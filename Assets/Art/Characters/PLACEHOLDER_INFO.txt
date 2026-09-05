@@ -1,0 +1,22 @@
+PLACEHOLDER SPRITES NEEDED
+
+For Phase 1 testing, you'll need to create simple placeholder sprites in Unity:
+
+1. Player Placeholder:
+   - Create a simple sprite in Unity (GameObject > 2D Object > Sprites > Square)
+   - Color it distinctly (e.g., blue or green)
+   - Save as a prefab in Assets/Prefabs/Player/
+
+2. Platform Placeholder:
+   - Create a sprite (square or rectangle)
+   - Color it (e.g., brown or gray)
+   - Add a Box Collider 2D
+   - Save as a prefab in Assets/Prefabs/Environment/
+
+3. Ground Placeholder:
+   - Similar to platform but larger
+   - Can use Unity's default sprite
+
+These will be replaced with proper art assets later.
+
+IMPORTANT: All final art must be original. Do not use Mario or Nintendo assets.
