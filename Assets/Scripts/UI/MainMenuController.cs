@@ -14,7 +14,7 @@ namespace MazeRunner.UI
             }
             else
             {
-                SceneManager.LoadScene("TestLevel");
+                SceneManager.LoadScene("Level1");
             }
         }
         

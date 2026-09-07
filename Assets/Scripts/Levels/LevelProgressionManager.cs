@@ -16,7 +16,7 @@ namespace MazeRunner.Levels
         private static LevelProgressionManager instance;
 
         [Header("Level Sequence")]
-        [SerializeField] private string[] levelSceneNames = { "TestLevel", "Level2", "Level3" };
+        [SerializeField] private string[] levelSceneNames = { "Level1", "Level2", "Level3" };
 
         [Header("Progression")]
         [SerializeField] private bool persistProgress = true;
