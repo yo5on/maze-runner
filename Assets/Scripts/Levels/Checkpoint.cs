@@ -36,6 +36,11 @@ namespace MazeRunner.Levels
                 health.SetCheckpoint(transform.position);
             }
             
+            if (Audio.AudioManager.Instance != null)
+            {
+                Audio.AudioManager.Instance.PlayCheckpoint();
+            }
+            
             UpdateVisual();
         }
         

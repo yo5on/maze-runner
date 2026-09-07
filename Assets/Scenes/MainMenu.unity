@@ -282,6 +282,7 @@ GameObject:
   - component: {fileID: 359441396}
   - component: {fileID: 359441395}
   - component: {fileID: 359441394}
+  - component: {fileID: 359441397}
   m_Layer: 5
   m_Name: LevelSelectButton
   m_TagString: Untagged
@@ -403,6 +404,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 359441392}
   m_CullTransparentMesh: 1
+--- !u!114 &359441397
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 359441392}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 09ea70a572ef242409f5312ba109dc11, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MazeRunner.UI.UIButtonSound
 --- !u!1 &553580210
 GameObject:
   m_ObjectHideFlags: 0
@@ -826,6 +839,7 @@ GameObject:
   - component: {fileID: 1076504363}
   - component: {fileID: 1076504362}
   - component: {fileID: 1076504361}
+  - component: {fileID: 1076504364}
   m_Layer: 5
   m_Name: PlayButton
   m_TagString: Untagged
@@ -947,6 +961,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1076504359}
   m_CullTransparentMesh: 1
+--- !u!114 &1076504364
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1076504359}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 09ea70a572ef242409f5312ba109dc11, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MazeRunner.UI.UIButtonSound
 --- !u!1 &1166162401
 GameObject:
   m_ObjectHideFlags: 0
@@ -1096,6 +1122,7 @@ GameObject:
   - component: {fileID: 1166234081}
   - component: {fileID: 1166234080}
   - component: {fileID: 1166234079}
+  - component: {fileID: 1166234082}
   m_Layer: 5
   m_Name: CustomizationButton
   m_TagString: Untagged
@@ -1217,6 +1244,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1166234077}
   m_CullTransparentMesh: 1
+--- !u!114 &1166234082
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1166234077}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 09ea70a572ef242409f5312ba109dc11, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MazeRunner.UI.UIButtonSound
 --- !u!1 &1295892217
 GameObject:
   m_ObjectHideFlags: 0
@@ -1366,6 +1405,7 @@ GameObject:
   - component: {fileID: 1347033473}
   - component: {fileID: 1347033472}
   - component: {fileID: 1347033471}
+  - component: {fileID: 1347033474}
   m_Layer: 5
   m_Name: SettingsButton
   m_TagString: Untagged
@@ -1487,6 +1527,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1347033469}
   m_CullTransparentMesh: 1
+--- !u!114 &1347033474
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1347033469}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 09ea70a572ef242409f5312ba109dc11, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MazeRunner.UI.UIButtonSound
 --- !u!1 &1460839885
 GameObject:
   m_ObjectHideFlags: 0
@@ -1578,6 +1630,7 @@ GameObject:
   - component: {fileID: 1634765624}
   - component: {fileID: 1634765623}
   - component: {fileID: 1634765622}
+  - component: {fileID: 1634765625}
   m_Layer: 5
   m_Name: QuitButton
   m_TagString: Untagged
@@ -1699,6 +1752,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1634765620}
   m_CullTransparentMesh: 1
+--- !u!114 &1634765625
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1634765620}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 09ea70a572ef242409f5312ba109dc11, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MazeRunner.UI.UIButtonSound
 --- !u!1 &1889583099
 GameObject:
   m_ObjectHideFlags: 0

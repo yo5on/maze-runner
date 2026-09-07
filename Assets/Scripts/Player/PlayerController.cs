@@ -191,6 +191,11 @@ namespace MazeRunner.Player
             isJumping = true;
             lastGroundedTime = 0f;
             lastJumpPressedTime = 0f;
+            
+            if (Audio.AudioManager.Instance != null)
+            {
+                Audio.AudioManager.Instance.PlayJump();
+            }
         }
 
         private void OnDrawGizmos()

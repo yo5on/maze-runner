@@ -38,6 +38,11 @@ namespace MazeRunner.Player
             {
                 enemy.Defeat();
                 rb.linearVelocity = new Vector2(rb.linearVelocity.x, bounceForce);
+                
+                if (Audio.AudioManager.Instance != null)
+                {
+                    Audio.AudioManager.Instance.PlayEnemyDefeat();
+                }
             }
             else
             {

@@ -105,7 +105,7 @@ namespace MazeRunner.UI
 
         private void Back()
         {
-            gameObject.SetActive(false);
+            UnityEngine.SceneManagement.SceneManager.LoadScene("MainMenu");
         }
 
         private void RefreshUI()

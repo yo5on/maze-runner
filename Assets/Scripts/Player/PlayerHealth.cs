@@ -47,6 +47,11 @@ namespace MazeRunner.Player
             invincibilityTimer = invincibilityDuration;
             OnHealthChanged?.Invoke(currentHealth);
             
+            if (Audio.AudioManager.Instance != null)
+            {
+                Audio.AudioManager.Instance.PlayDamage();
+            }
+            
             if (currentHealth <= 0)
             {
                 Die();
