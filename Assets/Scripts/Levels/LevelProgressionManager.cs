@@ -130,11 +130,11 @@ namespace MazeRunner.Levels
             if (!IsValidLevelIndex(nextLevelIndex))
             {
                 AllLevelsCompleted?.Invoke();
-                return;
             }
-
-            SetLevelUnlocked(nextLevelIndex, true);
-            LoadLevel(nextLevelIndex);
+            else
+            {
+                SetLevelUnlocked(nextLevelIndex, true);
+            }
         }
 
         public void ResetProgress()

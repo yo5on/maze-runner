@@ -44,7 +44,14 @@ namespace MazeRunner.UI
             if (LevelProgressionManager.Instance != null)
             {
                 int nextLevel = LevelProgressionManager.Instance.CurrentLevelIndex + 1;
-                LevelProgressionManager.Instance.StartLevel(nextLevel);
+                if (nextLevel < LevelProgressionManager.Instance.LevelCount)
+                {
+                    LevelProgressionManager.Instance.StartLevel(nextLevel);
+                }
+                else
+                {
+                    ReturnToMainMenu();
+                }
             }
         }
         
