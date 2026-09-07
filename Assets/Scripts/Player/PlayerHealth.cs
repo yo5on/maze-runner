@@ -7,6 +7,7 @@ namespace MazeRunner.Player
     {
         [SerializeField] private int maxHealth = 3;
         [SerializeField] private float invincibilityDuration = 1f;
+        [SerializeField] private float fallDeathY = -10f;
         
         private int currentHealth;
         private float invincibilityTimer;
@@ -30,6 +31,11 @@ namespace MazeRunner.Player
             if (invincibilityTimer > 0)
             {
                 invincibilityTimer -= Time.deltaTime;
+            }
+            
+            if (transform.position.y < fallDeathY)
+            {
+                Die();
             }
         }
         
