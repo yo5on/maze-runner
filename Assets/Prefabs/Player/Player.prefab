@@ -784,7 +784,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8150244dad48d7b4dabc039ad699542b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MazeRunner.Customization.CharacterCustomizationManager
-  categories: []
+  categories:
+  - {fileID: 11400000, guid: c6e48d98d9c626d449ec5f7b22613443, type: 2}
+  - {fileID: 11400000, guid: 184cf433826880544a128e574629529b, type: 2}
+  - {fileID: 11400000, guid: cb28c36daa77a9a44b32f3570765a0ed, type: 2}
+  - {fileID: 11400000, guid: d9562ea5ceefa734fbb8725d7fbfa7ab, type: 2}
+  - {fileID: 11400000, guid: 3fb1accc78c16a84d9f3ddf3ca987eca, type: 2}
+  - {fileID: 11400000, guid: 8fa142d2d44d82c44b7628e7a188fb6b, type: 2}
+  - {fileID: 11400000, guid: 0caef32f38a67ad40a68684739128d3c, type: 2}
+  - {fileID: 11400000, guid: 25a1a0cb49d2e15469a41aa83c9a7c62, type: 2}
   characterRenderer: {fileID: 7576686857004156069}
   useDefaultsOnStart: 1
 --- !u!1 &7991651956975793456
