@@ -93,14 +93,14 @@ namespace MazeRunner.UI
         private void ResetToDefaults()
         {
             if (customizationManager == null) return;
-            customizationManager.ApplyDefaults();
+            customizationManager.ResetToDefaults();
             RefreshOptionLabel();
         }
 
         private void Apply()
         {
-            // Placeholder hook for Phase 5 (Save/Load) to persist the current selection.
-            Debug.Log("Customization applied.");
+            if (customizationManager == null) return;
+            customizationManager.SaveCustomization();
         }
 
         private void Back()

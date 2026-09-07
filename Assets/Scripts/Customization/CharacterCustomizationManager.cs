@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using MazeRunner.SaveSystem;
 
 namespace MazeRunner.Customization
 {
@@ -22,6 +23,13 @@ namespace MazeRunner.Customization
         [Tooltip("Use default selections on start (first option in each category)")]
         [SerializeField] private bool useDefaultsOnStart = true;
         
+        [Header("Save/Load")]
+        [Tooltip("Auto-load saved customization on start")]
+        [SerializeField] private bool autoLoadOnStart = true;
+        
+        [Tooltip("PlayerPrefs key for saving customization")]
+        [SerializeField] private string saveKey = "CharacterCustomization";
+        
         // Current selections: maps category type to selected option index
         private Dictionary<CustomizationCategoryType, int> currentSelections;
         
@@ -41,6 +49,11 @@ namespace MazeRunner.Customization
         
         private void Start()
         {
+            if (autoLoadOnStart && TryLoadCustomization())
+            {
+                return; // Loaded successfully
+            }
+            
             if (useDefaultsOnStart)
             {
                 ApplyDefaults();
@@ -386,6 +399,68 @@ namespace MazeRunner.Customization
             }
             
             return isValid;
+        }
+        
+        /// <summary>
+        /// Saves the current customization selections to PlayerPrefs.
+        /// </summary>
+        public void SaveCustomization()
+        {
+            var exported = ExportCustomization();
+            var data = new CustomizationData(exported);
+            data.SaveToPlayerPrefs(saveKey);
+        }
+        
+        /// <summary>
+        /// Attempts to load and apply saved customization from PlayerPrefs.
+        /// Safely falls back if data is missing, invalid, or corrupted.
+        /// </summary>
+        /// <returns>True if valid saved data was found and applied</returns>
+        public bool TryLoadCustomization()
+        {
+            CustomizationData data = CustomizationData.LoadFromPlayerPrefs(saveKey);
+            
+            if (data == null || !data.HasData())
+            {
+                return false;
+            }
+            
+            Dictionary<CustomizationCategoryType, string> dict = data.ToDictionary();
+            bool anyApplied = false;
+            
+            foreach (var kvp in dict)
+            {
+                // Skip categories that no longer exist (corrupted/outdated save safety)
+                if (!categoryMap.ContainsKey(kvp.Key))
+                {
+                    continue;
+                }
+                
+                if (SetCustomizationById(kvp.Key, kvp.Value))
+                {
+                    anyApplied = true;
+                }
+            }
+            
+            // Fill any categories missing from save data with defaults
+            foreach (var category in categoryMap.Values)
+            {
+                if (GetCurrentSelection(category.CategoryType) < 0 && category.OptionCount > 0)
+                {
+                    SetCustomization(category.CategoryType, 0);
+                }
+            }
+            
+            return anyApplied;
+        }
+        
+        /// <summary>
+        /// Resets customization to defaults and clears saved data.
+        /// </summary>
+        public void ResetToDefaults()
+        {
+            ApplyDefaults();
+            PlayerPrefs.DeleteKey(saveKey);
         }
         
 #if UNITY_EDITOR
