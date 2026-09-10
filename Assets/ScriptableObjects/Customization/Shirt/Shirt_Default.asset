@@ -14,5 +14,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::MazeRunner.Customization.CustomizationOption
   optionId: shirt_default
   displayName: Default Shirt
-  sprite: {fileID: 7482667652216324306, guid: 311925a002f4447b3a28927169b83ea6, type: 3}
+  sprite: {fileID: -4059714276665716718, guid: 980ef599fdeb2e84790f235ecb572aeb, type: 3}
   description: 

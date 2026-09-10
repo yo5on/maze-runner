@@ -14,5 +14,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::MazeRunner.Customization.CustomizationOption
   optionId: shoes_default
   displayName: Default Shoes
-  sprite: {fileID: 7482667652216324306, guid: 311925a002f4447b3a28927169b83ea6, type: 3}
+  sprite: {fileID: -965552165390097976, guid: 8f97acf8ca4ca1043af8b8d42d3b4902, type: 3}
   description: 

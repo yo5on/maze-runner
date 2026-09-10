@@ -14,5 +14,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::MazeRunner.Customization.CustomizationOption
   optionId: eyes_default
   displayName: Default Eyes
-  sprite: {fileID: 7482667652216324306, guid: 311925a002f4447b3a28927169b83ea6, type: 3}
+  sprite: {fileID: 8252919439515835471, guid: 2ef678d2910c7204095a4162ff0fd6e9, type: 3}
   description: 

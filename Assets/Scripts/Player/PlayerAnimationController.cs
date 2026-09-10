@@ -1,99 +1,248 @@
 using UnityEngine;
-using MazeRunner.Customization;
 
 namespace MazeRunner.Player
 {
     [RequireComponent(typeof(PlayerController))]
-    [RequireComponent(typeof(CharacterRenderer))]
     public class PlayerAnimationController : MonoBehaviour
     {
-        private PlayerController playerController;
-        private CharacterRenderer characterRenderer;
-        private Animator[] layerAnimators;
+        [Header("Animator Reference")]
+        [SerializeField] private Animator fallenAngelsAnimator;
         
-        private enum AnimationState { Idle, Run, Jump, Fall }
-        private AnimationState currentState = AnimationState.Idle;
+        [Header("Settings")]
+        [SerializeField] private bool enableAnimations = true;
+        
+        private PlayerController playerController;
+        private PlayerHealth playerHealth;
+        private SpriteRenderer spriteRenderer;
+        
+        private bool wasGrounded;
+        private bool isHurt;
+        private bool isDead;
+        
+        private static readonly int IsRunningHash = Animator.StringToHash("isRunning");
+        private static readonly int IsJumpingHash = Animator.StringToHash("isJumping");
+        private static readonly int IsFallingHash = Animator.StringToHash("isFalling");
+        private static readonly int IsHurtHash = Animator.StringToHash("isHurt");
+        private static readonly int IsDeadHash = Animator.StringToHash("isDead");
+        private static readonly int JumpTriggerHash = Animator.StringToHash("Jump");
+        private static readonly int HurtTriggerHash = Animator.StringToHash("Hurt");
+        private static readonly int DeathTriggerHash = Animator.StringToHash("Death");
         
         private void Awake()
         {
             playerController = GetComponent<PlayerController>();
-            characterRenderer = GetComponent<CharacterRenderer>();
+            playerHealth = GetComponent<PlayerHealth>();
             
-            layerAnimators = new Animator[8];
-            layerAnimators[0] = GetLayerAnimator(CustomizationCategoryType.Body);
-            layerAnimators[1] = GetLayerAnimator(CustomizationCategoryType.Eyes);
-            layerAnimators[2] = GetLayerAnimator(CustomizationCategoryType.Hair);
-            layerAnimators[3] = GetLayerAnimator(CustomizationCategoryType.Shirt);
-            layerAnimators[4] = GetLayerAnimator(CustomizationCategoryType.Pants);
-            layerAnimators[5] = GetLayerAnimator(CustomizationCategoryType.Shoes);
-            layerAnimators[6] = GetLayerAnimator(CustomizationCategoryType.Hat);
-            layerAnimators[7] = GetLayerAnimator(CustomizationCategoryType.Accessory);
+            if (fallenAngelsAnimator == null)
+            {
+                Transform child = transform.Find("Fallen_Angels");
+                if (child != null)
+                {
+                    fallenAngelsAnimator = child.GetComponent<Animator>();
+                }
+            }
+            
+            if (fallenAngelsAnimator != null)
+            {
+                spriteRenderer = fallenAngelsAnimator.GetComponent<SpriteRenderer>();
+            }
+            
+            if (playerHealth != null)
+            {
+                playerHealth.OnPlayerDeath += OnPlayerDeath;
+            }
+            
+            wasGrounded = true;
         }
         
-        private Animator GetLayerAnimator(CustomizationCategoryType type)
+        private void OnDestroy()
         {
-            SpriteRenderer renderer = characterRenderer.GetRenderer(type);
-            if (renderer == null) return null;
-            
-            Animator animator = renderer.GetComponent<Animator>();
-            if (animator == null)
+            if (playerHealth != null)
             {
-                animator = renderer.gameObject.AddComponent<Animator>();
+                playerHealth.OnPlayerDeath -= OnPlayerDeath;
             }
-            return animator;
         }
         
         private void Update()
         {
-            AnimationState newState = DetermineState();
+            if (!enableAnimations || fallenAngelsAnimator == null) return;
             
-            if (newState != currentState)
-            {
-                currentState = newState;
-                ApplyState(currentState);
-            }
-            
+            UpdateAnimationState();
             UpdateFlip();
         }
         
-        private AnimationState DetermineState()
+        private void UpdateAnimationState()
         {
-            if (!playerController.IsGrounded)
+            if (isDead)
             {
-                return playerController.Velocity.y > 0 ? AnimationState.Jump : AnimationState.Fall;
+                return;
             }
             
-            return Mathf.Abs(playerController.Velocity.x) > 0.1f ? AnimationState.Run : AnimationState.Idle;
-        }
-        
-        private void ApplyState(AnimationState state)
-        {
-            string stateName = state.ToString();
+            bool isGrounded = playerController.IsGrounded;
+            float velocityY = playerController.Velocity.y;
+            float horizontalSpeed = Mathf.Abs(playerController.Velocity.x);
+            bool isMoving = horizontalSpeed > 0.1f;
             
-            foreach (Animator animator in layerAnimators)
+            // Debug logging
+            if (Time.frameCount % 60 == 0)
             {
-                if (animator != null && animator.runtimeAnimatorController != null)
+                Debug.Log($"[AnimController] Grounded={isGrounded}, VelX={playerController.Velocity.x:F2}, VelY={velocityY:F2}, Moving={isMoving}, Animator={(fallenAngelsAnimator != null ? "Found" : "NULL")}, Controller={(fallenAngelsAnimator != null && fallenAngelsAnimator.runtimeAnimatorController != null ? "Assigned" : "MISSING")}");
+            }
+            
+            // Always update isRunning based on grounded movement
+            bool shouldRun = isGrounded && isMoving;
+            SetBool(IsRunningHash, shouldRun);
+            
+            if (Time.frameCount % 60 == 0 && isMoving)
+            {
+                Debug.Log($"[AnimController] Setting isRunning={shouldRun}, HasParam={HasParameter(IsRunningHash)}");
+            }
+            
+            if (!wasGrounded && isGrounded)
+            {
+                SetBool(IsJumpingHash, false);
+                SetBool(IsFallingHash, false);
+            }
+            
+            // Trigger Jump animation when leaving ground
+            if (wasGrounded && !isGrounded && velocityY > 0.1f)
+            {
+                SetTrigger(JumpTriggerHash);
+                Debug.Log("[AnimController] Jump trigger fired");
+            }
+            
+            wasGrounded = isGrounded;
+            
+            if (!isGrounded)
+            {
+                if (velocityY > 0.1f)
                 {
-                    animator.Play(stateName);
+                    SetBool(IsJumpingHash, true);
+                    SetBool(IsFallingHash, false);
                 }
+                else if (velocityY < -0.1f)
+                {
+                    SetBool(IsJumpingHash, false);
+                    SetBool(IsFallingHash, true);
+                }
+            }
+            else
+            {
+                SetBool(IsJumpingHash, false);
+                SetBool(IsFallingHash, false);
             }
         }
         
         private void UpdateFlip()
         {
-            if (Mathf.Abs(playerController.Velocity.x) > 0.1f)
+            if (spriteRenderer == null) return;
+            
+            float velocityX = playerController.Velocity.x;
+            
+            if (Mathf.Abs(velocityX) > 0.1f)
             {
-                float scaleX = playerController.Velocity.x > 0 ? 1f : -1f;
-                
-                foreach (Animator animator in layerAnimators)
+                spriteRenderer.flipX = velocityX < 0;
+            }
+        }
+        
+        public void TriggerHurt()
+        {
+            if (fallenAngelsAnimator == null || isDead) return;
+            
+            isHurt = true;
+            SetTrigger(HurtTriggerHash);
+            SetBool(IsHurtHash, true);
+            Invoke(nameof(EndHurt), 0.4f);
+        }
+        
+        private void EndHurt()
+        {
+            isHurt = false;
+            if (fallenAngelsAnimator != null)
+            {
+                SetBool(IsHurtHash, false);
+            }
+        }
+        
+        private void OnPlayerDeath()
+        {
+            if (fallenAngelsAnimator == null) return;
+            
+            isDead = true;
+            SetTrigger(DeathTriggerHash);
+            SetBool(IsDeadHash, true);
+        }
+        
+        private void SetBool(int hash, bool value)
+        {
+            if (fallenAngelsAnimator != null && fallenAngelsAnimator.runtimeAnimatorController != null)
+            {
+                if (HasParameter(hash))
                 {
-                    if (animator != null)
-                    {
-                        Transform t = animator.transform;
-                        t.localScale = new Vector3(scaleX, t.localScale.y, t.localScale.z);
-                    }
+                    fallenAngelsAnimator.SetBool(hash, value);
+                }
+                else
+                {
+                    Debug.LogWarning($"[AnimController] Parameter hash {hash} not found in Animator. Check parameter names.");
                 }
             }
+            else
+            {
+                Debug.LogWarning($"[AnimController] SetBool failed: Animator={fallenAngelsAnimator != null}, Controller={fallenAngelsAnimator?.runtimeAnimatorController != null}");
+            }
+        }
+        
+        private void SetTrigger(int hash)
+        {
+            if (fallenAngelsAnimator != null && fallenAngelsAnimator.runtimeAnimatorController != null)
+            {
+                if (HasParameter(hash))
+                {
+                    fallenAngelsAnimator.SetTrigger(hash);
+                }
+            }
+        }
+        
+        private bool HasParameter(int hash)
+        {
+            if (fallenAngelsAnimator == null || fallenAngelsAnimator.runtimeAnimatorController == null)
+            {
+                return false;
+            }
+            
+            foreach (AnimatorControllerParameter param in fallenAngelsAnimator.parameters)
+            {
+                if (param.nameHash == hash)
+                {
+                    return true;
+                }
+            }
+            
+            return false;
+        }
+        
+        public void ResetAnimationState()
+        {
+            isDead = false;
+            isHurt = false;
+            
+            if (fallenAngelsAnimator == null ||
+                fallenAngelsAnimator.runtimeAnimatorController == null)
+            {
+                return;
+            }
+            
+            if (HasParameter(DeathTriggerHash)) fallenAngelsAnimator.ResetTrigger(DeathTriggerHash);
+            if (HasParameter(HurtTriggerHash)) fallenAngelsAnimator.ResetTrigger(HurtTriggerHash);
+            if (HasParameter(JumpTriggerHash)) fallenAngelsAnimator.ResetTrigger(JumpTriggerHash);
+            
+            if (HasParameter(IsDeadHash)) fallenAngelsAnimator.SetBool(IsDeadHash, false);
+            if (HasParameter(IsHurtHash)) fallenAngelsAnimator.SetBool(IsHurtHash, false);
+            if (HasParameter(IsJumpingHash)) fallenAngelsAnimator.SetBool(IsJumpingHash, false);
+            if (HasParameter(IsFallingHash)) fallenAngelsAnimator.SetBool(IsFallingHash, false);
+            if (HasParameter(IsRunningHash)) fallenAngelsAnimator.SetBool(IsRunningHash, false);
+            
+            fallenAngelsAnimator.Play("Idle", 0, 0f);
         }
     }
 }

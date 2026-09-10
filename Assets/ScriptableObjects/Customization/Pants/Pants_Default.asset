@@ -14,5 +14,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::MazeRunner.Customization.CustomizationOption
   optionId: pants_default
   displayName: Default Pants
-  sprite: {fileID: 7482667652216324306, guid: 311925a002f4447b3a28927169b83ea6, type: 3}
+  sprite: {fileID: -2426226620100896474, guid: 6244037a3d1a7854b88db3a0067e0987, type: 3}
   description: 

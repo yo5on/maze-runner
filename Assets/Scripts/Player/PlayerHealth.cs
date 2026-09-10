@@ -12,6 +12,7 @@ namespace MazeRunner.Player
         private int currentHealth;
         private float invincibilityTimer;
         private Vector3 lastCheckpointPosition;
+        private PlayerAnimationController animationController;
         
         public event Action OnPlayerDeath;
         public event Action<int> OnHealthChanged;
@@ -24,6 +25,7 @@ namespace MazeRunner.Player
         {
             currentHealth = maxHealth;
             lastCheckpointPosition = transform.position;
+            animationController = GetComponent<PlayerAnimationController>();
         }
         
         private void Update()
@@ -52,6 +54,11 @@ namespace MazeRunner.Player
                 Audio.AudioManager.Instance.PlayDamage();
             }
             
+            if (animationController != null)
+            {
+                animationController.TriggerHurt();
+            }
+            
             if (currentHealth <= 0)
             {
                 Die();
@@ -76,6 +83,11 @@ namespace MazeRunner.Player
             currentHealth = maxHealth;
             invincibilityTimer = invincibilityDuration;
             OnHealthChanged?.Invoke(currentHealth);
+            
+            if (animationController != null)
+            {
+                animationController.ResetAnimationState();
+            }
         }
         
         public void SetCheckpoint(Vector3 position)

@@ -14,5 +14,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::MazeRunner.Customization.CustomizationOption
   optionId: body_default
   displayName: Default Body
-  sprite: {fileID: 7482667652216324306, guid: 311925a002f4447b3a28927169b83ea6, type: 3}
+  sprite: {fileID: 8954190098238879556, guid: 2c0b536437994c741acb232cf7a59708, type: 3}
   description: 
