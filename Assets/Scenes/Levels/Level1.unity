@@ -1145,6 +1145,14 @@ MonoBehaviour:
   playerLayer:
     serializedVersion: 2
     m_Bits: 64
+  visionRange: 3
+  visionWidth: 2
+  obstacleLayer:
+    serializedVersion: 2
+    m_Bits: 0
+  noticeSpeedMultiplier: 2
+  noticeSpeedDuration: 1.5
+  rearDetectionRange: 2
   maxHealth: 2
 --- !u!50 &422811958
 Rigidbody2D:
@@ -1439,7 +1447,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &483062504
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2085,6 +2093,7 @@ RectTransform:
   m_LocalScale: {x: 0, y: 0, z: 0}
   m_ConstrainProportionsScale: 0
   m_Children:
+  - {fileID: 755138388}
   - {fileID: 1251366137}
   - {fileID: 869684760}
   - {fileID: 483062506}
@@ -2339,27 +2348,27 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4771212800294580, guid: 1578dbbf01f3e2242923e22c1af2c7b6, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
-      value: 0.8246379
+      value: -2.7232447
       objectReference: {fileID: 0}
     - target: {fileID: 4842360773462478, guid: 1578dbbf01f3e2242923e22c1af2c7b6, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
-      value: 90.40319
+      value: 81.18306
       objectReference: {fileID: 0}
     - target: {fileID: 4857783361503396, guid: 1578dbbf01f3e2242923e22c1af2c7b6, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
-      value: -91.525894
+      value: -84.47377
       objectReference: {fileID: 0}
     - target: {fileID: 4865783848757314, guid: 1578dbbf01f3e2242923e22c1af2c7b6, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
-      value: -15.353622
+      value: -5.3943634
       objectReference: {fileID: 0}
     - target: {fileID: 4884522505388542, guid: 1578dbbf01f3e2242923e22c1af2c7b6, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
-      value: 19.771286
+      value: -167.57095
       objectReference: {fileID: 0}
     - target: {fileID: 4915438747015694, guid: 1578dbbf01f3e2242923e22c1af2c7b6, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
-      value: -93.38048
+      value: -93.98738
       objectReference: {fileID: 0}
     - target: {fileID: 4950480674301596, guid: 1578dbbf01f3e2242923e22c1af2c7b6, type: 3}
       propertyPath: m_LocalScale.x
@@ -2417,6 +2426,10 @@ PrefabInstance:
       propertyPath: m_Controller
       value: 
       objectReference: {fileID: 9100000, guid: b658c161755afe249a0ee54f971f7f5f, type: 2}
+    - target: {fileID: 212899538689566302, guid: 1578dbbf01f3e2242923e22c1af2c7b6, type: 3}
+      propertyPath: m_Sprite
+      value: 
+      objectReference: {fileID: 21300000, guid: 7932456fa08b22b438d0219e86c5a94f, type: 3}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects:
@@ -2638,7 +2651,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 1950, y: -2050}
+  m_AnchoredPosition: {x: 20, y: -20}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 20, y: -20}
 --- !u!114 &684754817
@@ -2654,7 +2667,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MazeRunner.UI.HealthDisplay
   playerHealth: {fileID: 1777059358}
-  healthText: {fileID: 483062504}
+  heartContainer: {fileID: 755138386}
+  heartPrefab: {fileID: 1423026579546237900, guid: cb4f43fe3f2d5374b9b0a146ca942088, type: 3}
+  fullHeartSprite: {fileID: 1564688358316481467, guid: a5e9763b0f048fb4490601c4a1428f02, type: 3}
+  emptyHeartSprite: {fileID: 7885684081779559860, guid: a5e9763b0f048fb4490601c4a1428f02, type: 3}
 --- !u!1 &736372274
 GameObject:
   m_ObjectHideFlags: 0
@@ -2788,6 +2804,68 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 736372274}
   m_CullTransparentMesh: 1
+--- !u!1 &755138386
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 755138388}
+  - component: {fileID: 755138387}
+  m_Layer: 5
+  m_Name: HeartContainer
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &755138387
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 755138386}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 30649d3a9faa99c48a7b1166b86bf2a0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.HorizontalLayoutGroup
+  m_Padding:
+    m_Left: 0
+    m_Right: 0
+    m_Top: 0
+    m_Bottom: 0
+  m_ChildAlignment: 0
+  m_Spacing: 5
+  m_ChildForceExpandWidth: 1
+  m_ChildForceExpandHeight: 1
+  m_ChildControlWidth: 0
+  m_ChildControlHeight: 0
+  m_ChildScaleWidth: 0
+  m_ChildScaleHeight: 0
+  m_ReverseArrangement: 0
+--- !u!224 &755138388
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 755138386}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 569488125}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 20, y: -20}
+  m_SizeDelta: {x: 100, y: 100}
+  m_Pivot: {x: 0, y: 1}
 --- !u!1 &770799675
 GameObject:
   m_ObjectHideFlags: 0
@@ -4662,7 +4740,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 10, y: 2.75, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 0.75, y: 0.75, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -5391,7 +5469,7 @@ SpriteRenderer:
   m_Size: {x: 1.8, y: 1.8}
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
-  m_WasSpriteAssigned: 1
+  m_WasSpriteAssigned: 0
   m_SpriteSortPoint: 0
   m_BlendShapeWeights: []
 --- !u!114 &1777059366
@@ -7053,6 +7131,10 @@ PrefabInstance:
     - target: {fileID: 640594874719128557, guid: 24aef6fa93e21344d8df87843892b442, type: 3}
       propertyPath: m_IsActive
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1124288634222738282, guid: 24aef6fa93e21344d8df87843892b442, type: 3}
+      propertyPath: jumpForce
+      value: 10
       objectReference: {fileID: 0}
     - target: {fileID: 1611428784135052574, guid: 24aef6fa93e21344d8df87843892b442, type: 3}
       propertyPath: m_Layer
