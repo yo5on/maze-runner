@@ -690,8 +690,8 @@ CapsuleCollider2D:
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
-  m_Offset: {x: 0, y: 0}
-  m_Size: {x: 1, y: 1}
+  m_Offset: {x: 0, y: 0.2}
+  m_Size: {x: 1, y: 1.5}
   m_Direction: 0
 --- !u!114 &1885596420176263100
 MonoBehaviour:
@@ -795,6 +795,8 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 25a1a0cb49d2e15469a41aa83c9a7c62, type: 2}
   characterRenderer: {fileID: 7576686857004156069}
   useDefaultsOnStart: 1
+  autoLoadOnStart: 1
+  saveKey: CharacterCustomization
 --- !u!1 &7991651956975793456
 GameObject:
   m_ObjectHideFlags: 0

@@ -135,13 +135,18 @@ namespace MazeRunner.Player
         
         private void UpdateFlip()
         {
-            if (spriteRenderer == null) return;
+            if (fallenAngelsAnimator == null) return;
             
             float velocityX = playerController.Velocity.x;
             
             if (Mathf.Abs(velocityX) > 0.1f)
             {
-                spriteRenderer.flipX = velocityX < 0;
+                Vector3 scale = fallenAngelsAnimator.transform.localScale;
+                fallenAngelsAnimator.transform.localScale = new Vector3(
+                    velocityX > 0 ? Mathf.Abs(scale.x) : -Mathf.Abs(scale.x),
+                    scale.y,
+                    scale.z
+                );
             }
         }
         
