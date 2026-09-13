@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using MazeRunner.Enemies;
 
 namespace MazeRunner.Player
@@ -27,8 +27,12 @@ namespace MazeRunner.Player
         private void OnCollisionEnter2D(Collision2D collision)
         {
             if (((1 << collision.gameObject.layer) & enemyLayer) == 0) return;
+            
             Enemy enemy = collision.gameObject.GetComponent<Enemy>();
-            if (enemy == null) return;
+            GoblinEnemy goblinEnemy = collision.gameObject.GetComponent<GoblinEnemy>();
+            
+            if (enemy == null && goblinEnemy == null) return;
+            
             Vector2 contactNormal = collision.contacts[0].normal;
             float playerVelocityY = rb.linearVelocity.y;
             
@@ -36,7 +40,15 @@ namespace MazeRunner.Player
             
             if (isStomping)
             {
-                enemy.Defeat();
+                if (enemy != null)
+                {
+                    enemy.Defeat();
+                }
+                else if (goblinEnemy != null)
+                {
+                    goblinEnemy.TakeDamage(1);
+                }
+                
                 rb.linearVelocity = new Vector2(rb.linearVelocity.x, bounceForce);
                 
                 if (Audio.AudioManager.Instance != null)
@@ -44,14 +56,7 @@ namespace MazeRunner.Player
                     Audio.AudioManager.Instance.PlayEnemyDefeat();
                 }
             }
-            else
-            {
-                if (playerHealth != null)
-                {
-                    playerHealth.TakeDamage(1);
-                }
-            }
+            // Body collision does not damage player - only sword attacks via Animation Events
         }
     }
 }
-
