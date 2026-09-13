@@ -1,4 +1,5 @@
-using UnityEngine;
+﻿using UnityEngine;
+using UnityEngine.SceneManagement;
 using System;
 
 namespace MazeRunner.Player
@@ -13,8 +14,10 @@ namespace MazeRunner.Player
         private float invincibilityTimer;
         private Vector3 lastCheckpointPosition;
         private PlayerAnimationController animationController;
+        private bool hasUsedRespawn;
         
         public event Action OnPlayerDeath;
+        public event Action OnGameOver;
         public event Action<int> OnHealthChanged;
         
         public int CurrentHealth => currentHealth;
@@ -26,6 +29,7 @@ namespace MazeRunner.Player
             currentHealth = maxHealth;
             lastCheckpointPosition = transform.position;
             animationController = GetComponent<PlayerAnimationController>();
+            hasUsedRespawn = false;
         }
         
         private void Update()
@@ -74,7 +78,16 @@ namespace MazeRunner.Player
         public void Die()
         {
             OnPlayerDeath?.Invoke();
-            Respawn();
+            
+            if (!hasUsedRespawn)
+            {
+                hasUsedRespawn = true;
+                Respawn();
+            }
+            else
+            {
+                GameOver();
+            }
         }
         
         public void Respawn()
@@ -88,6 +101,23 @@ namespace MazeRunner.Player
             {
                 animationController.ResetAnimationState();
             }
+        }
+        
+        private void GameOver()
+        {
+            OnGameOver?.Invoke();
+            Time.timeScale = 0f;
+            
+            if (GetComponent<PlayerController>() != null)
+            {
+                GetComponent<PlayerController>().enabled = false;
+            }
+        }
+        
+        public void RestartLevel()
+        {
+            Time.timeScale = 1f;
+            SceneManager.LoadScene(SceneManager.GetActiveScene().name);
         }
         
         public void SetCheckpoint(Vector3 position)
