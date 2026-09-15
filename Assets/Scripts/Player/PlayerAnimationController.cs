@@ -83,20 +83,9 @@ namespace MazeRunner.Player
             float horizontalSpeed = Mathf.Abs(playerController.Velocity.x);
             bool isMoving = horizontalSpeed > 0.1f;
             
-            // Debug logging
-            if (Time.frameCount % 60 == 0)
-            {
-                Debug.Log($"[AnimController] Grounded={isGrounded}, VelX={playerController.Velocity.x:F2}, VelY={velocityY:F2}, Moving={isMoving}, Animator={(fallenAngelsAnimator != null ? "Found" : "NULL")}, Controller={(fallenAngelsAnimator != null && fallenAngelsAnimator.runtimeAnimatorController != null ? "Assigned" : "MISSING")}");
-            }
-            
             // Always update isRunning based on grounded movement
             bool shouldRun = isGrounded && isMoving;
             SetBool(IsRunningHash, shouldRun);
-            
-            if (Time.frameCount % 60 == 0 && isMoving)
-            {
-                Debug.Log($"[AnimController] Setting isRunning={shouldRun}, HasParam={HasParameter(IsRunningHash)}");
-            }
             
             if (!wasGrounded && isGrounded)
             {
@@ -108,7 +97,6 @@ namespace MazeRunner.Player
             if (wasGrounded && !isGrounded && velocityY > 0.1f)
             {
                 SetTrigger(JumpTriggerHash);
-                Debug.Log("[AnimController] Jump trigger fired");
             }
             
             wasGrounded = isGrounded;
@@ -186,14 +174,6 @@ namespace MazeRunner.Player
                 {
                     fallenAngelsAnimator.SetBool(hash, value);
                 }
-                else
-                {
-                    Debug.LogWarning($"[AnimController] Parameter hash {hash} not found in Animator. Check parameter names.");
-                }
-            }
-            else
-            {
-                Debug.LogWarning($"[AnimController] SetBool failed: Animator={fallenAngelsAnimator != null}, Controller={fallenAngelsAnimator?.runtimeAnimatorController != null}");
             }
         }
         
