@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using MazeRunner.Player;
+using MazeRunner.Audio;
 
 namespace MazeRunner.UI
 {
@@ -39,6 +40,12 @@ namespace MazeRunner.UI
             if (gameOverPanel != null)
             {
                 gameOverPanel.SetActive(true);
+            }
+            
+            // Pause background music
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.PauseMusic();
             }
         }
         

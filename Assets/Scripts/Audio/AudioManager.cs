@@ -21,6 +21,8 @@ namespace MazeRunner.Audio
         [SerializeField] private AudioClip checkpointClip;
         [SerializeField] private AudioClip levelCompleteClip;
         [SerializeField] private AudioClip buttonClickClip;
+        [SerializeField] private AudioClip swordHitClip;
+        [SerializeField] private AudioClip respawnClip;
         
         public static AudioManager Instance => instance;
         
@@ -34,6 +36,11 @@ namespace MazeRunner.Audio
             
             instance = this;
             DontDestroyOnLoad(gameObject);
+            
+            if (sfxSource != null)
+            {
+                sfxSource.ignoreListenerPause = true;
+            }
         }
         
         private void Start()
@@ -94,6 +101,32 @@ namespace MazeRunner.Audio
         public void PlayButtonClick()
         {
             PlaySFX(buttonClickClip);
+        }
+        
+        public void PlaySwordHit()
+        {
+            PlaySFX(swordHitClip);
+        }
+        
+        public void PlayRespawn()
+        {
+            PlaySFX(respawnClip);
+        }
+        
+        public void PauseMusic()
+        {
+            if (musicSource != null && musicSource.isPlaying)
+            {
+                musicSource.Pause();
+            }
+        }
+        
+        public void ResumeMusic()
+        {
+            if (musicSource != null && !musicSource.isPlaying)
+            {
+                musicSource.UnPause();
+            }
         }
         
         private void PlaySFX(AudioClip clip)

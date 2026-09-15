@@ -28,6 +28,16 @@ namespace MazeRunner.Levels
                 return;
             }
 
+            if (EnemyTracker.Instance != null && EnemyTracker.Instance.RemainingEnemyCount > 0)
+            {
+                return;
+            }
+            
+            if (EnemyTracker.Instance == null)
+            {
+                return;
+            }
+
             CompleteLevel();
         }
 

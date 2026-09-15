@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.InputSystem;
+using MazeRunner.Audio;
 
 namespace MazeRunner.UI
 {
@@ -63,6 +64,12 @@ namespace MazeRunner.UI
             isPaused = true;
             Time.timeScale = 0f;
             if (pauseMenuPanel != null) pauseMenuPanel.SetActive(true);
+            
+            // Pause background music
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.PauseMusic();
+            }
         }
         
         public void Resume()
@@ -70,6 +77,12 @@ namespace MazeRunner.UI
             isPaused = false;
             Time.timeScale = 1f;
             if (pauseMenuPanel != null) pauseMenuPanel.SetActive(false);
+            
+            // Resume background music
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.ResumeMusic();
+            }
         }
         
         public void RestartLevel()

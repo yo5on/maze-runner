@@ -101,6 +101,12 @@ namespace MazeRunner.Player
             {
                 animationController.ResetAnimationState();
             }
+            
+            // Play respawn sound
+            if (Audio.AudioManager.Instance != null)
+            {
+                Audio.AudioManager.Instance.PlayRespawn();
+            }
         }
         
         private void GameOver()
