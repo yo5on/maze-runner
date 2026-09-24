@@ -16,6 +16,10 @@ Recent history (September 2026) records work on enemy animations, level audio, e
 
 The project uses Universal Render Pipeline (URP) with 2D renderer assets and the New Input System. Cinemachine is not listed in the current package manifest; the project contains its own `CameraFollow` script.
 
+## 3D asset workflow
+
+A low-poly stone ruin pillar was created in **Blender 4.2.1 LTS** for this project during the current asset integration. The editable Blender source, exported FBX model, and transparent rendered sprite are stored under `Assets/Blender/`, `Assets/Models/Blender/`, and `Assets/Art/Environment/Blender/`. The Unity-ready background sprite prefab is `Assets/Prefabs/Environment/MazeRunner_RuinPillar_Background.prefab`; one instance is placed in `Assets/Scenes/Levels/Level1.unity` at sorting order −10, behind the existing gameplay sprites, without a collider or gameplay script. Only that decorative scene instance was added; gameplay systems were left unchanged. See [Blender workflow](docs/BLENDER_WORKFLOW.md) for the modeling, export, and import details.
+
 ## Open the project
 
 1. Install or open Unity Hub and add this repository as a project.
