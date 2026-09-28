@@ -1,8 +1,20 @@
-# Maze Runner
+<div align="center">
+
+<img src="https://raw.githubusercontent.com/yo5on/yo5on/main/hd-projects.svg" width="620" alt="projects"/>
+
+<samp><b>MAZE RUNNER</b></samp>
+
+<samp>unity · c# · 2d platformer · game development</samp>
+
+**[Repository](https://github.com/yo5on/maze-runner)**
+
+</div>
+
+---
 
 Maze Runner is a 2D side-scrolling platform game built with Unity. The repository currently contains three gameplay levels, menu and customization scenes, player movement and combat systems, enemies, checkpoints, level goals, and supporting UI and audio.
 
-## Project status
+## Project Status
 
 The project is an active college project prototype. Its current source includes implemented game systems and authored Unity scenes; the repository does not include a release build or a complete testing record. Descriptions of implemented systems below are based on the current source, scene, prefab, and project configuration files. A script existing in the project does not by itself guarantee it is used in every scene.
 
@@ -10,73 +22,65 @@ Recent history (September 2026) records work on enemy animations, level audio, e
 
 ## Requirements
 
-- Unity **6000.5.1f1** (recorded in `ProjectSettings/ProjectVersion.txt`)
-- Unity Package Manager dependencies as recorded in `Packages/manifest.json`
+- Unity **6000.5.1f1**
+- Unity Package Manager dependencies in `Packages/manifest.json`
 - A desktop platform supported by the installed Unity Editor
 
-The project uses Universal Render Pipeline (URP) with 2D renderer assets and the New Input System. Cinemachine is not listed in the current package manifest; the project contains its own `CameraFollow` script.
+The project uses Universal Render Pipeline with a 2D renderer and the New Input System. Cinemachine is not listed in the current package manifest; the project contains its own `CameraFollow` script.
 
-## 3D asset workflow
-
-A low-poly stone ruin pillar was created in **Blender 4.2.1 LTS** for this project during the current asset integration. The editable Blender source, exported FBX model, and transparent rendered sprite are stored under `Assets/Blender/`, `Assets/Models/Blender/`, and `Assets/Art/Environment/Blender/`. The Unity-ready background sprite prefab is `Assets/Prefabs/Environment/MazeRunner_RuinPillar_Background.prefab`; one instance is placed in `Assets/Scenes/Levels/Level1.unity` at sorting order −10, behind the existing gameplay sprites, without a collider or gameplay script. Only that decorative scene instance was added; gameplay systems were left unchanged. See [Blender workflow](docs/BLENDER_WORKFLOW.md) for the modeling, export, and import details.
-
-## Open the project
+## Open the Project
 
 1. Install or open Unity Hub and add this repository as a project.
 2. Select Unity **6000.5.1f1** when prompted.
-3. Allow Unity Package Manager to resolve the packages in `Packages/manifest.json` and the editor to import assets.
-4. Open `Assets/Scenes/MainMenu.unity` to explore the menu, or open one of the gameplay scenes under `Assets/Scenes/Levels/`.
-5. Use the Unity Editor Play control to run the selected scene. The repository has no checked-in standalone build instructions or prebuilt executable.
+3. Allow Unity Package Manager to resolve the packages and import assets.
+4. Open `Assets/Scenes/MainMenu.unity` or one of the gameplay scenes under `Assets/Scenes/Levels/`.
+5. Use the Unity Editor Play control to run the selected scene.
 
-All six intended application scenes are enabled in `ProjectSettings/EditorBuildSettings.asset`: `Level1`, `Level2`, `Level3`, `LevelSelect`, `MainMenu`, and `Customization`. `SampleScene` and the URP template scene are also present as auxiliary scenes but are not in the build scene list.
+The six intended application scenes enabled in the build settings are `Level1`, `Level2`, `Level3`, `LevelSelect`, `MainMenu`, and `Customization`.
 
-## Current scenes
+## Current Scenes
 
-| Scene | Role indicated by its contents |
+| Scene | Role |
 |---|---|
-| `Assets/Scenes/MainMenu.unity` | Main menu with play/level-select, customization, settings, and quit controls |
-| `Assets/Scenes/LevelSelect.unity` | Selection controls for Levels 1–3 |
-| `Assets/Scenes/Customization.unity` | Character option/category UI |
-| `Assets/Scenes/Levels/Level1.unity` | Gameplay scene with player, goal, checkpoint, and gameplay UI |
-| `Assets/Scenes/Levels/Level2.unity` | Gameplay scene with player, goal, checkpoint, enemy, and gameplay UI |
-| `Assets/Scenes/Levels/Level3.unity` | Gameplay scene with player, goal, checkpoint, enemy, and gameplay UI |
-
-`Assets/Scenes/SampleScene.unity` is an auxiliary scene. `Assets/Settings/Scenes/URP2DSceneTemplate.unity` is a render-pipeline template.
+| `MainMenu.unity` | Main menu with play, level selection, customization, settings, and quit controls |
+| `LevelSelect.unity` | Selection controls for Levels 1–3 |
+| `Customization.unity` | Character option and category UI |
+| `Levels/Level1.unity` | Gameplay scene with player, goal, checkpoint, and gameplay UI |
+| `Levels/Level2.unity` | Gameplay scene with player, goal, checkpoint, enemy, and gameplay UI |
+| `Levels/Level3.unity` | Gameplay scene with player, goal, checkpoint, enemy, and gameplay UI |
 
 ![Level 1 scene layout in the Unity Editor, showing the player, platforms, goal, and checkpoint.](pics/09_level_scene.png)
 
-*Level 1 layout in the Unity Editor. This is an editor scene view, not a captured gameplay run.*
+*Level 1 layout in the Unity Editor.*
 
-## Implemented systems
+## Implemented Systems
 
 - Rigidbody2D player movement using the New Input System, with acceleration/deceleration, variable jump height, jump buffering, coyote time, and stronger falling gravity.
 - Player health, temporary damage invulnerability, fall death, a single automatic respawn, checkpoint position updates, and a game-over state after the respawn has been used.
-- Player animation state handling and enemy interaction. Player combat supports stomping the simple `Enemy` type and damaging `GoblinEnemy`; goblin sword damage is issued through animation events.
-- Goblin patrol/awareness/attack behavior and a configurable chase mode; a wraith patrol and projectile attack system also exists in source.
-- Trigger-based collectibles, including health pickups; checkpoints; hazards; level goals; and enemy tracking/progression scripts.
+- Player animation state handling and enemy interaction. Player combat supports stomping the simple `Enemy` type and damaging `GoblinEnemy`.
+- Goblin patrol, awareness, attack behavior, and configurable chase mode; a wraith patrol and projectile attack system also exists in source.
+- Trigger-based collectibles, health pickups, checkpoints, hazards, level goals, and enemy tracking/progression scripts.
 - Main menu, level selection, customization, pause, game-over, health HUD, and level-complete UI controllers.
-- Character customization categories/options, a renderer, and PlayerPrefs serialization for customization selections.
-- Audio playback helpers for gameplay events and UI, plus a configurable camera-follow component.
-
-See [Gameplay Systems](docs/GAMEPLAY_SYSTEMS.md) for the code-level behavior and limits.
+- Character customization categories/options, renderer, and PlayerPrefs serialization for customization selections.
+- Audio playback helpers and configurable camera-follow behavior.
 
 ![Player character and configured movement and jump values in the Unity Inspector.](pics/01_player_controller.png)
 
-*Player setup in the Inspector, including movement, jump, and ground-detection settings.*
+*Player setup in the Inspector.*
 
 ![Customization UI controller and its assigned category, option, and action controls in the Unity Inspector.](pics/05_customization_ui.png)
 
-*Customization controller setup with references to the category and option navigation controls.*
+*Customization controller setup.*
 
 ![LevelGoal trigger collider and completion color settings in the Unity Inspector.](pics/06_level_goal.png)
 
-*The level goal is configured as a trigger; its script also requires the enemy tracker and progression manager for completion.*
+*Level goal configuration.*
 
 ![Checkpoint trigger and active/inactive visual configuration in the Unity Inspector.](pics/07_checkpoint.png)
 
-*Checkpoint setup with its trigger collider and inactive/active visual colors.*
+*Checkpoint configuration.*
 
-## Repository map
+## Repository Map
 
 ```text
 Assets/
@@ -84,12 +88,12 @@ Assets/
   Scripts/                Gameplay and UI C# scripts
   Prefabs/                Player and platform prefabs
   ScriptableObjects/      Character customization data
-  Enemies/, Vector Parts/ Character/enemy part sprites and related art
-  Audio/                  Music and sound effect clips
-  Settings/               URP renderer and scene-template settings
-  TextMesh Pro/           TextMesh Pro package resources and examples
+  Enemies/, Vector Parts/ Character and enemy art
+  Audio/                  Music and sound effects
+  Settings/               URP renderer and scene settings
+  TextMesh Pro/           TextMesh Pro resources
 Packages/                 Unity package manifest and lock data
-ProjectSettings/          Unity editor, input, render, physics, and build settings
+ProjectSettings/          Unity editor and build settings
 docs/                     Project documentation
 ```
 
@@ -100,6 +104,6 @@ docs/                     Project documentation
 - [Architecture](docs/ARCHITECTURE.md)
 - [Development notes](docs/DEVELOPMENT.md)
 
-## Scope and future work
+## Scope and Future Work
 
-The repository contains code for several reusable systems beyond what is currently represented in the three level scenes. For example, the wraith and collectible scripts exist, but the current gameplay scenes inspected do not establish that those features are placed and wired into the levels. Treat adding and balancing content, confirming scene wiring, and end-to-end playtesting as ongoing development work. No unimplemented future feature is described here as complete.
+The repository contains reusable systems beyond what is currently represented in the three level scenes. For example, the wraith and collectible scripts exist, but the current gameplay scenes inspected do not establish that those features are placed and wired into the levels. Adding and balancing content, confirming scene wiring, and end-to-end playtesting remain ongoing work.
