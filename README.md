@@ -6,13 +6,11 @@
 
 <samp>unity · c# · 2d platformer · game development</samp>
 
-**[Repository](https://github.com/yo5on/maze-runner)**
-
 </div>
 
 ---
 
-<samp>Maze Runner is a 2D side-scrolling platform game built with Unity. The repository currently contains three gameplay levels, menu and customization scenes, player movement and combat systems, enemies, checkpoints, level goals, and supporting UI and audio.</samp>
+<div align="center"><samp>Maze Runner is a 2D side-scrolling platform game built with Unity. The repository currently contains three gameplay levels, menu and customization scenes, player movement and combat systems, enemies, checkpoints, level goals, and supporting UI and audio.</samp></div>
 
 ---
 
