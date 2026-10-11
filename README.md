@@ -14,11 +14,19 @@
 
 ---
 
+<div align="center"><samp><b>Gameplay Preview</b></samp></div>
+
+<samp>A recording of Level 1 being played in the Unity Editor’s Game view: platforming between ledges, goblin enemies, the heart health display taking damage, and the level-complete menu. It was captured with Unity 6.5 (<b>6000.5.1f1</b>); the Editor’s menu bar and toolbar are visible at the top of the frame.</samp>
+
+<samp><a href="media/gameplay-level-1.mp4">Watch the Level 1 gameplay recording</a> (<code>media/gameplay-level-1.mp4</code>, MP4, 97 MB, stored with Git LFS)</samp>
+
+---
+
 <div align="center"><samp><b>Project Status</b></samp></div>
 
 <samp>The project is an active college project prototype. Its current source includes implemented game systems and authored Unity scenes; the repository does not include a release build or a complete testing record. Descriptions of implemented systems below are based on the current source, scene, prefab, and project configuration files. A script existing in the project does not by itself guarantee it is used in every scene.</samp>
 
-<samp>Recent history (September 2026) records work on enemy animations, level audio, enemy fall death, a one-respawn game-over flow, and a three-heart HUD. Older root notes describe an earlier phase and conflict with the current scenes and packages, so they should not be treated as the present project specification.</samp>
+<samp>Recent history (September 2026) records work on enemy animations, level audio, enemy fall death, a one-respawn game-over flow, and a heart-based health HUD that shows one heart per point of the player’s maximum health (seven in Level 1, three in Levels 2 and 3). Older root notes describe an earlier phase and conflict with the current scenes and packages, so they should not be treated as the present project specification.</samp>
 
 ---
 
