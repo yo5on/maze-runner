@@ -22,7 +22,7 @@
         href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Instrument+Sans:wght@400..700&family=Instrument+Serif&display=swap">
   <link rel="stylesheet" href="TemplateData/style.css">
 </head>
-<body>
+<body data-controls="joystick">
   <div id="stage">
     <canvas id="unity-canvas" tabindex="-1"></canvas>
     <div id="loading" role="status" aria-live="polite">
@@ -32,7 +32,9 @@
     </div>
   </div>
 
-  <!-- On-screen controls (touch devices only). -->
+  <!-- On-screen controls (touch devices only). Exactly one movement layout shows, chosen in
+       the game's Settings > Mobile Controls: A = joystick, B = Left / Right buttons
+       (body[data-controls], set by WebBridge). Jump is shared by both. -->
   <div id="touch-controls">
     <div id="joystick" aria-label="Movement joystick">
       <div class="joy-base">
@@ -40,6 +42,14 @@
         <span class="joy-arrow joy-arrow-right"></span>
         <div class="joy-thumb"></div>
       </div>
+    </div>
+    <div id="move-buttons" role="group" aria-label="Movement buttons">
+      <button id="btn-left" class="ctrl move-btn" type="button" aria-label="Move left" data-key="ArrowLeft">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+      </button>
+      <button id="btn-right" class="ctrl move-btn" type="button" aria-label="Move right" data-key="ArrowRight">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>
+      </button>
     </div>
     <button id="btn-jump" class="ctrl" type="button" aria-label="Jump">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V6M6 12l6-6 6 6"/></svg>
@@ -157,7 +167,7 @@
       if (isTouch && portrait) {
         // Center the game in the space above the controls, leaving a row
         // below it for the hint / pause / fullscreen chips.
-        var controlsTop = joyBase.getBoundingClientRect().top || vp.h * 0.7;
+        var controlsTop = movementControl().getBoundingClientRect().top || vp.h * 0.7;
         var room = controlsTop - top - 16 - (h + 56);
         y = Math.round(top + Math.max(0, room / 2));
       }
@@ -314,11 +324,80 @@
       });
     });
 
+    // ------------------------------------------------- left / right buttons (B)
+    // Each button holds its arrow key while at least one finger is on it. A finger that
+    // lifts, is cancelled (e.g. by a system gesture) or slides off the button lets go;
+    // sliding onto the other button engages that one, like a real d-pad.
+    var moveWrap = document.getElementById("move-buttons");
+    var moveButtons = Array.prototype.slice.call(moveWrap.querySelectorAll(".move-btn"));
+    moveButtons.forEach(function (btn) {
+      var key = btn.getAttribute("data-key");
+      var pointers = {};
+      btn.mrPointers = pointers;
+
+      function engage(id) {
+        pointers[id] = true;
+        btn.classList.add("down");
+        press(key);
+      }
+      function disengage(id) {
+        if (!pointers[id]) return;
+        delete pointers[id];
+        if (Object.keys(pointers).length === 0) {
+          btn.classList.remove("down");
+          release(key);
+        }
+      }
+      btn.mrRelease = function () {
+        Object.keys(pointers).forEach(function (id) { delete pointers[id]; });
+        btn.classList.remove("down");
+        release(key);
+      };
+
+      btn.addEventListener("pointerdown", function (e) {
+        e.preventDefault();
+        // Touch input is captured by the touched element automatically; release that so
+        // pointerleave fires when the finger slides off the button.
+        try { if (btn.hasPointerCapture(e.pointerId)) btn.releasePointerCapture(e.pointerId); } catch (err) { /* optional */ }
+        engage(e.pointerId);
+      });
+      btn.addEventListener("pointerenter", function (e) {
+        // A finger (or held mouse button) sliding in from the other button.
+        if (e.buttons & 1) engage(e.pointerId);
+      });
+      ["pointerup", "pointercancel", "pointerleave", "lostpointercapture"].forEach(function (type) {
+        btn.addEventListener(type, function (e) { disengage(e.pointerId); });
+      });
+    });
+    // Belt and braces: a pointer that ends anywhere releases whatever it held.
+    ["pointerup", "pointercancel"].forEach(function (type) {
+      window.addEventListener(type, function (e) {
+        moveButtons.forEach(function (btn) {
+          if (btn.mrPointers[e.pointerId]) btn.dispatchEvent(new PointerEvent("pointerleave", { pointerId: e.pointerId }));
+        });
+      }, true);
+    });
+
+    function movementControl() {
+      return body.getAttribute("data-controls") === "buttons" ? moveWrap : joyBase;
+    }
+
     function releaseAll() {
       if (joy.id !== null) endJoy();
       if (jumpId !== null) { jumpId = null; jumpBtn.classList.remove("down"); }
+      moveButtons.forEach(function (btn) { btn.mrRelease(); });
       Object.keys(held).forEach(release);
     }
+
+    // Settings > Mobile Controls (WebBridge -> MazeRunner_SetControlMode): "joystick" or
+    // "buttons". Only that layout is shown (style.css); whatever the old one held is let go.
+    window.mazeRunnerOnControls = function (mode) {
+      mode = mode === "buttons" ? "buttons" : "joystick";
+      if (body.getAttribute("data-controls") === mode) return;
+      releaseAll();
+      body.setAttribute("data-controls", mode);
+      scheduleLayout();
+    };
     window.addEventListener("blur", releaseAll);
     document.addEventListener("visibilitychange", function () { if (document.hidden) releaseAll(); });
 
@@ -520,9 +599,9 @@
     var buildUrl = "Build";
     var config = {
       arguments: [],
-      dataUrl: buildUrl + "/91d96be662b401fd1438ad3a5cd64662.data.unityweb",
-      frameworkUrl: buildUrl + "/f2ee019a572c659ceb4204358315486d.framework.js.unityweb",
-      codeUrl: buildUrl + "/000f29f37b7553ea4f3c8dccba27f87d.wasm.unityweb",
+      dataUrl: buildUrl + "/f7b0e46423d5945ea36b9aa6b729b6d4.data.unityweb",
+      frameworkUrl: buildUrl + "/3ac3d19f5f11929b8e67bb244048465b.framework.js.unityweb",
+      codeUrl: buildUrl + "/f31b95bfef5329ef295c70f37a44b00b.wasm.unityweb",
       streamingAssetsUrl: "StreamingAssets",
       companyName: "DefaultCompany",
       productName: "maze-runner",
@@ -537,7 +616,7 @@
     var fill = document.getElementById("loading-fill");
     var loadingText = document.getElementById("loading-text");
     var script = document.createElement("script");
-    script.src = buildUrl + "/d977cf002be6ffd7142fbcc49ec19d94.loader.js";
+    script.src = buildUrl + "/cb999d2fdc79ee4a8b5173a21348c5dc.loader.js";
     script.onload = function () {
       createUnityInstance(canvas, config, function (progress) {
         var pct = Math.round(progress * 100);
@@ -546,6 +625,7 @@
       }).then(function (instance) {
         window.unityInstance = instance;
         try { sessionStorage.removeItem("mr-reloaded"); } catch (e) { /* ignore */ }
+        try { instance.SendMessage("WebBridge", "SetInputDevice", isTouch ? "touch" : "desktop"); } catch (e) { /* bridge optional */ }
         try { instance.SendMessage("WebBridge", "RequestState"); } catch (e) { /* bridge optional */ }
         lastSafeArea = "";
         layout();
