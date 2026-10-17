@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -8,29 +7,18 @@ using MazeRunner.Player;
 namespace MazeRunner.UI
 {
     /// <summary>
-    /// Presentation-only styling for the in-level overlay menus (pause, game over,
-    /// level complete). Applied at runtime when a scene loads so no scene files need
-    /// to change. It only touches colors, a backing card and (in Web builds) UI scale;
-    /// gameplay, physics, progression and the existing button actions are untouched.
-    /// Levels without a game-over panel get one that calls the same
-    /// PlayerHealth.RestartLevel / Main Menu actions as GameOverController.
+    /// Runtime UI support applied when a scene loads. It does not restyle the
+    /// original Unity menus:
+    /// - Web builds render at a fixed 1920x1080, which makes the Constant Pixel Size
+    ///   UI very small; it is enlarged by one uniform factor so menus keep the same
+    ///   proportions on desktop and mobile and stay easy to tap.
+    /// - Levels 2 and 3 have no game-over UI (a game over froze the screen). They get
+    ///   a panel built to match Level 1's original GameOverPanel, using the same
+    ///   PlayerHealth.RestartLevel / Main Menu actions as GameOverController.
     /// </summary>
     public static class MenuPresentation
     {
-        private static readonly Color ScrimColor = new Color(0.02f, 0.03f, 0.05f, 0.86f);
-        private static readonly Color PauseScrimColor = new Color(0.02f, 0.03f, 0.05f, 0.7f);
-        private static readonly Color CardColor = new Color(0.07f, 0.09f, 0.13f, 0.97f);
-        private static readonly Color ButtonNormal = new Color(0.17f, 0.21f, 0.29f, 1f);
-        private static readonly Color ButtonHighlighted = new Color(0.23f, 0.29f, 0.39f, 1f);
-        private static readonly Color ButtonPressed = new Color(0.11f, 0.14f, 0.20f, 1f);
-        private static readonly Color LabelColor = new Color(0.93f, 0.95f, 0.98f, 1f);
-        private static readonly Color GameOverColor = new Color(0.97f, 0.38f, 0.38f, 1f);
-        private static readonly Color TitleColor = new Color(0.93f, 0.95f, 0.98f, 1f);
-
-        private static readonly HashSet<string> OverlayPanels = new HashSet<string>
-        {
-            "PauseMenuPanel", "GameOverPanel", "LevelCompletePanel"
-        };
+        private const float WebUIScale = 1.4f;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void Initialize()
@@ -41,17 +29,13 @@ namespace MazeRunner.UI
 
         private static void Apply()
         {
-            ScaleWebUI();
-
             RectTransform pausePanel = null;
             bool hasGameOverPanel = false;
             var rects = Object.FindObjectsByType<RectTransform>(FindObjectsInactive.Include, FindObjectsSortMode.None);
             foreach (RectTransform rect in rects)
             {
-                if (!OverlayPanels.Contains(rect.name)) continue;
                 if (rect.name == "PauseMenuPanel") pausePanel = rect;
                 if (rect.name == "GameOverPanel") hasGameOverPanel = true;
-                StylePanel(rect);
             }
 
             if (!hasGameOverPanel && pausePanel != null)
@@ -62,76 +46,29 @@ namespace MazeRunner.UI
                     CreateGameOverPanel(pausePanel, playerHealth);
                 }
             }
+
+            ScaleWebUI();
         }
 
-        /// <summary>
-        /// The Web page renders at a fixed 1920x1080, which makes the Constant Pixel Size
-        /// menus very small (and hard to tap on phones). Enlarge them in Web builds only.
-        /// </summary>
         private static void ScaleWebUI()
         {
 #if UNITY_WEBGL && !UNITY_EDITOR
-            float factor = Application.isMobilePlatform ? 1.8f : 1.4f;
             var scalers = Object.FindObjectsByType<CanvasScaler>(FindObjectsInactive.Include, FindObjectsSortMode.None);
             foreach (CanvasScaler scaler in scalers)
             {
                 if (scaler.uiScaleMode == CanvasScaler.ScaleMode.ConstantPixelSize)
                 {
-                    scaler.scaleFactor = factor;
+                    scaler.scaleFactor = WebUIScale;
                 }
             }
 #endif
         }
 
-        private static void StylePanel(RectTransform panel)
-        {
-            if (panel.GetComponent<MenuCard>() != null) return;
-
-            Image scrim = panel.GetComponent<Image>();
-            Sprite roundedSprite = null;
-            foreach (Button button in panel.GetComponentsInChildren<Button>(true))
-            {
-                StyleButton(button);
-                if (roundedSprite == null && button.image != null) roundedSprite = button.image.sprite;
-            }
-
-            if (scrim != null)
-            {
-                scrim.sprite = null;
-                scrim.color = panel.name == "PauseMenuPanel" ? PauseScrimColor : ScrimColor;
-            }
-
-            foreach (TMP_Text text in panel.GetComponentsInChildren<TMP_Text>(true))
-            {
-                if (text.GetComponentInParent<Button>(true) != null) continue;
-                bool isGameOver = text.text.ToUpperInvariant().Contains("GAME OVER");
-                text.color = isGameOver ? GameOverColor : TitleColor;
-                text.fontStyle |= FontStyles.Bold;
-            }
-
-            panel.gameObject.AddComponent<MenuCard>().Init(roundedSprite, CardColor);
-        }
-
-        private static void StyleButton(Button button)
-        {
-            if (button.image != null) button.image.color = Color.white;
-
-            ColorBlock colors = button.colors;
-            colors.normalColor = ButtonNormal;
-            colors.highlightedColor = ButtonHighlighted;
-            colors.selectedColor = ButtonNormal;
-            colors.pressedColor = ButtonPressed;
-            colors.colorMultiplier = 1f;
-            colors.fadeDuration = 0.08f;
-            button.colors = colors;
-
-            foreach (TMP_Text label in button.GetComponentsInChildren<TMP_Text>(true))
-            {
-                label.color = LabelColor;
-                label.fontStyle |= FontStyles.Bold;
-            }
-        }
-
+        /// <summary>
+        /// Mirrors Level 1's GameOverPanel: full-screen backdrop identical to the
+        /// level's pause panel, a white 48pt "GAME OVER" title and two 200x50
+        /// buttons cloned from the pause menu, at the same positions.
+        /// </summary>
         private static void CreateGameOverPanel(RectTransform pausePanel, PlayerHealth playerHealth)
         {
             Button templateButton = pausePanel.GetComponentInChildren<Button>(true);
@@ -146,41 +83,50 @@ namespace MazeRunner.UI
             panel.offsetMin = Vector2.zero;
             panel.offsetMax = Vector2.zero;
 
-            var layout = panelGo.AddComponent<VerticalLayoutGroup>();
-            layout.childAlignment = TextAnchor.MiddleCenter;
-            layout.spacing = 16f;
-            layout.childControlWidth = false;
-            layout.childControlHeight = false;
-            layout.childForceExpandWidth = false;
-            layout.childForceExpandHeight = false;
+            Image backdrop = panelGo.GetComponent<Image>();
+            Image pauseBackdrop = pausePanel.GetComponent<Image>();
+            if (pauseBackdrop != null)
+            {
+                backdrop.sprite = pauseBackdrop.sprite;
+                backdrop.type = pauseBackdrop.type;
+                backdrop.color = pauseBackdrop.color;
+            }
 
             var titleGo = new GameObject("GameOverText", typeof(RectTransform));
-            titleGo.transform.SetParent(panel, false);
-            ((RectTransform)titleGo.transform).sizeDelta = new Vector2(320f, 64f);
+            var titleRect = (RectTransform)titleGo.transform;
+            titleRect.SetParent(panel, false);
+            titleRect.anchorMin = titleRect.anchorMax = new Vector2(0.5f, 0.5f);
+            titleRect.anchoredPosition = new Vector2(0f, 100f);
+            titleRect.sizeDelta = new Vector2(300f, 60f);
             var title = titleGo.AddComponent<TextMeshProUGUI>();
             title.text = "GAME OVER";
             title.fontSize = 48f;
+            title.color = Color.white;
             title.alignment = TextAlignmentOptions.Center;
+            title.textWrappingMode = TextWrappingModes.NoWrap;
 
-            AddButton(templateButton, panel, "RESTART", () => playerHealth.RestartLevel());
-            AddButton(templateButton, panel, "MAIN MENU", () =>
+            AddButton(templateButton, panel, "RESTART", new Vector2(0f, 0f), () => playerHealth.RestartLevel());
+            AddButton(templateButton, panel, "MAIN MENU", new Vector2(0f, -70f), () =>
             {
                 Time.timeScale = 1f;
                 SceneManager.LoadScene("MainMenu");
             });
 
             panelGo.AddComponent<GeneratedGameOverPanel>().Bind(playerHealth);
-            StylePanel(panel);
             panelGo.SetActive(false);
         }
 
-        private static void AddButton(Button template, Transform parent, string label, UnityEngine.Events.UnityAction action)
+        private static void AddButton(Button template, Transform parent, string label, Vector2 position, UnityEngine.Events.UnityAction action)
         {
             Button button = Object.Instantiate(template, parent, false);
             button.name = label.Replace(" ", "") + "Button";
             button.onClick = new Button.ButtonClickedEvent();
             button.onClick.AddListener(action);
-            ((RectTransform)button.transform).sizeDelta = new Vector2(250f, 50f);
+            var rect = (RectTransform)button.transform;
+            rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0.5f);
+            rect.pivot = new Vector2(0.5f, 0.5f);
+            rect.anchoredPosition = position;
+            rect.sizeDelta = new Vector2(200f, 50f);
             foreach (TMP_Text text in button.GetComponentsInChildren<TMP_Text>(true))
             {
                 text.text = label;
