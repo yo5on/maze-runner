@@ -116,6 +116,13 @@ namespace MazeRunner.Enemies
         {
             isDead = true;
             animator.SetTrigger(DeathTriggerHash);
+
+            // LevelGoal only completes once EnemyTracker counts every enemy as defeated.
+            if (Levels.EnemyTracker.Instance != null)
+            {
+                Levels.EnemyTracker.Instance.NotifyEnemyDefeated();
+            }
+
             rb.linearVelocity = Vector2.zero;
             Destroy(gameObject, 1.5f);
         }
