@@ -13,6 +13,7 @@ namespace MazeRunner.EditorTools
     /// CLI:  Unity -batchmode -quit -projectPath . -buildTarget WebGL
     ///             -executeMethod MazeRunner.EditorTools.WebBuild.BuildFromCommandLine
     ///             [-webBuildOutput Builds/WebGL]
+    ///             [-webBuildDefines MAZE_AI_TEST]   (test builds only)
     /// </summary>
     public static class WebBuild
     {
@@ -39,11 +40,13 @@ namespace MazeRunner.EditorTools
         public static void BuildFromCommandLine()
         {
             string output = GetArg("-webBuildOutput") ?? DefaultOutput;
-            bool ok = Build(output);
+            // Optional, for test builds only, e.g. -webBuildDefines MAZE_AI_TEST (comma-separated).
+            string defines = GetArg("-webBuildDefines");
+            bool ok = Build(output, string.IsNullOrEmpty(defines) ? null : defines.Split(','));
             EditorApplication.Exit(ok ? 0 : 1);
         }
 
-        private static bool Build(string outputPath)
+        private static bool Build(string outputPath, string[] extraDefines = null)
         {
             ApplyWebSettings();
 
@@ -54,6 +57,7 @@ namespace MazeRunner.EditorTools
                 target = BuildTarget.WebGL,
                 targetGroup = BuildTargetGroup.WebGL,
                 options = BuildOptions.None,
+                extraScriptingDefines = extraDefines,
             };
 
             BuildReport report = BuildPipeline.BuildPlayer(options);
