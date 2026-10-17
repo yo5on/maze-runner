@@ -360,18 +360,23 @@
       .touch-only { display: inline; }
     }
 
-    /* ---- desktop: landscape card --------------------------------------- */
-    @media (min-width: 900px) {
+    /* ---- landscape: wide card ------------------------------------------- */
+    /* Desktop windows and any landscape screen at least 560px wide (phones and
+       tablets turned sideways) get the two-column card: screenshot left, details
+       and Play Now right. It is sized from the window height so it fits without
+       scrolling; on very short windows the page scrolls instead of clipping.
+       Portrait keeps the stacked single column. */
+    @media (min-width: 900px), (orientation: landscape) and (min-width: 560px) {
       .frame {
-        /* Wide, capped at 1240px, and narrow enough that the 16:9 screenshot
-           (about 64% of the card's width) plus header and padding fits the window
-           height. On very short windows the page scrolls instead of clipping. */
-        width: min(100%, 1240px, max(860px, (100dvh - 150px) * 16 / 9 / 0.64));
+        --floor: 860px;   /* never narrower than this on desktop */
+        --chrome: 150px;  /* header + paddings around the screenshot */
+        --share: 0.64;    /* screenshot column's share of the card width */
+        width: min(100%, 1240px, max(var(--floor), (100dvh - var(--chrome)) * 16 / 9 / var(--share)));
       }
 
       .body {
-        grid-template-columns: minmax(0, 1.85fr) minmax(280px, 1fr);
-        gap: clamp(20px, 2.4vw, 32px);
+        grid-template-columns: minmax(0, 1.85fr) minmax(240px, 1fr);
+        gap: clamp(16px, 2.4vw, 32px);
         align-items: stretch;
       }
 
@@ -380,12 +385,30 @@
       .meta { flex-direction: column; align-items: flex-start; gap: 12px; }
     }
 
-    /* ---- narrower screens ---------------------------------------------- */
+    /* Short landscape screens (phones turned sideways): tighter chrome. */
+    @media (orientation: landscape) and (max-height: 540px) and (min-width: 560px) {
+      body { padding-top: max(8px, env(safe-area-inset-top)); padding-bottom: max(8px, env(safe-area-inset-bottom)); }
+      .frame { --floor: 0px; --chrome: 92px; --share: 0.6; border-radius: 10px; }
+      .head { padding: 9px 16px; gap: 10px; }
+      .head svg { width: 20px; height: 20px; }
+      h1 { font-size: 22px; }
+      .tags { display: none; }
+      .body { padding: 12px 16px 14px; gap: 16px; grid-template-columns: minmax(0, 1.55fr) minmax(200px, 1fr); }
+      .plate { padding: 5px; }
+      .plate figcaption { display: none; }
+      .side { gap: 10px; }
+      .intro { font-size: 13px; line-height: 1.45; }
+      .facts { display: none; }
+      .play { min-height: 48px; font-size: 14px; padding: 10px 16px; }
+      .meta { gap: 8px; font-size: 11px; }
+    }
+
+    /* ---- portrait / narrow ---------------------------------------------- */
     @media (max-width: 899px) {
       .tags { display: none; }
     }
 
-    @media (max-width: 480px) {
+    @media (orientation: portrait) and (max-width: 480px), (max-width: 480px) {
       .titles { flex-direction: column; gap: 3px; }
       .intro { font-size: 14px; }
       .plate { padding: 6px; }
