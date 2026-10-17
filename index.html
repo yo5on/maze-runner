@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#0b0f14">
+  <meta name="description" content="Maze Runner - a 2D platformer made with Unity, playable in your browser.">
+  <title>maze-runner</title>
+  <link rel="stylesheet" href="TemplateData/style.css">
+</head>
+<body>
+  <div id="stage">
+    <canvas id="unity-canvas" tabindex="-1"></canvas>
+    <div id="loading">
+      <div id="loading-title">maze-runner</div>
+      <div id="loading-track"><div id="loading-fill"></div></div>
+      <div id="loading-text">Loading&hellip;</div>
+    </div>
+  </div>
+
+  <div id="touch-controls" aria-hidden="true">
+    <div class="pad pad-left">
+      <button class="tc" data-key="ArrowLeft">&#9664;</button>
+      <button class="tc" data-key="ArrowRight">&#9654;</button>
+    </div>
+    <div class="pad pad-right">
+      <button class="tc tc-jump" data-key="Space">JUMP</button>
+    </div>
+    <button class="tc tc-pause" data-key="Escape">II</button>
+    <div id="rotate-hint">Rotate your device for a bigger view</div>
+  </div>
+
+  <div id="toolbar">
+    <button id="btn-fullscreen" title="Fullscreen">&#x26F6;</button>
+  </div>
+
+  <div id="error" hidden></div>
+
+  <script>
+    // Game renders at a fixed 1920x1080 backbuffer (the resolution the UI was
+    // laid out for) and is scaled with CSS to fit the window, letterboxed.
+    var GAME_W = 1920, GAME_H = 1080;
+
+    var canvas = document.getElementById("unity-canvas");
+    var stage = document.getElementById("stage");
+    var isTouch = ("ontouchstart" in window) || navigator.maxTouchPoints > 0;
+    if (isTouch) document.body.classList.add("touch");
+
+    canvas.width = GAME_W;
+    canvas.height = GAME_H;
+
+    function layout() {
+      var vw = window.innerWidth, vh = window.innerHeight;
+      var portrait = vh > vw;
+      document.body.classList.toggle("portrait", portrait);
+      // In portrait on touch devices leave room below the game for the controls.
+      var availH = (isTouch && portrait) ? vh * 0.62 : vh;
+      var scale = Math.min(vw / GAME_W, availH / GAME_H);
+      stage.style.width = Math.floor(GAME_W * scale) + "px";
+      stage.style.height = Math.floor(GAME_H * scale) + "px";
+      document.documentElement.style.setProperty("--stage-h", Math.floor(GAME_H * scale) + "px");
+    }
+    window.addEventListener("resize", layout);
+    window.addEventListener("orientationchange", function () { setTimeout(layout, 200); });
+    layout();
+
+    // ---- Touch controls: forward to the same keyboard keys the game already uses ----
+    var KEYS = {
+      ArrowLeft:  { key: "ArrowLeft",  keyCode: 37 },
+      ArrowRight: { key: "ArrowRight", keyCode: 39 },
+      Space:      { key: " ",          keyCode: 32 },
+      Escape:     { key: "Escape",     keyCode: 27 }
+    };
+    var held = {};
+
+    function sendKey(type, code) {
+      var k = KEYS[code];
+      var ev = new KeyboardEvent(type, {
+        key: k.key, code: code, keyCode: k.keyCode, which: k.keyCode,
+        bubbles: true, cancelable: true
+      });
+      canvas.dispatchEvent(ev);
+    }
+    function press(code) { if (!held[code]) { held[code] = true; sendKey("keydown", code); } }
+    function release(code) { if (held[code]) { held[code] = false; sendKey("keyup", code); } }
+    function releaseAll() { Object.keys(held).forEach(release); }
+
+    document.querySelectorAll("#touch-controls .tc").forEach(function (btn) {
+      var code = btn.getAttribute("data-key");
+      btn.addEventListener("pointerdown", function (e) {
+        e.preventDefault();
+        btn.classList.add("down");
+        press(code);
+        try { btn.setPointerCapture(e.pointerId); } catch (err) { /* capture is optional */ }
+      });
+      ["pointerup", "pointercancel", "lostpointercapture"].forEach(function (t) {
+        btn.addEventListener(t, function (e) {
+          e.preventDefault();
+          btn.classList.remove("down");
+          release(code);
+        });
+      });
+      btn.addEventListener("contextmenu", function (e) { e.preventDefault(); });
+    });
+    window.addEventListener("blur", releaseAll);
+    document.addEventListener("visibilitychange", function () { if (document.hidden) releaseAll(); });
+
+    // Block pinch-zoom / double-tap zoom / scrolling while playing.
+    document.addEventListener("gesturestart", function (e) { e.preventDefault(); });
+    document.addEventListener("touchmove", function (e) { e.preventDefault(); }, { passive: false });
+    var lastTouchEnd = 0;
+    document.addEventListener("touchend", function (e) {
+      var now = Date.now();
+      if (now - lastTouchEnd < 350) e.preventDefault();
+      lastTouchEnd = now;
+    }, { passive: false });
+
+    // Keep keyboard focus on the game.
+    function focusGame() { try { canvas.focus({ preventScroll: true }); } catch (e) { canvas.focus(); } }
+    canvas.addEventListener("pointerdown", focusGame);
+
+    document.getElementById("btn-fullscreen").addEventListener("click", function () {
+      var el = document.documentElement;
+      if (document.fullscreenElement || document.webkitFullscreenElement) {
+        (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+      } else if (el.requestFullscreen || el.webkitRequestFullscreen) {
+        (el.requestFullscreen || el.webkitRequestFullscreen).call(el);
+      }
+      focusGame();
+    });
+
+    function showError(msg) {
+      var box = document.getElementById("error");
+      box.textContent = msg;
+      box.hidden = false;
+    }
+
+    // ---- Unity loader ----
+    var buildUrl = "Build";
+    var config = {
+      arguments: [],
+      dataUrl: buildUrl + "/WebGL.data.unityweb",
+      frameworkUrl: buildUrl + "/WebGL.framework.js.unityweb",
+      codeUrl: buildUrl + "/WebGL.wasm.unityweb",
+      streamingAssetsUrl: "StreamingAssets",
+      companyName: "DefaultCompany",
+      productName: "maze-runner",
+      productVersion: "1.0",
+      matchWebGLToCanvasSize: false,
+      showBanner: function (msg, type) {
+        if (type === "error") showError(msg);
+        else console.warn(msg);
+      }
+    };
+
+    var fill = document.getElementById("loading-fill");
+    var loadingText = document.getElementById("loading-text");
+    var script = document.createElement("script");
+    script.src = buildUrl + "/WebGL.loader.js";
+    script.onload = function () {
+      createUnityInstance(canvas, config, function (progress) {
+        fill.style.width = Math.round(progress * 100) + "%";
+        loadingText.textContent = "Loading… " + Math.round(progress * 100) + "%";
+      }).then(function (instance) {
+        window.unityInstance = instance;
+        document.getElementById("loading").style.display = "none";
+        document.body.classList.add("ready");
+        focusGame();
+      }).catch(function (message) {
+        showError(String(message));
+      });
+    };
+    script.onerror = function () { showError("Failed to load the game files. Please refresh the page."); };
+    document.body.appendChild(script);
+  </script>
+</body>
+</html>
