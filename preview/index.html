@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Maze Runner — Play in your browser</title>
+  <meta name="description" content="Maze Runner, a 2D side-scrolling platformer made with Unity. Play it in your browser on desktop or mobile.">
+  <meta name="theme-color" content="#1b1e4a">
+  <meta name="color-scheme" content="dark">
+  <link rel="canonical" href="https://yo5on.github.io/maze-runner/preview/">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Maze Runner">
+  <meta property="og:description" content="A 2D platformer made with Unity — playable in your browser.">
+  <meta property="og:url" content="https://yo5on.github.io/maze-runner/preview/">
+  <meta property="og:image" content="https://yo5on.github.io/maze-runner/preview/maze-runner.webp">
+  <meta property="og:image:width" content="1015">
+  <meta property="og:image:height" content="710">
+  <meta property="og:image:alt" content="Maze Runner Level 1: the hooded player mid-jump above a green goblin on a platform">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" type="image/png" href="../TemplateData/icon-192.png">
+  <link rel="apple-touch-icon" href="../TemplateData/icon-180.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" media="print" onload="this.media='all'"
+        href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Instrument+Sans:wght@400..700&family=Instrument+Serif&display=swap">
+  <style>
+    /* Styled after the yo5on portfolio: navy, stone grey, crimson; Instrument + Plex Mono. */
+    :root {
+      --navy: #1b1e4a;
+      --navy-deep: #15173c;
+      --stone: #afaea2;
+      --stone-soft: rgba(175, 174, 162, 0.86);
+      --stone-faint: rgba(175, 174, 162, 0.55);
+      --hair: rgba(175, 174, 162, 0.2);
+      --crimson: #d21319;
+      --crimson-deep: #b40f14;
+      --ivory: #f3ead7;
+      --ui: "Instrument Sans", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+      --display: "Instrument Serif", "Times New Roman", serif;
+      --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      background: var(--navy);
+      color: var(--stone);
+      font-family: var(--ui);
+      -webkit-font-smoothing: antialiased;
+      -webkit-text-size-adjust: 100%;
+    }
+
+    body {
+      min-height: 100vh;
+      min-height: 100dvh;
+      display: grid;
+      place-items: center;
+      padding:
+        max(16px, env(safe-area-inset-top))
+        max(16px, env(safe-area-inset-right))
+        max(16px, env(safe-area-inset-bottom))
+        max(16px, env(safe-area-inset-left));
+    }
+
+    .frame {
+      /* Wide, but never taller than the window: header + button + footer take about
+         300px; the 1015x710 screenshot fills the rest at its own aspect ratio. */
+      width: min(100%, 980px, max(320px, (100dvh - 300px) * 1.43 + 42px));
+      border: 1px solid var(--hair);
+      border-radius: 14px;
+      background: var(--navy-deep);
+      box-shadow: 0 24px 60px rgba(8, 9, 28, 0.45);
+      overflow: hidden;
+    }
+
+    .head {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--hair);
+    }
+
+    .head svg {
+      flex: none;
+      width: 22px;
+      height: 22px;
+      fill: none;
+      stroke: var(--stone);
+      stroke-width: 1.6;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .head h1 {
+      margin: 0;
+      font-family: var(--display);
+      font-weight: 400;
+      font-size: clamp(22px, 3.2vw, 28px);
+      line-height: 1;
+      letter-spacing: 0.01em;
+      text-transform: uppercase;
+      white-space: nowrap;
+      color: var(--ivory);
+    }
+
+    .head .meta {
+      margin-left: auto;
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--stone-faint);
+      white-space: nowrap;
+    }
+
+    .body {
+      padding: 20px;
+      display: grid;
+      gap: 18px;
+    }
+
+    .shot {
+      margin: 0;
+      position: relative;
+      border: 1px solid var(--hair);
+      border-radius: 8px;
+      overflow: hidden;
+      background: #2f4a75;
+    }
+
+    .shot img {
+      display: block;
+      width: 100%;
+      height: auto;
+      aspect-ratio: 1015 / 710;
+      object-fit: cover;
+    }
+
+    .play {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      min-height: 56px;
+      padding: 14px 24px;
+      border: 0;
+      border-radius: 8px;
+      background: var(--crimson);
+      color: #fff;
+      font-family: var(--ui);
+      font-size: 17px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      text-decoration: none;
+      cursor: pointer;
+      transition: background-color 0.15s ease, transform 0.1s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .play:hover { background: var(--crimson-deep); }
+    .play:active { transform: translateY(1px); }
+
+    .play:focus-visible {
+      outline: 2px solid var(--ivory);
+      outline-offset: 3px;
+    }
+
+    .play svg {
+      width: 16px;
+      height: 16px;
+      fill: currentColor;
+    }
+
+    .play .spinner {
+      display: none;
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255, 255, 255, 0.35);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    .play[aria-busy="true"] { cursor: progress; background: var(--crimson-deep); }
+    .play[aria-busy="true"] svg { display: none; }
+    .play[aria-busy="true"] .spinner { display: block; }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .error {
+      margin: -6px 0 0;
+      padding: 10px 12px;
+      border: 1px solid var(--crimson);
+      border-radius: 8px;
+      font-size: 14px;
+      line-height: 1.45;
+      color: var(--ivory);
+    }
+
+    .error[hidden] { display: none; }
+
+    .foot {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px 16px;
+      align-items: baseline;
+      justify-content: space-between;
+      padding: 12px 20px 14px;
+      border-top: 1px solid var(--hair);
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.04em;
+      color: var(--stone-faint);
+    }
+
+    .foot a {
+      color: var(--stone-soft);
+      text-decoration: none;
+      border-bottom: 1px solid var(--hair);
+    }
+
+    .foot a:hover { color: var(--ivory); border-bottom-color: var(--crimson); }
+    .foot a:focus-visible { outline: 2px solid var(--ivory); outline-offset: 2px; }
+
+    kbd {
+      font-family: var(--mono);
+      font-size: 10px;
+      padding: 1px 4px;
+      border: 1px solid var(--hair);
+      border-radius: 3px;
+      color: var(--stone-soft);
+    }
+
+    @media (max-width: 640px) {
+      .head .meta { display: none; }
+    }
+
+    @media (max-width: 520px) {
+      .head { padding: 12px 14px; }
+      .body { padding: 14px; gap: 14px; }
+      .play { min-height: 54px; font-size: 16px; }
+      .foot { padding: 12px 14px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .play, .play .spinner { transition: none; animation-duration: 2s; }
+    }
+  </style>
+</head>
+<body>
+  <main class="frame" aria-labelledby="title">
+    <header class="head">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M7 8h10a5 5 0 0 1 4.9 6l-.6 3a2.5 2.5 0 0 1-4.3 1.2L15 16H9l-2 2.2A2.5 2.5 0 0 1 2.7 17l-.6-3A5 5 0 0 1 7 8z"/>
+        <path d="M7.5 11v3M6 12.5h3"/>
+        <circle cx="16" cy="11.5" r="0.6"/>
+        <circle cx="17.8" cy="13.4" r="0.6"/>
+      </svg>
+      <h1 id="title">Maze Runner</h1>
+      <span class="meta">Unity · 2D platformer</span>
+    </header>
+
+    <div class="body">
+      <figure class="shot">
+        <img src="maze-runner.webp" width="1015" height="710"
+             alt="Maze Runner Level 1: the hooded player character mid-jump above a large green goblin standing on a platform">
+      </figure>
+
+      <!-- A real link, so Play Now works without JavaScript too. The game is not
+           loaded until it is clicked. -->
+      <a class="play" id="play" href="../" aria-describedby="play-note">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15l13-7.5z"/></svg>
+        <span class="spinner" aria-hidden="true"></span>
+        <span class="label">Play now</span>
+      </a>
+      <p class="error" id="error" role="alert" hidden></p>
+    </div>
+
+    <footer class="foot">
+      <span id="play-note">Plays in your browser · <kbd>A</kbd>/<kbd>D</kbd> move · <kbd>Space</kbd> jump · touch controls on phones</span>
+      <a href="https://github.com/yo5on/maze-runner">Source on GitHub</a>
+    </footer>
+  </main>
+
+  <script>
+  (function () {
+    "use strict";
+    var play = document.getElementById("play");
+    var label = play.querySelector(".label");
+    var error = document.getElementById("error");
+    var GAME_URL = play.getAttribute("href");
+
+    function reset() {
+      play.removeAttribute("aria-busy");
+      label.textContent = "Play now";
+    }
+
+    play.addEventListener("click", function (e) {
+      // Let modified clicks (new tab / window) behave like a normal link.
+      if (e.button || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      e.preventDefault();
+      if (play.getAttribute("aria-busy") === "true") return;
+
+      play.setAttribute("aria-busy", "true");
+      label.textContent = "Loading game…";
+      error.hidden = true;
+
+      // Check the game is reachable before leaving, so a failure can be explained
+      // here instead of on a browser error page. The game itself loads on its page.
+      var controller = "AbortController" in window ? new AbortController() : null;
+      var timer = setTimeout(function () { if (controller) controller.abort(); }, 12000);
+      fetch(GAME_URL, { method: "HEAD", cache: "no-store", signal: controller ? controller.signal : undefined })
+        .then(function (res) {
+          clearTimeout(timer);
+          if (!res.ok) throw new Error("HTTP " + res.status);
+          window.location.assign(GAME_URL);
+        })
+        .catch(function (err) {
+          clearTimeout(timer);
+          reset();
+          label.textContent = "Try again";
+          error.textContent = navigator.onLine === false
+            ? "You appear to be offline. Reconnect and try again."
+            : "The game could not be reached right now (" + (err && err.name === "AbortError" ? "timed out" : (err && err.message) || "network error") + "). Please try again in a moment.";
+          error.hidden = false;
+        });
+    });
+
+    // Coming back with the Back button can restore this page from cache mid-load.
+    window.addEventListener("pageshow", function (e) { if (e.persisted) reset(); });
+  })();
+  </script>
+</body>
+</html>
