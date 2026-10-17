@@ -32,6 +32,7 @@
   --joy: clamp(104px, 30vmin, 148px);
   --jump: clamp(68px, 20vmin, 94px);
   --chip: 40px;
+  --chip-touch: 44px;
 }
 
 html, body {
@@ -157,34 +158,101 @@ body.ready #loading {
   z-index: 40;
 }
 
-/* ------------------------------------------------- top-right chip buttons */
+/* ------------------------------------------- control bar (top-right of game) */
+/* Pause + fullscreen as one joined bar, anchored to the game's top-right corner. */
 #top-controls {
   position: fixed;
-  top: calc(var(--safe-t) + 10px);
-  right: calc(var(--safe-r) + 12px);
+  top: calc(max(var(--stage-y, 0px), var(--safe-t)) + 12px);
+  right: calc(var(--stage-right, 0px) + 12px);
   display: flex;
-  gap: 8px;
+  border: 1px solid var(--hair);
+  background: rgba(21, 23, 60, 0.55);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 6px 20px rgba(8, 9, 28, 0.28);
   z-index: 20;
+  transition: opacity 0.4s ease;
 }
 
 .chip {
+  position: relative;
   width: var(--chip);
   height: var(--chip);
   display: grid;
   place-items: center;
   padding: 0;
-  border: 1px solid var(--ctl-line);
+  border: 0;
   border-radius: 0;
-  background: var(--ctl-base);
+  background: transparent;
   cursor: pointer;
-  transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+  transition: background-color 0.15s ease;
+}
+
+.chip[hidden] {
+  display: none;
+}
+
+/* Hairline divider between joined buttons. */
+.chip:not([hidden]) + .chip::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 9px;
+  bottom: 9px;
+  width: 1px;
+  background: var(--hair);
+}
+
+/* Crimson rule under the hovered / focused / active button. */
+.chip::after {
+  content: "";
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: 0;
+  height: 2px;
+  background: var(--crimson);
+  transform: scaleX(0);
+  transition: transform 0.18s ease;
+}
+
+.chip:hover::after,
+.chip:focus-visible::after,
+.chip.is-paused::after {
+  transform: scaleX(1);
+}
+
+.chip:focus-visible {
+  outline: none;
+}
+
+.chip:hover {
+  background: rgba(175, 174, 162, 0.08);
+}
+
+.chip:active {
+  background: rgba(175, 174, 162, 0.14);
+}
+
+.chip:disabled {
+  cursor: default;
+  opacity: 0.35;
+}
+
+.chip:disabled::after {
+  transform: scaleX(0);
 }
 
 .chip svg {
-  width: 17px;
-  height: 17px;
+  width: 16px;
+  height: 16px;
   fill: var(--stone);
   stroke: none;
+  transition: fill 0.15s ease, stroke 0.15s ease;
+}
+
+.chip:hover svg {
+  fill: #f3ead7;
 }
 
 #btn-fullscreen svg {
@@ -194,43 +262,30 @@ body.ready #loading {
   stroke-linecap: square;
 }
 
-.chip:hover,
-.chip:focus-visible {
-  border-color: var(--crimson);
-  outline: none;
-}
-
-.chip:active {
-  transform: scale(0.94);
-  background: var(--ctl-base-strong);
-  border-color: var(--crimson);
-}
-
-/* Desktop: keep the single fullscreen chip discreet until hovered. */
-body:not(.touch) .chip {
-  opacity: 0.55;
-}
-
-body:not(.touch) .chip:hover {
-  opacity: 1;
+#btn-fullscreen:hover svg {
+  fill: none;
+  stroke: #f3ead7;
 }
 
 #btn-fullscreen .icon-exit,
-#btn-fullscreen[aria-pressed="true"] .icon-enter {
+#btn-fullscreen[aria-pressed="true"] .icon-enter,
+#btn-pause .icon-play,
+#btn-pause.is-paused .icon-pause {
   display: none;
 }
 
-#btn-fullscreen[aria-pressed="true"] .icon-exit {
+#btn-fullscreen[aria-pressed="true"] .icon-exit,
+#btn-pause.is-paused .icon-play {
   display: block;
 }
 
-/* Pause is keyboard (Esc) on desktop; only touch devices get the button. */
-#btn-pause {
-  display: none;
+/* Desktop: the bar recedes while the mouse is idle and returns on movement. */
+body.idle:not(.touch) #top-controls {
+  opacity: 0.28;
 }
 
-body.touch #btn-pause {
-  display: grid;
+body:not(.touch) #top-controls:hover {
+  opacity: 1;
 }
 
 /* Running as a Home Screen app: already full screen. */
@@ -238,9 +293,10 @@ body.standalone #btn-fullscreen {
   display: none;
 }
 
-/* Portrait phones: chips sit just below the game instead of over it. */
+/* Portrait phones: the bar sits just below the game instead of over it. */
 body.touch.portrait #top-controls {
   top: calc(var(--stage-bottom, 0px) + 10px);
+  right: calc(var(--safe-r) + 12px);
 }
 
 /* -------------------------------------------------------- touch controls */
@@ -250,6 +306,11 @@ body.touch.portrait #top-controls {
 
 body.touch #touch-controls {
   display: block;
+}
+
+body.touch .chip {
+  width: var(--chip-touch);
+  height: var(--chip-touch);
 }
 
 #joystick {
@@ -411,7 +472,8 @@ body.touch.portrait #btn-jump {
   position: fixed;
   left: calc(var(--safe-l) + 12px);
   top: calc(var(--stage-bottom, 0px) + 10px);
-  height: var(--chip);
+  height: var(--chip-touch);
+  box-sizing: border-box;
   display: flex;
   align-items: center;
   gap: 8px;
