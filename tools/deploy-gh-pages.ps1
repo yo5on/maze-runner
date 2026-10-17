@@ -13,7 +13,8 @@ param(
     [string]$Branch = "gh-pages"
 )
 
-$ErrorActionPreference = "Stop"
+# git writes progress to stderr; rely on $LASTEXITCODE instead of treating stderr as fatal.
+$ErrorActionPreference = "Continue"
 $repoRoot = (git rev-parse --show-toplevel).Trim()
 Set-Location $repoRoot
 
@@ -27,8 +28,12 @@ foreach ($required in @("index.html", "Build")) {
 $sourceCommit = (git rev-parse --short HEAD).Trim()
 $worktree = Join-Path ([System.IO.Path]::GetTempPath()) ("maze-runner-pages-" + [guid]::NewGuid().ToString("N").Substring(0, 8))
 
-git fetch $Remote $Branch 2>$null
+git ls-remote --exit-code --heads $Remote $Branch | Out-Null
 $remoteHasBranch = ($LASTEXITCODE -eq 0)
+if ($remoteHasBranch) {
+    git fetch $Remote $Branch
+    if ($LASTEXITCODE -ne 0) { throw "git fetch failed" }
+}
 
 try {
     if ($remoteHasBranch) {
