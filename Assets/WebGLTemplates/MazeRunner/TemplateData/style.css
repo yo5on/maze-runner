@@ -1,14 +1,26 @@
+/* Maze Runner web player - styled after the yo5on portfolio:
+   midnight navy, warm stone grey, crimson accents, Instrument Sans/Serif,
+   hairline borders, square corners. The game itself is the page. */
 :root {
-  --bg: #070a10;
-  --surface: rgba(16, 21, 31, 0.62);
-  --surface-strong: rgba(24, 31, 44, 0.86);
-  --border: rgba(255, 255, 255, 0.14);
-  --border-strong: rgba(255, 255, 255, 0.28);
-  --text: #e8edf5;
-  --text-dim: rgba(232, 237, 245, 0.62);
-  --accent: #7fd6a4;
-  --radius: 12px;
-  --shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+  --navy: #1b1e4a;
+  --navy-deep: #15173c;
+  --stone: #afaea2;
+  --stone-soft: rgba(175, 174, 162, 0.86);
+  --stone-faint: rgba(175, 174, 162, 0.48);
+  --hair: rgba(175, 174, 162, 0.2);
+  --crimson: #d21319;
+  --crimson-soft: rgba(210, 19, 25, 0.35);
+
+  --ui: "Instrument Sans", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  --display: "Instrument Serif", "Times New Roman", serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  --fs-label: 11px;
+  --ls-label: 0.08em;
+
+  /* Translucent control surfaces. */
+  --ctl-base: rgba(27, 30, 74, 0.5);
+  --ctl-base-strong: rgba(21, 23, 60, 0.78);
+  --ctl-line: rgba(175, 174, 162, 0.55);
 
   --safe-t: env(safe-area-inset-top, 0px);
   --safe-r: env(safe-area-inset-right, 0px);
@@ -18,7 +30,7 @@
 
   /* Control sizes scale with the short side of the screen. */
   --joy: clamp(104px, 30vmin, 148px);
-  --jump: clamp(68px, 20vmin, 96px);
+  --jump: clamp(68px, 20vmin, 94px);
   --chip: 40px;
 }
 
@@ -28,9 +40,9 @@ html, body {
   width: 100%;
   height: 100%;
   overflow: hidden;
-  background: var(--bg);
-  color: var(--text);
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  background: var(--navy);
+  color: var(--stone);
+  font-family: var(--ui);
   -webkit-font-smoothing: antialiased;
   /* No page scrolling, pinch zoom, selection, callouts or tap flashes. */
   touch-action: none;
@@ -67,7 +79,8 @@ button {
   position: absolute;
   left: 0;
   top: 0;
-  background: #000;
+  background: var(--navy-deep);
+  box-shadow: 0 0 0 1px var(--hair);
   transform-origin: 0 0;
 }
 
@@ -76,7 +89,7 @@ button {
   width: 100%;
   height: 100%;
   outline: none;
-  background: #000;
+  background: var(--navy-deep);
 }
 
 /* --------------------------------------------------------------- loading */
@@ -87,8 +100,8 @@ button {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 12px;
-  background: var(--bg);
+  gap: 14px;
+  background: var(--navy);
   transition: opacity 0.35s ease;
 }
 
@@ -98,31 +111,36 @@ body.ready #loading {
 }
 
 #loading-title {
-  font-size: clamp(14px, 2.4vw, 20px);
-  font-weight: 700;
-  letter-spacing: 0.28em;
-  color: var(--text-dim);
+  font-family: var(--display);
+  font-size: clamp(26px, 5vw, 44px);
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--crimson);
 }
 
 #loading-track {
-  width: min(42%, 260px);
-  height: 3px;
-  border-radius: 2px;
-  background: rgba(255, 255, 255, 0.1);
+  width: min(44%, 240px);
+  height: 1px;
+  background: var(--hair);
   overflow: hidden;
 }
 
 #loading-fill {
   width: 0;
   height: 100%;
-  background: var(--accent);
+  background: var(--crimson);
   transition: width 0.2s ease-out;
 }
 
 #loading-text {
-  font-size: 12px;
+  font-family: var(--mono);
+  font-size: var(--fs-label);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
   font-variant-numeric: tabular-nums;
-  color: var(--text-dim);
+  color: var(--stone-faint);
 }
 
 #error {
@@ -132,10 +150,10 @@ body.ready #loading {
   transform: translateX(-50%);
   max-width: calc(100% - 32px);
   padding: 10px 14px;
-  border-radius: var(--radius);
-  background: #7f1d1d;
-  color: #fff;
-  font-size: 14px;
+  border: 1px solid var(--crimson);
+  background: var(--navy-deep);
+  color: var(--stone);
+  font-size: 13px;
   z-index: 40;
 }
 
@@ -143,7 +161,7 @@ body.ready #loading {
 #top-controls {
   position: fixed;
   top: calc(var(--safe-t) + 10px);
-  right: calc(var(--safe-r) + 10px);
+  right: calc(var(--safe-r) + 12px);
   display: flex;
   gap: 8px;
   z-index: 20;
@@ -155,39 +173,46 @@ body.ready #loading {
   display: grid;
   place-items: center;
   padding: 0;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--surface);
-  box-shadow: var(--shadow);
+  border: 1px solid var(--ctl-line);
+  border-radius: 0;
+  background: var(--ctl-base);
   cursor: pointer;
-  opacity: 0.72;
-  transition: opacity 0.15s ease, background-color 0.15s ease, transform 0.1s ease;
-  -webkit-backdrop-filter: blur(6px);
-  backdrop-filter: blur(6px);
+  transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
 }
 
 .chip svg {
-  width: 20px;
-  height: 20px;
-  fill: var(--text);
+  width: 17px;
+  height: 17px;
+  fill: var(--stone);
   stroke: none;
 }
 
 #btn-fullscreen svg {
   fill: none;
-  stroke: var(--text);
-  stroke-width: 2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
+  stroke: var(--stone);
+  stroke-width: 1.8;
+  stroke-linecap: square;
 }
 
-.chip:hover {
-  opacity: 1;
+.chip:hover,
+.chip:focus-visible {
+  border-color: var(--crimson);
+  outline: none;
 }
 
 .chip:active {
   transform: scale(0.94);
-  background: var(--surface-strong);
+  background: var(--ctl-base-strong);
+  border-color: var(--crimson);
+}
+
+/* Desktop: keep the single fullscreen chip discreet until hovered. */
+body:not(.touch) .chip {
+  opacity: 0.55;
+}
+
+body:not(.touch) .chip:hover {
+  opacity: 1;
 }
 
 #btn-fullscreen .icon-exit,
@@ -229,11 +254,11 @@ body.touch #touch-controls {
 
 #joystick {
   position: fixed;
-  left: calc(var(--safe-l) + var(--edge));
+  left: calc(var(--safe-l) + var(--edge) + 6px);
   bottom: calc(var(--safe-b) + var(--edge));
   /* Generous hit area around the visible base. */
-  padding: 18px;
-  margin: -18px;
+  padding: 22px;
+  margin: -22px;
   z-index: 15;
   touch-action: none;
 }
@@ -243,16 +268,22 @@ body.touch #touch-controls {
   width: var(--joy);
   height: var(--joy);
   border-radius: 50%;
-  border: 1.5px solid var(--border);
-  background:
-    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.05) 0 38%, transparent 39%),
-    radial-gradient(circle at 50% 40%, rgba(30, 38, 54, 0.55), rgba(8, 11, 18, 0.6));
-  box-shadow: var(--shadow), inset 0 0 0 1px rgba(0, 0, 0, 0.25);
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
-  -webkit-backdrop-filter: blur(4px);
-  backdrop-filter: blur(4px);
+  border: 1px solid var(--ctl-line);
+  background: var(--ctl-base);
+  box-shadow: inset 0 0 0 6px rgba(21, 23, 60, 0.35), 0 4px 14px rgba(8, 9, 28, 0.35);
+  transition: border-color 0.15s ease;
 }
 
+/* Inner hairline ring marking the dead zone. */
+.joy-base::before {
+  content: "";
+  position: absolute;
+  inset: 22%;
+  border-radius: 50%;
+  border: 1px solid var(--hair);
+}
+
+/* Direction marks on the ring (the game moves left/right only). */
 .joy-arrow {
   position: absolute;
   top: 50%;
@@ -260,33 +291,32 @@ body.touch #touch-controls {
   height: 0;
   margin-top: -6px;
   border: 6px solid transparent;
-  opacity: 0.35;
-  transition: opacity 0.12s ease;
+  opacity: 0.75;
+  transition: opacity 0.12s ease, transform 0.12s ease;
 }
 
 .joy-arrow-left {
-  left: 9%;
-  border-right: 8px solid var(--text);
+  left: 8%;
+  border-right: 8px solid var(--stone);
   border-left-width: 0;
 }
 
 .joy-arrow-right {
-  right: 9%;
-  border-left: 8px solid var(--text);
+  right: 8%;
+  border-left: 8px solid var(--stone);
   border-right-width: 0;
 }
 
-#joystick[data-dir="left"] .joy-arrow-left,
-#joystick[data-dir="right"] .joy-arrow-right {
-  opacity: 0.95;
-  border-left-color: var(--accent);
-  border-right-color: var(--accent);
+#joystick[data-dir="left"] .joy-arrow-left {
+  opacity: 1;
+  border-right-color: var(--crimson);
+  transform: translateX(-2px);
 }
 
-#joystick[data-dir="left"] .joy-arrow-right,
-#joystick[data-dir="right"] .joy-arrow-left {
-  border-left-color: var(--text);
-  border-right-color: var(--text);
+#joystick[data-dir="right"] .joy-arrow-right {
+  opacity: 1;
+  border-left-color: var(--crimson);
+  transform: translateX(2px);
 }
 
 .joy-thumb {
@@ -297,27 +327,27 @@ body.touch #touch-controls {
   height: 44%;
   margin: -22% 0 0 -22%;
   border-radius: 50%;
-  border: 1.5px solid var(--border-strong);
-  background: radial-gradient(circle at 35% 30%, #3a4559, #1a2130 70%);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.12);
-  transition: transform 0.18s cubic-bezier(0.2, 0.8, 0.2, 1.2), border-color 0.15s ease;
+  border: 1px solid rgba(175, 174, 162, 0.9);
+  background: rgba(175, 174, 162, 0.32);
+  box-shadow: 0 3px 10px rgba(8, 9, 28, 0.4);
+  transition: transform 0.18s cubic-bezier(0.2, 0.8, 0.2, 1.2), background-color 0.15s ease, border-color 0.15s ease;
   will-change: transform;
 }
 
 #joystick.active .joy-base {
-  border-color: rgba(127, 214, 164, 0.45);
-  box-shadow: var(--shadow), 0 0 0 4px rgba(127, 214, 164, 0.08);
+  border-color: var(--stone);
 }
 
 #joystick.active .joy-thumb {
   /* Follow the finger directly while dragging; spring back on release. */
-  transition: border-color 0.15s ease;
-  border-color: rgba(127, 214, 164, 0.7);
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+  background: rgba(175, 174, 162, 0.45);
+  border-color: var(--crimson);
 }
 
 #btn-jump {
   position: fixed;
-  right: calc(var(--safe-r) + var(--edge));
+  right: calc(var(--safe-r) + var(--edge) + 6px);
   bottom: calc(var(--safe-b) + var(--edge) + (var(--joy) - var(--jump)) / 2);
   width: var(--jump);
   height: var(--jump);
@@ -326,47 +356,49 @@ body.touch #touch-controls {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 1px;
+  gap: 3px;
   border-radius: 50%;
-  border: 1.5px solid var(--border);
-  background: radial-gradient(circle at 50% 35%, rgba(36, 45, 63, 0.7), rgba(10, 13, 21, 0.66));
-  box-shadow: var(--shadow), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--ctl-line);
+  background: var(--ctl-base);
+  box-shadow: inset 0 0 0 4px rgba(21, 23, 60, 0.35), 0 4px 14px rgba(8, 9, 28, 0.35);
   z-index: 15;
   touch-action: none;
-  transition: transform 0.08s ease, border-color 0.12s ease, background-color 0.12s ease;
-  -webkit-backdrop-filter: blur(4px);
-  backdrop-filter: blur(4px);
+  transition: transform 0.08s ease, background-color 0.12s ease, border-color 0.12s ease;
 }
 
 #btn-jump svg {
-  width: 38%;
-  height: 38%;
-  fill: var(--text);
-  opacity: 0.9;
+  width: 32%;
+  height: 32%;
+  fill: none;
+  stroke: var(--stone);
+  stroke-width: 2;
+  stroke-linecap: square;
+  stroke-linejoin: miter;
 }
 
 #btn-jump span {
-  font-size: clamp(9px, 2.4vmin, 11px);
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  color: var(--text-dim);
+  font-family: var(--mono);
+  font-size: clamp(9px, 2.3vmin, 11px);
+  font-weight: 500;
+  letter-spacing: var(--ls-label);
+  color: var(--stone-soft);
 }
 
 #btn-jump.down {
-  transform: scale(0.93);
-  border-color: rgba(127, 214, 164, 0.7);
-  background: radial-gradient(circle at 50% 35%, rgba(60, 86, 76, 0.8), rgba(14, 22, 24, 0.8));
+  transform: scale(0.94);
+  border-color: var(--crimson);
+  background: var(--ctl-base-strong);
 }
 
 #btn-jump.down svg {
-  fill: var(--accent);
+  stroke: var(--crimson);
 }
 
 /* Portrait: controls sit in the space below the game, a little larger. */
 body.touch.portrait {
   --edge: 26px;
   --joy: clamp(120px, 36vmin, 156px);
-  --jump: clamp(80px, 24vmin, 104px);
+  --jump: clamp(80px, 24vmin, 102px);
 }
 
 body.touch.portrait #joystick,
@@ -383,12 +415,14 @@ body.touch.portrait #btn-jump {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 0 4px 0 12px;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  background: var(--surface);
-  font-size: 13px;
-  color: var(--text-dim);
+  padding: 0 2px 0 10px;
+  border: 1px solid var(--hair);
+  background: var(--ctl-base);
+  font-family: var(--mono);
+  font-size: var(--fs-label);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  color: var(--stone-soft);
   z-index: 20;
 }
 
@@ -397,11 +431,11 @@ body.touch.portrait #btn-jump {
 }
 
 #rotate-hint svg {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   fill: none;
-  stroke: var(--accent);
-  stroke-width: 1.8;
+  stroke: var(--crimson);
+  stroke-width: 1.6;
   stroke-linecap: round;
 }
 
@@ -409,11 +443,10 @@ body.touch.portrait #btn-jump {
   width: 30px;
   height: 30px;
   border: 0;
-  border-radius: 50%;
   background: transparent;
-  font-size: 18px;
+  font-size: 16px;
   line-height: 1;
-  color: var(--text-dim);
+  color: var(--stone-faint);
   cursor: pointer;
 }
 
@@ -425,7 +458,7 @@ body.touch.portrait #btn-jump {
   align-items: center;
   justify-content: center;
   padding: calc(var(--safe-t) + 16px) calc(var(--safe-r) + 16px) calc(var(--safe-b) + 16px) calc(var(--safe-l) + 16px);
-  background: rgba(3, 5, 9, 0.66);
+  background: rgba(14, 15, 40, 0.72);
   z-index: 50;
   touch-action: auto;
 }
@@ -438,47 +471,57 @@ body.touch.portrait #btn-jump {
   width: min(400px, 100%);
   max-height: 100%;
   overflow: auto;
-  padding: 18px 20px 16px;
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  background: #0f141d;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+  padding: 20px 22px 18px;
+  border: 1px solid var(--hair);
+  background: var(--navy-deep);
+  box-shadow: 0 18px 40px rgba(8, 9, 28, 0.5);
   font-size: 14px;
-  line-height: 1.45;
+  line-height: 1.5;
   -webkit-user-select: text;
   user-select: text;
 }
 
 .sheet-title {
-  font-size: 16px;
-  font-weight: 700;
-  margin-bottom: 6px;
+  font-family: var(--display);
+  font-size: 26px;
+  line-height: 1.1;
+  text-transform: uppercase;
+  color: var(--crimson);
+  margin-bottom: 8px;
 }
 
 .sheet-body p {
   margin: 6px 0;
-  color: var(--text-dim);
+  color: var(--stone-soft);
 }
 
 .sheet-body ol {
   margin: 8px 0;
   padding-left: 20px;
+  color: var(--stone);
 }
 
 .sheet-body li {
   margin: 4px 0;
 }
 
+.sheet-body b {
+  color: #f3ead7;
+  font-weight: 600;
+}
+
 .sheet-note {
-  font-size: 12px;
+  font-family: var(--mono);
+  font-size: var(--fs-label);
+  letter-spacing: 0.02em;
 }
 
 .inline-icon {
-  width: 16px;
-  height: 16px;
-  vertical-align: -3px;
+  width: 15px;
+  height: 15px;
+  vertical-align: -2px;
   fill: none;
-  stroke: var(--accent);
+  stroke: var(--crimson);
   stroke-width: 2;
   stroke-linecap: round;
   stroke-linejoin: round;
@@ -487,15 +530,21 @@ body.touch.portrait #btn-jump {
 #sheet-close {
   display: block;
   width: 100%;
-  margin-top: 12px;
+  margin-top: 14px;
   height: 40px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: #1b2331;
-  font-weight: 600;
+  border: 1px solid var(--crimson);
+  border-radius: 0;
+  background: transparent;
+  font-family: var(--mono);
+  font-size: var(--fs-label);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  color: var(--stone);
   cursor: pointer;
+  transition: background-color 0.15s ease;
 }
 
+#sheet-close:hover,
 #sheet-close:active {
-  background: #253044;
+  background: var(--crimson-soft);
 }
