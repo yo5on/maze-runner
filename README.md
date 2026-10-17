@@ -23,7 +23,8 @@
 |---|---|---|
 | <samp>Move</samp> | <samp><kbd>A</kbd>/<kbd>D</kbd> or <kbd>←</kbd>/<kbd>→</kbd></samp> | <samp>Joystick (bottom-left): drag left/right</samp> |
 | <samp>Jump (hold for a higher jump)</samp> | <samp><kbd>Space</kbd></samp> | <samp>JUMP button (bottom-right)</samp> |
-| <samp>Pause</samp> | <samp><kbd>Esc</kbd></samp> | <samp>Pause button (top-right)</samp> |
+| <samp>Pause / resume</samp> | <samp><kbd>Esc</kbd> or the pause button (top-right)</samp> | <samp>Pause button (top-right)</samp> |
+| <samp>Fullscreen</samp> | <samp><kbd>F</kbd> or the fullscreen button</samp> | <samp>Fullscreen button (Android); Home Screen on iPhone</samp> |
 | <samp>Menus</samp> | <samp>Mouse click</samp> | <samp>Tap</samp> |
 
 <samp>Enemies are defeated by landing on them. The joystick and buttons appear only on touch devices and can be used at the same time (run and jump). Landscape gives the largest view.</samp>
@@ -98,7 +99,8 @@ powershell -ExecutionPolicy Bypass -File tools/deploy-gh-pages.ps1
 
 - <samp>Scene order for the Web build starts at <code>MainMenu</code>; the Build Settings scene list is unchanged.</samp>
 - <samp>Gzip compression with the decompression fallback, because GitHub Pages cannot send <code>Content-Encoding</code> headers for pre-compressed files. Size-optimized IL2CPP code.</samp>
-- <samp>The page renders the game at 1920×1080 (the UI's design resolution) and scales it to fit the window with letterboxing, so menus keep their layout at every size.</samp>
+- <samp>The game fills the browser window: it renders 1080 px tall (the UI's design height) at the window's aspect ratio, between 16:9 and 2.4:1. All cameras are orthographic with a fixed vertical size, so wider windows show more of the level sideways instead of stretching anything; only windows outside that range get thin bars. The layout updates on resize, rotation and fullscreen changes.</samp>
+- <samp>The page's pause button drives the original Unity pause menu through <code>Assets/Scripts/UI/WebBridge.cs</code> and <code>Assets/Plugins/WebGL/MazeRunnerBridge.jslib</code>: Unity reports the pause state to the page (<code>none</code>, <code>playing</code>, <code>paused</code>, <code>blocked</code>) and the button calls <code>PauseMenuController.Pause()</code>/<code>Resume()</code>, so it never opens a second overlay and always shows the real state.</samp>
 - <samp>The touch joystick and buttons send the same keyboard key transitions the game already reads (one key-down when a control engages, one key-up when it releases), so gameplay code, physics, and input actions are unchanged. Pinch-zoom, double-tap zoom, and page scrolling are blocked while playing.</samp>
 - <samp>The page around the game uses the portfolio palette (midnight navy <code>#1b1e4a</code>, stone grey <code>#afaea2</code>, crimson <code>#d21319</code>) and typefaces; the in-game Unity UI keeps its original design. The game starts loading as soon as the page opens and shows the Unity main menu; there is no separate landing page.</samp>
 - <samp>The page includes a web app manifest and icons so it can be installed to a phone's Home Screen and launched full screen.</samp>
