@@ -13,6 +13,12 @@ namespace MazeRunner.Levels
     {
         private const string UnlockKeyPrefix = "MazeRunner.LevelUnlocked.";
 
+        /// <summary>
+        /// How many levels of the sequence can be played. Temporarily 1: Levels 2 and 3 are on hold while
+        /// Level 1 is finished. Their scenes stay in the build; raise this to 3 to bring them back.
+        /// </summary>
+        public const int EnabledLevelCount = 1;
+
         private static LevelProgressionManager instance;
 
         [Header("Level Sequence")]
@@ -92,9 +98,15 @@ namespace MazeRunner.Levels
             LevelStarted?.Invoke(currentLevelIndex);
         }
 
+        /// <summary>True for levels that are currently part of the game (see <see cref="EnabledLevelCount"/>).</summary>
+        public bool IsLevelEnabled(int levelIndex)
+        {
+            return IsValidLevelIndex(levelIndex) && levelIndex < EnabledLevelCount;
+        }
+
         public bool IsLevelUnlocked(int levelIndex)
         {
-            if (!IsValidLevelIndex(levelIndex))
+            if (!IsLevelEnabled(levelIndex))
             {
                 return false;
             }
@@ -127,7 +139,7 @@ namespace MazeRunner.Levels
             LevelCompleted?.Invoke(currentLevelIndex);
 
             int nextLevelIndex = currentLevelIndex + 1;
-            if (!IsValidLevelIndex(nextLevelIndex))
+            if (!IsLevelEnabled(nextLevelIndex))
             {
                 AllLevelsCompleted?.Invoke();
             }
