@@ -155,6 +155,24 @@ namespace MazeRunner.Testing
                         sb.Append(sr.name).Append('=').Append(sr.sprite.name).Append('#').Append(sr.sprite.texture.GetHashCode()).Append(sr.enabled && sr.gameObject.activeInHierarchy ? "" : "(hidden)").Append("; ");
             Debug.Log(sb.ToString());
         }
+
+        /// <summary>Settings and every AudioSource's effective volume (channel, configured base, playing).</summary>
+        public void AudioReport(string _)
+        {
+            var sb = new StringBuilder();
+            sb.AppendFormat(CultureInfo.InvariantCulture, "[PROBE] audio music={0}% sfx={1}% controls={2} prefs={3}/{4}/{5}\n",
+                MazeRunner.Settings.GameSettings.MusicPercent, MazeRunner.Settings.GameSettings.SfxPercent,
+                MazeRunner.Settings.GameSettings.ControlMode,
+                PlayerPrefs.GetInt("settings.musicVolume", -1), PlayerPrefs.GetInt("settings.sfxVolume", -1), PlayerPrefs.GetInt("settings.touchControls", -1));
+            foreach (var src in FindObjectsByType<AudioSource>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            {
+                var tag = src.GetComponent<MazeRunner.Audio.VolumeChannelSource>();
+                sb.AppendFormat(CultureInfo.InvariantCulture, "{0} channel={1} base={2:F2} volume={3:F3} playing={4} clip={5}\n",
+                    src.name, tag != null ? tag.Channel.ToString() : "NONE", tag != null ? tag.BaseVolume : -1f, src.volume,
+                    src.isPlaying, src.clip != null ? src.clip.name : (src.resource != null ? src.resource.name : "-"));
+            }
+            Debug.Log(sb.ToString());
+        }
     }
 }
 #endif

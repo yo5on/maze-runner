@@ -2,6 +2,7 @@ using UnityEngine;
 using MazeRunner.Player;
 using MazeRunner.Collectibles;
 using MazeRunner.Levels;
+using MazeRunner.Settings;
 
 namespace MazeRunner.Audio
 {
@@ -41,6 +42,11 @@ namespace MazeRunner.Audio
             {
                 sfxSource.ignoreListenerPause = true;
             }
+
+            // Both sources follow the player's volume settings; their configured volumes
+            // stay the 100% level.
+            VolumeChannelSource.Attach(sfxSource, VolumeChannel.Sfx);
+            VolumeChannelSource.Attach(musicSource, VolumeChannel.Music);
         }
         
         private void Start()
@@ -147,20 +153,16 @@ namespace MazeRunner.Audio
             PlayLevelComplete();
         }
         
+        /// <summary>Sets the Sound Effects setting (0..1); saved and applied to every SFX source.</summary>
         public void SetSFXVolume(float volume)
         {
-            if (sfxSource != null)
-            {
-                sfxSource.volume = Mathf.Clamp01(volume);
-            }
+            GameSettings.SetSfxPercent(Mathf.RoundToInt(Mathf.Clamp01(volume) * 100f));
         }
-        
+
+        /// <summary>Sets the Music setting (0..1); saved and applied to every music source.</summary>
         public void SetMusicVolume(float volume)
         {
-            if (musicSource != null)
-            {
-                musicSource.volume = Mathf.Clamp01(volume);
-            }
+            GameSettings.SetMusicPercent(Mathf.RoundToInt(Mathf.Clamp01(volume) * 100f));
         }
     }
 }

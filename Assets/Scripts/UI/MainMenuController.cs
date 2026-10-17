@@ -30,7 +30,7 @@ namespace MazeRunner.UI
         
         public void OpenSettings()
         {
-            Debug.Log("Settings menu not yet implemented.");
+            SettingsMenu.OpenCurrent();
         }
         
         public void QuitGame()
