@@ -55,6 +55,13 @@ namespace MazeRunner.Player
             wasGrounded = true;
         }
         
+        /// <summary>Points the controller at a different character rig (used when the selected character has its own rig).</summary>
+        public void UseRig(Animator rigAnimator)
+        {
+            fallenAngelsAnimator = rigAnimator;
+            spriteRenderer = rigAnimator != null ? rigAnimator.GetComponent<SpriteRenderer>() : null;
+        }
+        
         private void OnDestroy()
         {
             if (playerHealth != null)
