@@ -55,6 +55,12 @@ namespace MazeRunner.Levels
             RegisterAllEnemies();
         }
         
+        /// <summary>Counts the scene's enemies again (call after spawning enemies at load time).</summary>
+        public void RefreshEnemyCount()
+        {
+            RegisterAllEnemies();
+        }
+        
         private void RegisterAllEnemies()
         {
             enemyCount = 0;

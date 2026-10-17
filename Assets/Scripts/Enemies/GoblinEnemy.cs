@@ -47,6 +47,8 @@ namespace MazeRunner.Enemies
         [SerializeField] private LayerMask playerLayer;
         [Tooltip("The goblin stands still for this long while its slash plays.")]
         [SerializeField] private float attackMoveLock = 0.4f;
+        [Tooltip("When the slash hits if the attack clip has no DealDamage animation event (rigs imported without events).")]
+        [SerializeField] private float attackHitTime = 0.2f;
 
         [Header("Vision")]
         [SerializeField] private float visionRange = 3f;
@@ -67,6 +69,8 @@ namespace MazeRunner.Enemies
         private int direction = 1;
         private float attackTimer;
         private float attackLockTimer;
+        private float pendingHitTimer;
+        private bool hitDealtThisAttack = true;
         private float turnTimer;
         private float stallTimer;
         private float lastPatrolX;
@@ -111,6 +115,20 @@ namespace MazeRunner.Enemies
             hasRunParameter = HasAnimatorParameter(IsRunningHash);
         }
 
+        /// <summary>
+        /// Sets the patrol for an enemy spawned at runtime (call right after Instantiate, before Start;
+        /// Start then clamps the patrol to the platform under the enemy).
+        /// </summary>
+        public void ConfigurePatrol(int initialDirection, float distance)
+        {
+            startDirection = initialDirection >= 0 ? 1 : -1;
+            direction = startDirection;
+            patrolDistance = Mathf.Max(0f, distance);
+            startPosition = transform.position;
+            patrolMinX = startPosition.x - patrolDistance;
+            patrolMaxX = startPosition.x + patrolDistance;
+        }
+        
         private void Start()
         {
             GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
@@ -143,6 +161,13 @@ namespace MazeRunner.Enemies
             attackTimer -= Time.deltaTime;
             attackLockTimer -= Time.deltaTime;
             turnTimer -= Time.deltaTime;
+
+            // Clips without a DealDamage event still hit, once, at attackHitTime.
+            if (!hitDealtThisAttack)
+            {
+                pendingHitTimer -= Time.deltaTime;
+                if (pendingHitTimer <= 0f) DealDamage();
+            }
 
             if (noticeSpeedTimer > 0)
             {
@@ -409,6 +434,8 @@ namespace MazeRunner.Enemies
         {
             attackTimer = attackCooldown;
             attackLockTimer = attackMoveLock;
+            hitDealtThisAttack = false;
+            pendingHitTimer = attackHitTime;
             SetLocomotion(false, false);
             animator.SetTrigger(AttackTriggerHash);
             rb.linearVelocity = new Vector2(0f, rb.linearVelocity.y);
@@ -416,6 +443,7 @@ namespace MazeRunner.Enemies
 
         public void DealDamage()
         {
+            hitDealtThisAttack = true;
             if (attackPoint == null) return;
 
             Collider2D[] hits = Physics2D.OverlapCircleAll(attackPoint.position, attackRadius, playerLayer);
