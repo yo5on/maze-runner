@@ -21,12 +21,14 @@
 
 | <samp>Action</samp> | <samp>Desktop</samp> | <samp>Phone / tablet</samp> |
 |---|---|---|
-| <samp>Move</samp> | <samp><kbd>A</kbd>/<kbd>D</kbd> or <kbd>←</kbd>/<kbd>→</kbd></samp> | <samp>On-screen ◀ ▶ buttons</samp> |
-| <samp>Jump (hold for a higher jump)</samp> | <samp><kbd>Space</kbd></samp> | <samp>On-screen JUMP button</samp> |
-| <samp>Pause</samp> | <samp><kbd>Esc</kbd></samp> | <samp>On-screen II button</samp> |
+| <samp>Move</samp> | <samp><kbd>A</kbd>/<kbd>D</kbd> or <kbd>←</kbd>/<kbd>→</kbd></samp> | <samp>Joystick (bottom-left): drag left/right</samp> |
+| <samp>Jump (hold for a higher jump)</samp> | <samp><kbd>Space</kbd></samp> | <samp>JUMP button (bottom-right)</samp> |
+| <samp>Pause</samp> | <samp><kbd>Esc</kbd></samp> | <samp>Pause button (top-right)</samp> |
 | <samp>Menus</samp> | <samp>Mouse click</samp> | <samp>Tap</samp> |
 
-<samp>Enemies are defeated by landing on them. The on-screen buttons appear only on touch devices; landscape gives the largest view.</samp>
+<samp>Enemies are defeated by landing on them. The joystick and buttons appear only on touch devices and can be used at the same time (run and jump). Landscape gives the largest view.</samp>
+
+<samp><b>Full screen on iPhone:</b> Safari on iPhone does not let web pages enter full screen, so the fullscreen button shows how to add the game to the Home Screen instead (Share → Add to Home Screen). Opened from the Home Screen, the game runs without Safari's toolbars. Android Chrome and desktop browsers use real full screen.</samp>
 
 ---
 
@@ -97,7 +99,9 @@ powershell -ExecutionPolicy Bypass -File tools/deploy-gh-pages.ps1
 - <samp>Scene order for the Web build starts at <code>MainMenu</code>; the Build Settings scene list is unchanged.</samp>
 - <samp>Gzip compression with the decompression fallback, because GitHub Pages cannot send <code>Content-Encoding</code> headers for pre-compressed files. Size-optimized IL2CPP code.</samp>
 - <samp>The page renders the game at 1920×1080 (the UI's design resolution) and scales it to fit the window with letterboxing, so menus keep their layout at every size.</samp>
-- <samp>Touch buttons send the same keyboard keys the game already reads, so gameplay code, physics, and input actions are unchanged. Pinch-zoom, double-tap zoom, and page scrolling are blocked while playing.</samp>
+- <samp>The touch joystick and buttons send the same keyboard key transitions the game already reads (one key-down when a control engages, one key-up when it releases), so gameplay code, physics, and input actions are unchanged. Pinch-zoom, double-tap zoom, and page scrolling are blocked while playing.</samp>
+- <samp>The page includes a web app manifest and icons so it can be installed to a phone's Home Screen and launched full screen.</samp>
+- <samp><code>Assets/Scripts/UI/MenuPresentation.cs</code> restyles the pause, game-over, and level-complete menus at runtime (dark backdrop, card, dark buttons) without editing scenes, enlarges menus in Web builds so they are easy to tap, and adds a game-over menu to levels that did not have one.</samp>
 
 <samp><b>Known limitations of the Web version:</b></samp>
 
@@ -105,6 +109,7 @@ powershell -ExecutionPolicy Bypass -File tools/deploy-gh-pages.ps1
 - <samp><b>Quit</b> does nothing in a browser; close the tab instead. <b>Settings</b> is not implemented yet (same as desktop).</samp>
 - <samp>Progress and customization are saved in the browser's storage (IndexedDB) and are lost if site data is cleared or in private windows.</samp>
 - <samp>In portrait on phones the game is small because the levels are 16:9; rotate to landscape.</samp>
+- <samp>Progress saved in the Home Screen version of the game is stored separately from progress saved in Safari.</samp>
 - <samp>Unity's Web player officially targets desktop browsers; mobile browsers work but performance depends on the device.</samp>
 
 ---
