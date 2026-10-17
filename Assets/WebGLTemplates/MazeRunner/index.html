@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-  <meta name="theme-color" content="#070a10">
+  <meta name="theme-color" content="#1b1e4a">
   <meta name="color-scheme" content="dark">
   <meta name="description" content="Maze Runner - a 2D platformer made with Unity, playable in your browser.">
   <!-- Home Screen / standalone mode (the supported way to get a full-screen game on iPhone). -->
@@ -15,15 +15,20 @@
   <link rel="apple-touch-icon" href="TemplateData/icon-180.png">
   <link rel="icon" type="image/png" href="TemplateData/icon-192.png">
   <title>Maze Runner</title>
+  <!-- Portfolio typefaces; loaded without blocking the game (system fonts until ready). -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" media="print" onload="this.media='all'"
+        href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Instrument+Sans:wght@400..700&family=Instrument+Serif&display=swap">
   <link rel="stylesheet" href="TemplateData/style.css">
 </head>
 <body>
   <div id="stage">
     <canvas id="unity-canvas" tabindex="-1"></canvas>
     <div id="loading" role="status" aria-live="polite">
-      <div id="loading-title">MAZE RUNNER</div>
+      <div id="loading-title">Maze Runner</div>
       <div id="loading-track"><div id="loading-fill"></div></div>
-      <div id="loading-text">0%</div>
+      <div id="loading-text">Loading 0%</div>
     </div>
   </div>
 
@@ -37,7 +42,7 @@
       </div>
     </div>
     <button id="btn-jump" class="ctrl" type="button" aria-label="Jump">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5l-7 7h4.5v7h5v-7H19z"/></svg>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V6M6 12l6-6 6 6"/></svg>
       <span>JUMP</span>
     </button>
   </div>
@@ -454,7 +459,7 @@
       createUnityInstance(canvas, config, function (progress) {
         var pct = Math.round(progress * 100);
         fill.style.width = pct + "%";
-        loadingText.textContent = pct + "%";
+        loadingText.textContent = "Loading " + pct + "%";
       }).then(function (instance) {
         window.unityInstance = instance;
         body.classList.add("ready");
