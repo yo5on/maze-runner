@@ -34,6 +34,7 @@ namespace MazeRunner.UI
             if (levelCompletePanel != null)
             {
                 levelCompletePanel.SetActive(true);
+                ShowNextLevelButton(HasNextLevel());
             }
             Time.timeScale = 0f;
         }
@@ -44,13 +45,34 @@ namespace MazeRunner.UI
             if (LevelProgressionManager.Instance != null)
             {
                 int nextLevel = LevelProgressionManager.Instance.CurrentLevelIndex + 1;
-                if (nextLevel < LevelProgressionManager.Instance.LevelCount)
+                if (LevelProgressionManager.Instance.IsLevelEnabled(nextLevel))
                 {
                     LevelProgressionManager.Instance.StartLevel(nextLevel);
                 }
                 else
                 {
                     ReturnToMainMenu();
+                }
+            }
+        }
+        
+        private static bool HasNextLevel()
+        {
+            var progression = LevelProgressionManager.Instance;
+            return progression != null && progression.IsLevelEnabled(progression.CurrentLevelIndex + 1);
+        }
+        
+        /// <summary>Hides the panel's "Next Level" button when there is no playable level after this one.</summary>
+        private void ShowNextLevelButton(bool show)
+        {
+            foreach (var button in levelCompletePanel.GetComponentsInChildren<UnityEngine.UI.Button>(true))
+            {
+                for (int i = 0; i < button.onClick.GetPersistentEventCount(); i++)
+                {
+                    if (button.onClick.GetPersistentMethodName(i) == nameof(NextLevel))
+                    {
+                        button.gameObject.SetActive(show);
+                    }
                 }
             }
         }

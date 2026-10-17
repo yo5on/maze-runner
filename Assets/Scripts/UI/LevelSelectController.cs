@@ -24,6 +24,11 @@ namespace MazeRunner.UI
             {
                 if (levelButtons[i] == null) continue;
                 
+                // Levels that are on hold are not offered at all.
+                bool isEnabled = LevelProgressionManager.Instance.IsLevelEnabled(i);
+                levelButtons[i].gameObject.SetActive(isEnabled);
+                if (!isEnabled) continue;
+                
                 bool unlocked = LevelProgressionManager.Instance.IsLevelUnlocked(i);
                 levelButtons[i].interactable = unlocked;
                 
