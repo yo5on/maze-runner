@@ -482,7 +482,7 @@ MonoBehaviour:
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 0
-  m_ActiveFontFeatures: 6e72656b
+  m_ActiveFontFeatures: 6e72656bu
   m_enableExtraPadding: 0
   checkPaddingRequired: 0
   m_isRichText: 1
@@ -619,7 +619,7 @@ MonoBehaviour:
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 0
-  m_ActiveFontFeatures: 6e72656b
+  m_ActiveFontFeatures: 6e72656bu
   m_enableExtraPadding: 0
   checkPaddingRequired: 0
   m_isRichText: 1
@@ -1936,7 +1936,7 @@ MonoBehaviour:
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 0
-  m_ActiveFontFeatures: 6e72656b
+  m_ActiveFontFeatures: 6e72656bu
   m_enableExtraPadding: 0
   checkPaddingRequired: 0
   m_isRichText: 1
@@ -2743,7 +2743,7 @@ MonoBehaviour:
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 0
-  m_ActiveFontFeatures: 6e72656b
+  m_ActiveFontFeatures: 6e72656bu
   m_enableExtraPadding: 0
   checkPaddingRequired: 0
   m_isRichText: 1
@@ -3722,7 +3722,7 @@ MonoBehaviour:
   m_Intensity: 1
   m_LightVolumeIntensity: 1
   m_LightVolumeEnabled: 0
-  m_ApplyToSortingLayers: 00000000
+  m_ApplyToSortingLayers: 00000000i
   m_LightCookieSprite: {fileID: 0}
   m_DeprecatedPointLightCookieSprite: {fileID: 0}
   m_LightOrder: 0
@@ -3737,6 +3737,9 @@ MonoBehaviour:
   m_ShadowSoftnessFalloffIntensity: 0.5
   m_ShadowVolumeIntensityEnabled: 0
   m_ShadowVolumeIntensity: 0.75
+  m_RenderingLayersMask:
+    serializedVersion: 0
+    m_Bits: 1
   m_LocalBounds:
     m_Center: {x: 0, y: -0.00000011920929, z: 0}
     m_Extent: {x: 0.9985302, y: 0.99853027, z: 0}
@@ -5857,7 +5860,7 @@ MonoBehaviour:
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 0
-  m_ActiveFontFeatures: 6e72656b
+  m_ActiveFontFeatures: 6e72656bu
   m_enableExtraPadding: 0
   checkPaddingRequired: 0
   m_isRichText: 1
@@ -6360,7 +6363,7 @@ MonoBehaviour:
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 0
-  m_ActiveFontFeatures: 6e72656b
+  m_ActiveFontFeatures: 6e72656bu
   m_enableExtraPadding: 0
   checkPaddingRequired: 0
   m_isRichText: 1
@@ -6676,7 +6679,7 @@ MonoBehaviour:
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 0
-  m_ActiveFontFeatures: 6e72656b
+  m_ActiveFontFeatures: 6e72656bu
   m_enableExtraPadding: 0
   checkPaddingRequired: 0
   m_isRichText: 1
@@ -6920,7 +6923,7 @@ MonoBehaviour:
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 0
-  m_ActiveFontFeatures: 6e72656b
+  m_ActiveFontFeatures: 6e72656bu
   m_enableExtraPadding: 0
   checkPaddingRequired: 0
   m_isRichText: 1
@@ -7090,7 +7093,7 @@ MonoBehaviour:
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 0
-  m_ActiveFontFeatures: 6e72656b
+  m_ActiveFontFeatures: 6e72656bu
   m_enableExtraPadding: 0
   checkPaddingRequired: 0
   m_isRichText: 1
@@ -7965,7 +7968,7 @@ MonoBehaviour:
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 0
-  m_ActiveFontFeatures: 6e72656b
+  m_ActiveFontFeatures: 6e72656bu
   m_enableExtraPadding: 0
   checkPaddingRequired: 0
   m_isRichText: 1
@@ -9073,7 +9076,7 @@ MonoBehaviour:
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 0
-  m_ActiveFontFeatures: 6e72656b
+  m_ActiveFontFeatures: 6e72656bu
   m_enableExtraPadding: 0
   checkPaddingRequired: 0
   m_isRichText: 1
@@ -9578,71 +9581,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 09ea70a572ef242409f5312ba109dc11, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MazeRunner.UI.UIButtonSound
---- !u!1001 &1734909321
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 0}
-    m_Modifications:
-    - target: {fileID: 6951113371342017277, guid: 11cf2b5e630f4ec396a0d25d7b6f46e6, type: 3}
-      propertyPath: m_LocalScale.x
-      value: 0.73972803
-      objectReference: {fileID: 0}
-    - target: {fileID: 6951113371342017277, guid: 11cf2b5e630f4ec396a0d25d7b6f46e6, type: 3}
-      propertyPath: m_LocalScale.y
-      value: 0.72
-      objectReference: {fileID: 0}
-    - target: {fileID: 6951113371342017277, guid: 11cf2b5e630f4ec396a0d25d7b6f46e6, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 169.24
-      objectReference: {fileID: 0}
-    - target: {fileID: 6951113371342017277, guid: 11cf2b5e630f4ec396a0d25d7b6f46e6, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 2.66
-      objectReference: {fileID: 0}
-    - target: {fileID: 6951113371342017277, guid: 11cf2b5e630f4ec396a0d25d7b6f46e6, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: -0.65
-      objectReference: {fileID: 0}
-    - target: {fileID: 6951113371342017277, guid: 11cf2b5e630f4ec396a0d25d7b6f46e6, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 0.9727546
-      objectReference: {fileID: 0}
-    - target: {fileID: 6951113371342017277, guid: 11cf2b5e630f4ec396a0d25d7b6f46e6, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: 0.027787335
-      objectReference: {fileID: 0}
-    - target: {fileID: 6951113371342017277, guid: 11cf2b5e630f4ec396a0d25d7b6f46e6, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: 0.22942105
-      objectReference: {fileID: 0}
-    - target: {fileID: 6951113371342017277, guid: 11cf2b5e630f4ec396a0d25d7b6f46e6, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: 0.01850276
-      objectReference: {fileID: 0}
-    - target: {fileID: 6951113371342017277, guid: 11cf2b5e630f4ec396a0d25d7b6f46e6, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 2.612
-      objectReference: {fileID: 0}
-    - target: {fileID: 6951113371342017277, guid: 11cf2b5e630f4ec396a0d25d7b6f46e6, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 26.605
-      objectReference: {fileID: 0}
-    - target: {fileID: 6951113371342017277, guid: 11cf2b5e630f4ec396a0d25d7b6f46e6, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 2.797
-      objectReference: {fileID: 0}
-    - target: {fileID: 8721517773162389102, guid: 11cf2b5e630f4ec396a0d25d7b6f46e6, type: 3}
-      propertyPath: m_Name
-      value: MazeRunner_RuinPillar_Background
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: 11cf2b5e630f4ec396a0d25d7b6f46e6, type: 3}
 --- !u!1001 &1741416339
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -10552,7 +10490,7 @@ MonoBehaviour:
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 0
-  m_ActiveFontFeatures: 6e72656b
+  m_ActiveFontFeatures: 6e72656bu
   m_enableExtraPadding: 0
   checkPaddingRequired: 0
   m_isRichText: 1
@@ -10691,7 +10629,7 @@ MonoBehaviour:
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 0
-  m_ActiveFontFeatures: 6e72656b
+  m_ActiveFontFeatures: 6e72656bu
   m_enableExtraPadding: 0
   checkPaddingRequired: 0
   m_isRichText: 1
@@ -11026,7 +10964,7 @@ MonoBehaviour:
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 0
-  m_ActiveFontFeatures: 6e72656b
+  m_ActiveFontFeatures: 6e72656bu
   m_enableExtraPadding: 0
   checkPaddingRequired: 0
   m_isRichText: 1
@@ -11797,7 +11735,7 @@ MonoBehaviour:
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 0
-  m_ActiveFontFeatures: 6e72656b
+  m_ActiveFontFeatures: 6e72656bu
   m_enableExtraPadding: 0
   checkPaddingRequired: 0
   m_isRichText: 1
@@ -12179,7 +12117,7 @@ MonoBehaviour:
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 0
-  m_ActiveFontFeatures: 6e72656b
+  m_ActiveFontFeatures: 6e72656bu
   m_enableExtraPadding: 0
   checkPaddingRequired: 0
   m_isRichText: 1
@@ -12447,7 +12385,7 @@ MonoBehaviour:
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 0
-  m_ActiveFontFeatures: 6e72656b
+  m_ActiveFontFeatures: 6e72656bu
   m_enableExtraPadding: 0
   checkPaddingRequired: 0
   m_isRichText: 1
@@ -12890,4 +12828,3 @@ SceneRoots:
   - {fileID: 116149263}
   - {fileID: 313545426}
   - {fileID: 293417484}
-  - {fileID: 1734909321}
