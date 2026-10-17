@@ -13,6 +13,8 @@
 
 <div align="center"><samp><b>▶ <a href="https://yo5on.github.io/maze-runner/">Play Online</a></b></samp></div>
 
+<div align="center"><samp>Preview page: <a href="https://yo5on.github.io/maze-runner/preview/">yo5on.github.io/maze-runner/preview</a></samp></div>
+
 <div align="center"><samp>Runs in desktop and mobile browsers via Unity's Web (WebGL) platform, hosted on GitHub Pages. About 16 MB to download; first load takes a few seconds.</samp></div>
 
 ---
@@ -103,6 +105,7 @@ powershell -ExecutionPolicy Bypass -File tools/deploy-gh-pages.ps1
 - <samp>The page's pause button drives the original Unity pause menu through <code>Assets/Scripts/UI/WebBridge.cs</code> and <code>Assets/Plugins/WebGL/MazeRunnerBridge.jslib</code>: Unity reports the pause state to the page (<code>none</code>, <code>playing</code>, <code>paused</code>, <code>blocked</code>) and the button calls <code>PauseMenuController.Pause()</code>/<code>Resume()</code>, so it never opens a second overlay and always shows the real state.</samp>
 - <samp>The touch joystick and buttons send the same keyboard key transitions the game already reads (one key-down when a control engages, one key-up when it releases), so gameplay code, physics, and input actions are unchanged. Pinch-zoom, double-tap zoom, and page scrolling are blocked while playing.</samp>
 - <samp>The page around the game uses the portfolio palette (midnight navy <code>#1b1e4a</code>, stone grey <code>#afaea2</code>, crimson <code>#d21319</code>) and typefaces; the in-game Unity UI keeps its original design. The game starts loading as soon as the page opens and shows the Unity main menu; there is no separate landing page.</samp>
+- <samp><code>Assets/WebGLTemplates/MazeRunner/preview/</code> is a lightweight preview page (screenshot and Play Now) published at <code>/maze-runner/preview/</code>. It loads no Unity files; Play Now checks the game is reachable, then opens the game at <code>/maze-runner/</code>, which loads straight into the main menu. Unity copies it into every Web build, so it deploys with the game.</samp>
 - <samp>The page includes a web app manifest and icons so it can be installed to a phone's Home Screen and launched full screen.</samp>
 - <samp><code>Assets/Scripts/UI/MenuPresentation.cs</code> leaves the original Unity menus' design unchanged. In Web builds it enlarges the Constant Pixel Size UI by one uniform factor (1.4×) so menus keep the same proportions on desktop and mobile and are easy to tap, and it adds a Game Over panel matching Level 1's original one to Levels 2 and 3, which previously froze on game over.</samp>
 
