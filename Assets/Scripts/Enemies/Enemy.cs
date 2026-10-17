@@ -42,7 +42,18 @@ namespace MazeRunner.Enemies
         
         public void Defeat()
         {
+            if (defeated) return; // two contacts in one step must not count twice
+            defeated = true;
+
+            // LevelGoal only completes once EnemyTracker counts every enemy as defeated.
+            if (Levels.EnemyTracker.Instance != null)
+            {
+                Levels.EnemyTracker.Instance.NotifyEnemyDefeated();
+            }
+
             Destroy(gameObject);
         }
+
+        private bool defeated;
     }
 }

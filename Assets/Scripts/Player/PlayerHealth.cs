@@ -15,6 +15,8 @@ namespace MazeRunner.Player
         private Vector3 lastCheckpointPosition;
         private PlayerAnimationController animationController;
         private bool hasUsedRespawn;
+        private bool isGameOver;
+        private Rigidbody2D body;
         
         public event Action OnPlayerDeath;
         public event Action OnGameOver;
@@ -29,6 +31,7 @@ namespace MazeRunner.Player
             currentHealth = maxHealth;
             lastCheckpointPosition = transform.position;
             animationController = GetComponent<PlayerAnimationController>();
+            body = GetComponent<Rigidbody2D>();
             hasUsedRespawn = false;
         }
         
@@ -39,7 +42,9 @@ namespace MazeRunner.Player
                 invincibilityTimer -= Time.deltaTime;
             }
             
-            if (transform.position.y < fallDeathY)
+            // After game over the player stays below the kill height (time is stopped),
+            // so stop checking; otherwise Die/OnGameOver would fire every frame.
+            if (!isGameOver && transform.position.y < fallDeathY)
             {
                 Die();
             }
@@ -77,6 +82,8 @@ namespace MazeRunner.Player
         
         public void Die()
         {
+            if (isGameOver) return;
+
             OnPlayerDeath?.Invoke();
             
             if (!hasUsedRespawn)
@@ -92,6 +99,13 @@ namespace MazeRunner.Player
         
         public void Respawn()
         {
+            // Move the physics body too and drop the fall speed: keeping it let the player
+            // pass through the checkpoint's platform after respawning and die again at once.
+            if (body != null)
+            {
+                body.linearVelocity = Vector2.zero;
+                body.position = lastCheckpointPosition;
+            }
             transform.position = lastCheckpointPosition;
             currentHealth = maxHealth;
             invincibilityTimer = invincibilityDuration;
@@ -111,6 +125,7 @@ namespace MazeRunner.Player
         
         private void GameOver()
         {
+            isGameOver = true;
             OnGameOver?.Invoke();
             Time.timeScale = 0f;
             
