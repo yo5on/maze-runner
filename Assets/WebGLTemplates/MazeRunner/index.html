@@ -47,11 +47,12 @@
     </button>
   </div>
 
-  <div id="top-controls">
-    <button id="btn-pause" class="chip" type="button" aria-label="Pause">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="5" width="3.6" height="14" rx="1.2"/><rect x="13.9" y="5" width="3.6" height="14" rx="1.2"/></svg>
+  <div id="top-controls" role="toolbar" aria-label="Game controls">
+    <button id="btn-pause" class="chip" type="button" aria-label="Pause" title="Pause (Esc)" hidden>
+      <svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="5" width="3.2" height="14"/><rect x="13.8" y="5" width="3.2" height="14"/></svg>
+      <svg class="icon-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
     </button>
-    <button id="btn-fullscreen" class="chip" type="button" aria-label="Enter fullscreen" aria-pressed="false">
+    <button id="btn-fullscreen" class="chip" type="button" aria-label="Enter fullscreen" aria-pressed="false" title="Fullscreen (F)">
       <svg class="icon-enter" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></svg>
       <svg class="icon-exit" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4v5H4M20 9h-5V4M15 20v-5h5M4 15h5v5"/></svg>
     </button>
@@ -78,9 +79,12 @@
   (function () {
     "use strict";
 
-    // The game renders at a fixed 1920x1080 backbuffer (the resolution its UI was
-    // laid out for) and is scaled with CSS to fit, preserving the 16:9 aspect ratio.
-    var GAME_W = 1920, GAME_H = 1080;
+    // The game renders 1080 px tall - the height its Constant Pixel Size UI was laid
+    // out for - at the window's own aspect ratio, clamped to MIN..MAX. Every camera
+    // is orthographic with a fixed vertical size, so a wider canvas shows more of the
+    // level sideways instead of stretching anything. Only windows narrower than 16:9
+    // or wider than 2.4:1 get (thin) bars.
+    var GAME_H = 1080, MIN_ASPECT = 16 / 9, MAX_ASPECT = 2.4;
 
     var root = document.documentElement;
     var body = document.body;
@@ -97,8 +101,6 @@
     body.classList.toggle("touch", isTouch);
     body.classList.toggle("standalone", isStandalone);
 
-    canvas.width = GAME_W;
-    canvas.height = GAME_H;
 
     // ------------------------------------------------------------------ layout
     function safeInsets() {
@@ -136,8 +138,18 @@
       var availW = vp.w - left - right;
       var availH = vp.h - top;
 
-      var scale = Math.min(availW / GAME_W, availH / GAME_H);
-      var w = Math.floor(GAME_W * scale), h = Math.floor(GAME_H * scale);
+      var aspect = Math.min(MAX_ASPECT, Math.max(MIN_ASPECT, availW / availH));
+      var w, h;
+      if (availW / availH > aspect) { h = availH; w = Math.round(h * aspect); }
+      else { w = availW; h = Math.round(w / aspect); }
+
+      // Render size follows the aspect ratio; Unity picks up the new canvas size.
+      var renderW = Math.round(GAME_H * aspect);
+      if (canvas.width !== renderW || canvas.height !== GAME_H) {
+        canvas.width = renderW;
+        canvas.height = GAME_H;
+      }
+
       var x = Math.round(left + (availW - w) / 2);
       var y = Math.round((vp.h - h) / 2);
       if (isTouch && portrait) {
@@ -156,6 +168,7 @@
       root.style.setProperty("--stage-w", w + "px");
       root.style.setProperty("--stage-h", h + "px");
       root.style.setProperty("--stage-bottom", (y + h) + "px");
+      root.style.setProperty("--stage-right", (vp.w - x - w) + "px");
       updateRotateHint();
     }
 
@@ -291,8 +304,27 @@
     document.addEventListener("visibilitychange", function () { if (document.hidden) releaseAll(); });
 
     // -------------------------------------------------------------------- pause
-    document.getElementById("btn-pause").addEventListener("click", function () {
-      tap("Escape");
+    // The button drives the game's own pause menu through WebBridge (Unity side),
+    // which also reports the real state back, so the button never opens a second
+    // overlay and always shows whether the game is paused.
+    var pauseBtn = document.getElementById("btn-pause");
+    var gameState = "none";
+    window.mazeRunnerOnState = function (state) {
+      gameState = state;
+      body.setAttribute("data-game", state);
+      pauseBtn.hidden = state === "none";
+      pauseBtn.disabled = state === "blocked";
+      var paused = state === "paused";
+      pauseBtn.classList.toggle("is-paused", paused);
+      pauseBtn.setAttribute("aria-label", paused ? "Resume" : "Pause");
+      pauseBtn.title = paused ? "Resume (Esc)" : "Pause (Esc)";
+    };
+    pauseBtn.addEventListener("click", function () {
+      if (window.unityInstance) {
+        window.unityInstance.SendMessage("WebBridge", "TogglePause");
+      } else {
+        tap("Escape");
+      }
       focusGame();
     });
 
@@ -312,6 +344,18 @@
     document.addEventListener("contextmenu", function (e) {
       if (e.target.closest && e.target.closest("#touch-controls, #top-controls")) e.preventDefault();
     });
+
+    // Desktop: let the control bar recede while the mouse is idle.
+    var idleTimer = 0;
+    function wake() {
+      body.classList.remove("idle");
+      clearTimeout(idleTimer);
+      idleTimer = setTimeout(function () { body.classList.add("idle"); }, 2500);
+    }
+    if (!isTouch) {
+      window.addEventListener("mousemove", wake, { passive: true });
+      wake();
+    }
 
     function focusGame() {
       try { canvas.focus({ preventScroll: true }); } catch (e) { canvas.focus(); }
@@ -357,7 +401,11 @@
         return;
       }
       if (result && typeof result.then === "function") {
-        result.then(lockLandscape, function () { showFullscreenHelp(); });
+        result.then(lockLandscape, function (err) {
+          // Desktop browsers reject only for transient reasons (e.g. no user gesture);
+          // the help sheet is for devices that cannot go full screen at all.
+          if (isTouch) showFullscreenHelp(); else console.warn("Fullscreen request was rejected:", err);
+        });
       } else {
         setTimeout(lockLandscape, 300);
       }
@@ -367,14 +415,27 @@
       if (result && typeof result.catch === "function") result.catch(function () { /* ignore */ });
     }
 
-    fsBtn.addEventListener("click", function () {
+    function toggleFullscreen() {
       if (fsSupported()) {
         if (fsActive()) exitFullscreen(); else enterFullscreen();
       } else {
         showFullscreenHelp();
       }
       focusGame();
-    });
+    }
+    fsBtn.addEventListener("click", toggleFullscreen);
+
+    // F toggles fullscreen (Esc keeps the browser's own exit). Ignored while typing,
+    // with modifier keys, or on key repeat while held.
+    window.addEventListener("keydown", function (e) {
+      if (e.code !== "KeyF" && e.key !== "f" && e.key !== "F") return;
+      if (e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
+      var t = e.target;
+      if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
+      if (!sheet.hidden) return;
+      e.preventDefault();
+      toggleFullscreen();
+    }, true);
 
     // -------------------------------------------- fallback help (iPhone etc.)
     var sheet = document.getElementById("sheet");
@@ -462,6 +523,7 @@
         loadingText.textContent = "Loading " + pct + "%";
       }).then(function (instance) {
         window.unityInstance = instance;
+        try { instance.SendMessage("WebBridge", "RequestState"); } catch (e) { /* bridge optional */ }
         body.classList.add("ready");
         focusGame();
       }).catch(function (message) {
