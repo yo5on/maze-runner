@@ -31,7 +31,7 @@
   /* Control sizes scale with the short side of the screen. */
   --joy: clamp(104px, 30vmin, 148px);
   --jump: clamp(68px, 20vmin, 94px);
-  --chip: 40px;
+  --chip: 38px;
   --chip-touch: 44px;
 }
 
@@ -158,113 +158,82 @@ body.ready #loading {
   z-index: 40;
 }
 
-/* ------------------------------------------- control bar (top-right of game) */
-/* Pause + fullscreen as one joined bar, anchored to the game's top-right corner. */
+/* ------------------------------------------- control buttons (top-right of game) */
+/* Pause and fullscreen are styled like the Unity menu buttons they sit next to:
+   a light face, a thin grey edge, a small radius and dark glyphs, with Unity's own
+   ColorTint feel (slightly brighter on hover, ~78% on press). */
 #top-controls {
   position: fixed;
   top: calc(max(var(--stage-y, 0px), var(--safe-t)) + 12px);
-  right: calc(var(--stage-right, 0px) + 12px);
+  right: calc(max(var(--stage-right, 0px), var(--safe-r)) + 12px);
   display: flex;
-  border: 1px solid var(--hair);
-  background: rgba(21, 23, 60, 0.55);
-  -webkit-backdrop-filter: blur(10px);
-  backdrop-filter: blur(10px);
-  box-shadow: 0 6px 20px rgba(8, 9, 28, 0.28);
+  gap: 8px;
   z-index: 20;
   transition: opacity 0.4s ease;
 }
 
 .chip {
-  position: relative;
+  --face: #f4f4f4;
   width: var(--chip);
   height: var(--chip);
   display: grid;
   place-items: center;
   padding: 0;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
+  border: 1px solid rgba(50, 50, 50, 0.32);
+  border-radius: 4px;
+  background: var(--face);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.18), 0 4px 12px rgba(10, 12, 30, 0.12);
   cursor: pointer;
-  transition: background-color 0.15s ease;
+  transition: background-color 0.1s ease, border-color 0.1s ease, box-shadow 0.1s ease;
 }
 
 .chip[hidden] {
   display: none;
 }
 
-/* Hairline divider between joined buttons. */
-.chip:not([hidden]) + .chip::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 9px;
-  bottom: 9px;
-  width: 1px;
-  background: var(--hair);
-}
-
-/* Crimson rule under the hovered / focused / active button. */
-.chip::after {
-  content: "";
-  position: absolute;
-  left: 10px;
-  right: 10px;
-  bottom: 0;
-  height: 2px;
-  background: var(--crimson);
-  transform: scaleX(0);
-  transition: transform 0.18s ease;
-}
-
-.chip:hover::after,
-.chip:focus-visible::after,
-.chip.is-paused::after {
-  transform: scaleX(1);
-}
-
-.chip:focus-visible {
-  outline: none;
-}
-
-.chip:hover {
-  background: rgba(175, 174, 162, 0.08);
-}
-
-.chip:active {
-  background: rgba(175, 174, 162, 0.14);
-}
-
-.chip:disabled {
-  cursor: default;
-  opacity: 0.35;
-}
-
-.chip:disabled::after {
-  transform: scaleX(0);
-}
-
 .chip svg {
-  width: 16px;
-  height: 16px;
-  fill: var(--stone);
+  width: 18px;
+  height: 18px;
+  fill: #323232;
   stroke: none;
-  transition: fill 0.15s ease, stroke 0.15s ease;
-}
-
-.chip:hover svg {
-  fill: #f3ead7;
 }
 
 #btn-fullscreen svg {
   fill: none;
-  stroke: var(--stone);
-  stroke-width: 1.8;
+  stroke: #323232;
+  stroke-width: 2;
   stroke-linecap: square;
 }
 
-#btn-fullscreen:hover svg {
-  fill: none;
-  stroke: #f3ead7;
+.chip:hover {
+  background: #ffffff;
+  border-color: rgba(50, 50, 50, 0.5);
+}
+
+.chip:active {
+  background: #c8c8c8;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.chip:focus-visible {
+  outline: 2px solid var(--crimson);
+  outline-offset: 2px;
+}
+
+/* Paused: the button shows "resume" and carries the crimson accent. */
+.chip.is-paused {
+  border-color: var(--crimson);
+  box-shadow: inset 0 -2px 0 var(--crimson), 0 1px 2px rgba(0, 0, 0, 0.18);
+}
+
+.chip.is-paused svg {
+  fill: var(--crimson);
+}
+
+.chip:disabled {
+  cursor: default;
+  opacity: 0.45;
+  box-shadow: none;
 }
 
 #btn-fullscreen .icon-exit,
@@ -279,12 +248,13 @@ body.ready #loading {
   display: block;
 }
 
-/* Desktop: the bar recedes while the mouse is idle and returns on movement. */
+/* Desktop: the buttons recede while the mouse is idle and return on movement. */
 body.idle:not(.touch) #top-controls {
-  opacity: 0.28;
+  opacity: 0.4;
 }
 
-body:not(.touch) #top-controls:hover {
+body:not(.touch) #top-controls:hover,
+body:not(.touch) #top-controls:focus-within {
   opacity: 1;
 }
 
@@ -293,7 +263,7 @@ body.standalone #btn-fullscreen {
   display: none;
 }
 
-/* Portrait phones: the bar sits just below the game instead of over it. */
+/* Portrait phones: the buttons sit just below the game instead of over it. */
 body.touch.portrait #top-controls {
   top: calc(var(--stage-bottom, 0px) + 10px);
   right: calc(var(--safe-r) + 12px);
