@@ -29,6 +29,8 @@ namespace MazeRunner.Camera
         
         private Vector3 velocity = Vector3.zero;
         private float currentLookAhead = 0f;
+        private Transform cachedTarget;
+        private Rigidbody2D targetBody;
 
         private void LateUpdate()
         {
@@ -40,7 +42,13 @@ namespace MazeRunner.Camera
             // Add look ahead if enabled
             if (useLookAhead)
             {
-                float targetLookAhead = target.GetComponent<Rigidbody2D>()?.linearVelocity.x ?? 0f;
+                // Look the body up once per target instead of every frame.
+                if (cachedTarget != target)
+                {
+                    cachedTarget = target;
+                    targetBody = target.GetComponent<Rigidbody2D>();
+                }
+                float targetLookAhead = targetBody != null ? targetBody.linearVelocity.x : 0f;
                 targetLookAhead = Mathf.Clamp(targetLookAhead, -1f, 1f) * lookAheadDistance;
                 currentLookAhead = Mathf.Lerp(currentLookAhead, targetLookAhead, Time.deltaTime * lookAheadSpeed);
                 desiredPosition.x += currentLookAhead;
