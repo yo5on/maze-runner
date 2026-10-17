@@ -1,6 +1,10 @@
+using System.Collections;
+using System.Collections.Generic;
+using System.Globalization;
 using System.Runtime.InteropServices;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 namespace MazeRunner.UI
 {
@@ -17,6 +21,12 @@ namespace MazeRunner.UI
     ///
     /// Unity -> page: QuitToPreview() (main menu Quit) calls window.mazeRunnerQuit(),
     /// which returns to the preview page.
+    ///
+    /// Page -> Unity: SendMessage("WebBridge", "SetSafeArea", "l,t,r,b") passes how far the
+    /// device's safe area (notch, rounded corners) cuts into the game, in render pixels.
+    /// HUD elements anchored to a screen edge (direct children of a root overlay canvas,
+    /// e.g. the hearts) are moved in by that amount; centred and full-screen UI such as
+    /// the menus is left alone.
     ///
     /// Page -> Unity: unityInstance.SendMessage("WebBridge", "TogglePause") opens or
     /// closes the original pause menu through PauseMenuController.Pause()/Resume(),
@@ -48,6 +58,9 @@ namespace MazeRunner.UI
         private GameObject pausePanel;
         private string lastState;
 
+        private Vector4 safeArea; // left, top, right, bottom in screen pixels
+        private readonly Dictionary<RectTransform, Vector2> hudBasePositions = new Dictionary<RectTransform, Vector2>();
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void Create()
         {
@@ -70,6 +83,59 @@ namespace MazeRunner.UI
         private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
         {
             FindPauseMenu();
+            hudBasePositions.Clear();
+            StartCoroutine(ApplySafeAreaNextFrame());
+        }
+
+        // Called from the page via SendMessage: "left,top,right,bottom" in screen pixels.
+        public void SetSafeArea(string value)
+        {
+            string[] parts = value.Split(',');
+            if (parts.Length != 4) return;
+            var v = new float[4];
+            for (int i = 0; i < 4; i++)
+            {
+                if (!float.TryParse(parts[i], NumberStyles.Float, CultureInfo.InvariantCulture, out v[i])) return;
+            }
+            safeArea = new Vector4(v[0], v[1], v[2], v[3]);
+            ApplySafeArea();
+        }
+
+        private IEnumerator ApplySafeAreaNextFrame()
+        {
+            yield return null; // let canvas scalers settle after the scene loads
+            ApplySafeArea();
+        }
+
+        private void ApplySafeArea()
+        {
+            foreach (Canvas canvas in FindObjectsByType<Canvas>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            {
+                if (!canvas.isRootCanvas || canvas.renderMode != RenderMode.ScreenSpaceOverlay) continue;
+                var scaler = canvas.GetComponent<CanvasScaler>();
+                float scale = scaler != null && scaler.uiScaleMode == CanvasScaler.ScaleMode.ConstantPixelSize
+                    ? scaler.scaleFactor : canvas.scaleFactor;
+                if (scale <= 0f) scale = 1f;
+
+                foreach (Transform child in canvas.transform)
+                {
+                    if (!(child is RectTransform rect)) continue;
+                    if (!hudBasePositions.TryGetValue(rect, out Vector2 basePosition))
+                    {
+                        basePosition = rect.anchoredPosition;
+                        hudBasePositions[rect] = basePosition;
+                    }
+
+                    Vector2 min = rect.anchorMin, max = rect.anchorMax;
+                    Vector2 offset = Vector2.zero;
+                    if (min.x == 0f && max.x == 0f) offset.x = safeArea.x / scale;
+                    else if (min.x == 1f && max.x == 1f) offset.x = -safeArea.z / scale;
+                    if (min.y == 1f && max.y == 1f) offset.y = -safeArea.y / scale;
+                    else if (min.y == 0f && max.y == 0f) offset.y = safeArea.w / scale;
+
+                    rect.anchoredPosition = basePosition + offset;
+                }
+            }
         }
 
         private void FindPauseMenu()

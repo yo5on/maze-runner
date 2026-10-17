@@ -130,10 +130,12 @@
       body.classList.toggle("landscape", !portrait);
       root.style.setProperty("--vh", vp.h + "px");
 
-      // Area the game may occupy. Keep it clear of notches / rounded corners
-      // on the sides; top and bottom can run edge to edge in landscape.
-      var left = isTouch ? inset.left : 0;
-      var right = isTouch ? inset.right : 0;
+      // Area the game may occupy. Phones in landscape run edge to edge (no side
+      // bars); the safe-area insets are passed to Unity instead, which keeps its
+      // edge-anchored HUD (the hearts) clear of the notch. Portrait keeps the game
+      // inside the safe area.
+      var left = isTouch && portrait ? inset.left : 0;
+      var right = isTouch && portrait ? inset.right : 0;
       var top = isTouch && portrait ? inset.top + 6 : 0;
       var availW = vp.w - left - right;
       var availH = vp.h - top;
@@ -170,6 +172,23 @@
       root.style.setProperty("--stage-bottom", (y + h) + "px");
       root.style.setProperty("--stage-right", (vp.w - x - w) + "px");
       updateRotateHint();
+
+      // How far the device's safe area cuts into the game, in render pixels.
+      var px = canvas.width / w;
+      sendSafeArea([
+        Math.max(0, inset.left - x),
+        Math.max(0, inset.top - y),
+        Math.max(0, (x + w) - (vp.w - inset.right)),
+        Math.max(0, (y + h) - (vp.h - inset.bottom))
+      ].map(function (v) { return Math.round(v * px); }).join(","));
+    }
+
+    // Unity side: WebBridge.SetSafeArea("left,top,right,bottom"), sent when it changes.
+    var lastSafeArea = "";
+    function sendSafeArea(value) {
+      if (value === lastSafeArea || !window.unityInstance) return;
+      lastSafeArea = value;
+      try { window.unityInstance.SendMessage("WebBridge", "SetSafeArea", value); } catch (e) { /* bridge optional */ }
     }
 
     var layoutTimer = 0;
@@ -533,6 +552,8 @@
         window.unityInstance = instance;
         try { sessionStorage.removeItem("mr-reloaded"); } catch (e) { /* ignore */ }
         try { instance.SendMessage("WebBridge", "RequestState"); } catch (e) { /* bridge optional */ }
+        lastSafeArea = "";
+        layout();
         body.classList.add("ready");
         focusGame();
       }).catch(function (message) {
