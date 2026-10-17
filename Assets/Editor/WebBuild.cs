@@ -73,7 +73,9 @@ namespace MazeRunner.EditorTools
             PlayerSettings.WebGL.compressionFormat = WebGLCompressionFormat.Gzip;
             PlayerSettings.WebGL.decompressionFallback = true;
             PlayerSettings.WebGL.dataCaching = true;
-            PlayerSettings.WebGL.nameFilesAsHashes = false;
+            // Content-hashed file names: a page cached from an earlier deploy never
+            // mixes with new build files (the page reloads once if its files are gone).
+            PlayerSettings.WebGL.nameFilesAsHashes = true;
             PlayerSettings.WebGL.showDiagnostics = false;
 
             // Smaller wasm and faster loading.
