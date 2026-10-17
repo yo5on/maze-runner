@@ -3,70 +3,173 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#070a10">
+  <meta name="color-scheme" content="dark">
+  <meta name="description" content="Maze Runner - a 2D platformer made with Unity, playable in your browser.">
+  <!-- Home Screen / standalone mode (the supported way to get a full-screen game on iPhone). -->
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="theme-color" content="#0b0f14">
-  <meta name="description" content="Maze Runner - a 2D platformer made with Unity, playable in your browser.">
-  <title>{{{ PRODUCT_NAME }}}</title>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Maze Runner">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="TemplateData/icon-180.png">
+  <link rel="icon" type="image/png" href="TemplateData/icon-192.png">
+  <title>Maze Runner</title>
   <link rel="stylesheet" href="TemplateData/style.css">
 </head>
 <body>
   <div id="stage">
     <canvas id="unity-canvas" tabindex="-1"></canvas>
-    <div id="loading">
-      <div id="loading-title">{{{ PRODUCT_NAME }}}</div>
+    <div id="loading" role="status" aria-live="polite">
+      <div id="loading-title">MAZE RUNNER</div>
       <div id="loading-track"><div id="loading-fill"></div></div>
-      <div id="loading-text">Loading&hellip;</div>
+      <div id="loading-text">0%</div>
     </div>
   </div>
 
-  <div id="touch-controls" aria-hidden="true">
-    <div class="pad pad-left">
-      <button class="tc" data-key="ArrowLeft">&#9664;</button>
-      <button class="tc" data-key="ArrowRight">&#9654;</button>
+  <!-- On-screen controls (touch devices only). -->
+  <div id="touch-controls">
+    <div id="joystick" aria-label="Movement joystick">
+      <div class="joy-base">
+        <span class="joy-arrow joy-arrow-left"></span>
+        <span class="joy-arrow joy-arrow-right"></span>
+        <div class="joy-thumb"></div>
+      </div>
     </div>
-    <div class="pad pad-right">
-      <button class="tc tc-jump" data-key="Space">JUMP</button>
-    </div>
-    <button class="tc tc-pause" data-key="Escape">II</button>
-    <div id="rotate-hint">Rotate your device for a bigger view</div>
+    <button id="btn-jump" class="ctrl" type="button" aria-label="Jump">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5l-7 7h4.5v7h5v-7H19z"/></svg>
+      <span>JUMP</span>
+    </button>
   </div>
 
-  <div id="toolbar">
-    <button id="btn-fullscreen" title="Fullscreen">&#x26F6;</button>
+  <div id="top-controls">
+    <button id="btn-pause" class="chip" type="button" aria-label="Pause">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="5" width="3.6" height="14" rx="1.2"/><rect x="13.9" y="5" width="3.6" height="14" rx="1.2"/></svg>
+    </button>
+    <button id="btn-fullscreen" class="chip" type="button" aria-label="Enter fullscreen" aria-pressed="false">
+      <svg class="icon-enter" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></svg>
+      <svg class="icon-exit" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4v5H4M20 9h-5V4M15 20v-5h5M4 15h5v5"/></svg>
+    </button>
   </div>
 
+  <div id="rotate-hint" hidden>
+    <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="3" width="10" height="18" rx="2"/><path d="M3 14a9 9 0 0 0 7 7M21 10a9 9 0 0 0-7-7"/></svg>
+    <span>Rotate for the full view</span>
+    <button type="button" aria-label="Dismiss">&times;</button>
+  </div>
+
+  <div id="sheet" hidden role="dialog" aria-modal="true" aria-labelledby="sheet-title">
+    <div class="sheet-card">
+      <div id="sheet-title" class="sheet-title">Play full screen</div>
+      <div id="sheet-body" class="sheet-body"></div>
+      <button id="sheet-close" type="button">OK</button>
+    </div>
+  </div>
+
+  <div id="safe-probe" aria-hidden="true"></div>
   <div id="error" hidden></div>
 
   <script>
-    // Game renders at a fixed 1920x1080 backbuffer (the resolution the UI was
-    // laid out for) and is scaled with CSS to fit the window, letterboxed.
+  (function () {
+    "use strict";
+
+    // The game renders at a fixed 1920x1080 backbuffer (the resolution its UI was
+    // laid out for) and is scaled with CSS to fit, preserving the 16:9 aspect ratio.
     var GAME_W = 1920, GAME_H = 1080;
 
+    var root = document.documentElement;
+    var body = document.body;
     var canvas = document.getElementById("unity-canvas");
     var stage = document.getElementById("stage");
-    var isTouch = ("ontouchstart" in window) || navigator.maxTouchPoints > 0;
-    if (isTouch) document.body.classList.add("touch");
+    var probe = document.getElementById("safe-probe");
+
+    var ua = navigator.userAgent;
+    var isIOS = /iPad|iPhone|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+    var isTouch = isIOS || window.matchMedia("(pointer: coarse)").matches;
+    var isStandalone = navigator.standalone === true ||
+      window.matchMedia("(display-mode: standalone), (display-mode: fullscreen)").matches;
+
+    body.classList.toggle("touch", isTouch);
+    body.classList.toggle("standalone", isStandalone);
 
     canvas.width = GAME_W;
     canvas.height = GAME_H;
 
-    function layout() {
-      var vw = window.innerWidth, vh = window.innerHeight;
-      var portrait = vh > vw;
-      document.body.classList.toggle("portrait", portrait);
-      // In portrait on touch devices leave room below the game for the controls.
-      var availH = (isTouch && portrait) ? vh * 0.62 : vh;
-      var scale = Math.min(vw / GAME_W, availH / GAME_H);
-      stage.style.width = Math.floor(GAME_W * scale) + "px";
-      stage.style.height = Math.floor(GAME_H * scale) + "px";
-      document.documentElement.style.setProperty("--stage-h", Math.floor(GAME_H * scale) + "px");
+    // ------------------------------------------------------------------ layout
+    function safeInsets() {
+      var cs = getComputedStyle(probe);
+      return {
+        top: parseFloat(cs.paddingTop) || 0,
+        right: parseFloat(cs.paddingRight) || 0,
+        bottom: parseFloat(cs.paddingBottom) || 0,
+        left: parseFloat(cs.paddingLeft) || 0
+      };
     }
-    window.addEventListener("resize", layout);
-    window.addEventListener("orientationchange", function () { setTimeout(layout, 200); });
-    layout();
 
-    // ---- Touch controls: forward to the same keyboard keys the game already uses ----
+    function viewportSize() {
+      // innerWidth/innerHeight track the visible area on iOS Safari as its
+      // toolbars collapse and expand; visualViewport is the more precise source.
+      var vv = window.visualViewport;
+      var w = vv ? Math.round(vv.width) : window.innerWidth;
+      var h = vv ? Math.round(vv.height) : window.innerHeight;
+      return { w: Math.min(w, window.innerWidth) || w, h: Math.min(h, window.innerHeight) || h };
+    }
+
+    function layout() {
+      var vp = viewportSize();
+      var inset = safeInsets();
+      var portrait = vp.h > vp.w;
+      body.classList.toggle("portrait", portrait);
+      body.classList.toggle("landscape", !portrait);
+      root.style.setProperty("--vh", vp.h + "px");
+
+      // Area the game may occupy. Keep it clear of notches / rounded corners
+      // on the sides; top and bottom can run edge to edge in landscape.
+      var left = isTouch ? inset.left : 0;
+      var right = isTouch ? inset.right : 0;
+      var top = isTouch && portrait ? inset.top + 6 : 0;
+      var availW = vp.w - left - right;
+      var availH = vp.h - top;
+
+      var scale = Math.min(availW / GAME_W, availH / GAME_H);
+      var w = Math.floor(GAME_W * scale), h = Math.floor(GAME_H * scale);
+      var x = Math.round(left + (availW - w) / 2);
+      var y = Math.round((vp.h - h) / 2);
+      if (isTouch && portrait) {
+        // Center the game in the space above the controls, leaving a row
+        // below it for the hint / pause / fullscreen chips.
+        var controlsTop = joyBase.getBoundingClientRect().top || vp.h * 0.7;
+        var room = controlsTop - top - 16 - (h + 56);
+        y = Math.round(top + Math.max(0, room / 2));
+      }
+
+      stage.style.width = w + "px";
+      stage.style.height = h + "px";
+      stage.style.transform = "translate(" + x + "px," + y + "px)";
+      root.style.setProperty("--stage-x", x + "px");
+      root.style.setProperty("--stage-y", y + "px");
+      root.style.setProperty("--stage-w", w + "px");
+      root.style.setProperty("--stage-h", h + "px");
+      root.style.setProperty("--stage-bottom", (y + h) + "px");
+      updateRotateHint();
+    }
+
+    var layoutTimer = 0;
+    function scheduleLayout() {
+      layout();
+      // iOS reports the final viewport size a little after rotation / toolbar changes.
+      clearTimeout(layoutTimer);
+      layoutTimer = setTimeout(layout, 350);
+    }
+    window.addEventListener("resize", scheduleLayout);
+    window.addEventListener("orientationchange", scheduleLayout);
+    if (window.visualViewport) window.visualViewport.addEventListener("resize", scheduleLayout);
+
+    // ------------------------------------------------- input bridge (keyboard)
+    // The game reads its existing Input System actions (Move: A/D/arrows,
+    // Jump: Space, Pause: Escape). On-screen controls emit the same key
+    // transitions - one keydown when a control engages, one keyup when it
+    // releases - so gameplay code, physics and input bindings stay unchanged.
     var KEYS = {
       ArrowLeft:  { key: "ArrowLeft",  keyCode: 37 },
       ArrowRight: { key: "ArrowRight", keyCode: 39 },
@@ -81,63 +184,243 @@
         key: k.key, code: code, keyCode: k.keyCode, which: k.keyCode,
         bubbles: true, cancelable: true
       });
+      // Some engines ignore keyCode/which in the constructor; make sure they are set.
+      if (ev.keyCode !== k.keyCode) {
+        try {
+          Object.defineProperty(ev, "keyCode", { get: function () { return k.keyCode; } });
+          Object.defineProperty(ev, "which", { get: function () { return k.keyCode; } });
+        } catch (e) { /* ignore */ }
+      }
       canvas.dispatchEvent(ev);
     }
     function press(code) { if (!held[code]) { held[code] = true; sendKey("keydown", code); } }
     function release(code) { if (held[code]) { held[code] = false; sendKey("keyup", code); } }
-    function releaseAll() { Object.keys(held).forEach(release); }
+    function tap(code) { press(code); setTimeout(function () { release(code); }, 60); }
 
-    document.querySelectorAll("#touch-controls .tc").forEach(function (btn) {
-      var code = btn.getAttribute("data-key");
-      btn.addEventListener("pointerdown", function (e) {
-        e.preventDefault();
-        btn.classList.add("down");
-        press(code);
-        try { btn.setPointerCapture(e.pointerId); } catch (err) { /* capture is optional */ }
-      });
-      ["pointerup", "pointercancel", "lostpointercapture"].forEach(function (t) {
-        btn.addEventListener(t, function (e) {
-          e.preventDefault();
-          btn.classList.remove("down");
-          release(code);
-        });
-      });
-      btn.addEventListener("contextmenu", function (e) { e.preventDefault(); });
+    // ----------------------------------------------------------------- joystick
+    var joyZone = document.getElementById("joystick");
+    var joyBase = joyZone.querySelector(".joy-base");
+    var joyThumb = joyZone.querySelector(".joy-thumb");
+    var joy = { id: null, cx: 0, cy: 0, travel: 0, dir: 0 };
+    var ENGAGE = 0.32, DISENGAGE = 0.2; // fraction of travel, with hysteresis
+
+    function setDir(dir) {
+      if (dir === joy.dir) return;
+      if (joy.dir === -1) release("ArrowLeft");
+      if (joy.dir === 1) release("ArrowRight");
+      joy.dir = dir;
+      if (dir === -1) press("ArrowLeft");
+      if (dir === 1) press("ArrowRight");
+      joyZone.setAttribute("data-dir", dir === -1 ? "left" : dir === 1 ? "right" : "");
+    }
+
+    function moveJoy(e) {
+      var dx = e.clientX - joy.cx, dy = e.clientY - joy.cy;
+      var dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist > joy.travel) { dx *= joy.travel / dist; dy *= joy.travel / dist; }
+      joyThumb.style.transform = "translate(" + dx + "px," + dy + "px)";
+      var nx = joy.travel ? dx / joy.travel : 0;
+      var dir = joy.dir;
+      if (nx >= ENGAGE) dir = 1;
+      else if (nx <= -ENGAGE) dir = -1;
+      else if (Math.abs(nx) < DISENGAGE) dir = 0;
+      setDir(dir);
+    }
+
+    function endJoy() {
+      joy.id = null;
+      joyZone.classList.remove("active");
+      joyThumb.style.transform = "";
+      setDir(0);
+    }
+
+    joyZone.addEventListener("pointerdown", function (e) {
+      e.preventDefault();
+      if (joy.id !== null) return; // another finger already owns the stick
+      joy.id = e.pointerId;
+      try { joyZone.setPointerCapture(e.pointerId); } catch (err) { /* optional */ }
+      var r = joyBase.getBoundingClientRect();
+      joy.cx = r.left + r.width / 2;
+      joy.cy = r.top + r.height / 2;
+      joy.travel = r.width * 0.3;
+      joyZone.classList.add("active");
+      moveJoy(e);
     });
+    joyZone.addEventListener("pointermove", function (e) {
+      if (e.pointerId !== joy.id) return;
+      e.preventDefault();
+      moveJoy(e);
+    });
+    ["pointerup", "pointercancel", "lostpointercapture"].forEach(function (type) {
+      joyZone.addEventListener(type, function (e) {
+        if (e.pointerId === joy.id) endJoy();
+      });
+    });
+
+    // --------------------------------------------------------------------- jump
+    var jumpBtn = document.getElementById("btn-jump");
+    var jumpId = null;
+    jumpBtn.addEventListener("pointerdown", function (e) {
+      e.preventDefault();
+      if (jumpId !== null) return;
+      jumpId = e.pointerId;
+      try { jumpBtn.setPointerCapture(e.pointerId); } catch (err) { /* optional */ }
+      jumpBtn.classList.add("down");
+      press("Space"); // one keydown per touch; holding = higher jump, as on keyboard
+    });
+    ["pointerup", "pointercancel", "lostpointercapture"].forEach(function (type) {
+      jumpBtn.addEventListener(type, function (e) {
+        if (e.pointerId !== jumpId) return;
+        jumpId = null;
+        jumpBtn.classList.remove("down");
+        release("Space");
+      });
+    });
+
+    function releaseAll() {
+      if (joy.id !== null) endJoy();
+      if (jumpId !== null) { jumpId = null; jumpBtn.classList.remove("down"); }
+      Object.keys(held).forEach(release);
+    }
     window.addEventListener("blur", releaseAll);
     document.addEventListener("visibilitychange", function () { if (document.hidden) releaseAll(); });
 
-    // Block pinch-zoom / double-tap zoom / scrolling while playing.
+    // -------------------------------------------------------------------- pause
+    document.getElementById("btn-pause").addEventListener("click", function () {
+      tap("Escape");
+      focusGame();
+    });
+
+    // --------------------------------------------- page gestures / focus
+    // No scrolling, pinch-zoom or double-tap zoom while playing.
     document.addEventListener("gesturestart", function (e) { e.preventDefault(); });
-    document.addEventListener("touchmove", function (e) { e.preventDefault(); }, { passive: false });
+    document.addEventListener("touchmove", function (e) {
+      if (!e.target.closest || !e.target.closest("#sheet")) e.preventDefault();
+    }, { passive: false });
     var lastTouchEnd = 0;
     document.addEventListener("touchend", function (e) {
       var now = Date.now();
-      if (now - lastTouchEnd < 350) e.preventDefault();
+      var onButton = e.target.closest && e.target.closest("button");
+      if (!onButton && now - lastTouchEnd < 350) e.preventDefault();
       lastTouchEnd = now;
     }, { passive: false });
+    document.addEventListener("contextmenu", function (e) {
+      if (e.target.closest && e.target.closest("#touch-controls, #top-controls")) e.preventDefault();
+    });
 
-    // Keep keyboard focus on the game.
-    function focusGame() { try { canvas.focus({ preventScroll: true }); } catch (e) { canvas.focus(); } }
+    function focusGame() {
+      try { canvas.focus({ preventScroll: true }); } catch (e) { canvas.focus(); }
+    }
     canvas.addEventListener("pointerdown", focusGame);
 
-    document.getElementById("btn-fullscreen").addEventListener("click", function () {
-      var el = document.documentElement;
-      if (document.fullscreenElement || document.webkitFullscreenElement) {
-        (document.exitFullscreen || document.webkitExitFullscreen).call(document);
-      } else if (el.requestFullscreen || el.webkitRequestFullscreen) {
-        (el.requestFullscreen || el.webkitRequestFullscreen).call(el);
+    // --------------------------------------------------------------- fullscreen
+    var fsBtn = document.getElementById("btn-fullscreen");
+    var fsTarget = root; // whole page, so the touch controls stay visible
+
+    function fsSupported() {
+      return !!(document.fullscreenEnabled || document.webkitFullscreenEnabled) &&
+        !!(fsTarget.requestFullscreen || fsTarget.webkitRequestFullscreen);
+    }
+    function fsActive() {
+      return !!(document.fullscreenElement || document.webkitFullscreenElement);
+    }
+    function onFullscreenChange() {
+      var active = fsActive();
+      body.classList.toggle("is-fullscreen", active);
+      fsBtn.setAttribute("aria-pressed", active ? "true" : "false");
+      fsBtn.setAttribute("aria-label", active ? "Exit fullscreen" : "Enter fullscreen");
+      scheduleLayout();
+    }
+    document.addEventListener("fullscreenchange", onFullscreenChange);
+    document.addEventListener("webkitfullscreenchange", onFullscreenChange);
+
+    function lockLandscape() {
+      // Only where the Screen Orientation API allows it (e.g. Android Chrome in fullscreen).
+      if (isTouch && screen.orientation && screen.orientation.lock) {
+        screen.orientation.lock("landscape").catch(function () { /* unsupported: ignore */ });
+      }
+    }
+
+    function enterFullscreen() {
+      var result;
+      try {
+        result = fsTarget.requestFullscreen
+          ? fsTarget.requestFullscreen({ navigationUI: "hide" })
+          : fsTarget.webkitRequestFullscreen();
+      } catch (err) {
+        showFullscreenHelp();
+        return;
+      }
+      if (result && typeof result.then === "function") {
+        result.then(lockLandscape, function () { showFullscreenHelp(); });
+      } else {
+        setTimeout(lockLandscape, 300);
+      }
+    }
+    function exitFullscreen() {
+      var result = document.exitFullscreen ? document.exitFullscreen() : document.webkitExitFullscreen();
+      if (result && typeof result.catch === "function") result.catch(function () { /* ignore */ });
+    }
+
+    fsBtn.addEventListener("click", function () {
+      if (fsSupported()) {
+        if (fsActive()) exitFullscreen(); else enterFullscreen();
+      } else {
+        showFullscreenHelp();
       }
       focusGame();
     });
 
+    // -------------------------------------------- fallback help (iPhone etc.)
+    var sheet = document.getElementById("sheet");
+    var sheetBody = document.getElementById("sheet-body");
+    function showFullscreenHelp() {
+      releaseAll();
+      if (isIOS) {
+        sheetBody.innerHTML =
+          "<p>Safari on iPhone does not allow web pages to go full screen. " +
+          "To play without the browser bars, add the game to your Home Screen:</p>" +
+          "<ol><li>Tap <b>Share</b> " +
+          "<svg class='inline-icon' viewBox='0 0 24 24' aria-hidden='true'><path d='M12 3v12M8 7l4-4 4 4M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7'/></svg>" +
+          " in the browser toolbar.</li>" +
+          "<li>Choose <b>Add to Home Screen</b>.</li>" +
+          "<li>Open <b>Maze Runner</b> from your Home Screen and turn your phone sideways.</li></ol>" +
+          "<p class='sheet-note'>Progress saved in the Home Screen app is kept separately from Safari.</p>";
+      } else {
+        sheetBody.innerHTML =
+          "<p>This browser does not support full screen for web pages. " +
+          "Turn your device sideways for the largest view, or use your browser's menu to install or add the game to your home screen.</p>";
+      }
+      sheet.hidden = false;
+    }
+    document.getElementById("sheet-close").addEventListener("click", function () {
+      sheet.hidden = true;
+      focusGame();
+    });
+    sheet.addEventListener("click", function (e) { if (e.target === sheet) { sheet.hidden = true; focusGame(); } });
+
+    // ------------------------------------------------------------- rotate hint
+    var hint = document.getElementById("rotate-hint");
+    var hintDismissed = false;
+    try { hintDismissed = localStorage.getItem("mr-rotate-hint") === "1"; } catch (e) { /* ignore */ }
+    function updateRotateHint() {
+      hint.hidden = !(isTouch && body.classList.contains("portrait") && !hintDismissed);
+    }
+    hint.querySelector("button").addEventListener("click", function () {
+      hintDismissed = true;
+      try { localStorage.setItem("mr-rotate-hint", "1"); } catch (e) { /* ignore */ }
+      updateRotateHint();
+    });
+
+    layout();
+
+    // ------------------------------------------------------------ unity loader
     function showError(msg) {
       var box = document.getElementById("error");
       box.textContent = msg;
       box.hidden = false;
     }
 
-    // ---- Unity loader ----
     var buildUrl = "Build";
     var config = {
       arguments: [],
@@ -169,19 +452,20 @@
     script.src = buildUrl + "/{{{ LOADER_FILENAME }}}";
     script.onload = function () {
       createUnityInstance(canvas, config, function (progress) {
-        fill.style.width = Math.round(progress * 100) + "%";
-        loadingText.textContent = "Loading… " + Math.round(progress * 100) + "%";
+        var pct = Math.round(progress * 100);
+        fill.style.width = pct + "%";
+        loadingText.textContent = pct + "%";
       }).then(function (instance) {
         window.unityInstance = instance;
-        document.getElementById("loading").style.display = "none";
-        document.body.classList.add("ready");
+        body.classList.add("ready");
         focusGame();
       }).catch(function (message) {
         showError(String(message));
       });
     };
     script.onerror = function () { showError("Failed to load the game files. Please refresh the page."); };
-    document.body.appendChild(script);
+    body.appendChild(script);
+  })();
   </script>
 </body>
 </html>
