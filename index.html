@@ -319,6 +319,14 @@
       pauseBtn.setAttribute("aria-label", paused ? "Resume" : "Pause");
       pauseBtn.title = paused ? "Resume (Esc)" : "Pause (Esc)";
     };
+    // Main menu Quit (via WebBridge.QuitToPreview / MazeRunner_Quit): a page cannot
+    // close its own tab, so return to the preview page. That page loads no Unity
+    // files, so the game is not started again until Play Now is clicked.
+    window.mazeRunnerQuit = function () {
+      releaseAll();
+      window.location.assign(new URL("preview/", window.location.href).href);
+    };
+
     pauseBtn.addEventListener("click", function () {
       if (window.unityInstance) {
         window.unityInstance.SendMessage("WebBridge", "TogglePause");
@@ -490,9 +498,9 @@
     var buildUrl = "Build";
     var config = {
       arguments: [],
-      dataUrl: buildUrl + "/WebGL4.data.unityweb",
-      frameworkUrl: buildUrl + "/WebGL4.framework.js.unityweb",
-      codeUrl: buildUrl + "/WebGL4.wasm.unityweb",
+      dataUrl: buildUrl + "/WebGL5.data.unityweb",
+      frameworkUrl: buildUrl + "/WebGL5.framework.js.unityweb",
+      codeUrl: buildUrl + "/WebGL5.wasm.unityweb",
       streamingAssetsUrl: "StreamingAssets",
       companyName: "DefaultCompany",
       productName: "maze-runner",
@@ -507,7 +515,7 @@
     var fill = document.getElementById("loading-fill");
     var loadingText = document.getElementById("loading-text");
     var script = document.createElement("script");
-    script.src = buildUrl + "/WebGL4.loader.js";
+    script.src = buildUrl + "/WebGL5.loader.js";
     script.onload = function () {
       createUnityInstance(canvas, config, function (progress) {
         var pct = Math.round(progress * 100);
@@ -515,14 +523,33 @@
         loadingText.textContent = "Loading " + pct + "%";
       }).then(function (instance) {
         window.unityInstance = instance;
+        try { sessionStorage.removeItem("mr-reloaded"); } catch (e) { /* ignore */ }
         try { instance.SendMessage("WebBridge", "RequestState"); } catch (e) { /* bridge optional */ }
         body.classList.add("ready");
         focusGame();
       }).catch(function (message) {
+        // A page cached from an earlier deploy can ask for build files that no longer
+        // exist. Reload once (the browser revalidates the page) before reporting it.
+        var reloaded = false;
+        try { reloaded = sessionStorage.getItem("mr-reloaded") === "1"; } catch (e) { /* ignore */ }
+        if (!reloaded) {
+          try { sessionStorage.setItem("mr-reloaded", "1"); } catch (e) { /* ignore */ }
+          window.location.reload();
+          return;
+        }
         showError(String(message));
       });
     };
-    script.onerror = function () { showError("Failed to load the game files. Please refresh the page."); };
+    script.onerror = function () {
+      var reloaded = false;
+      try { reloaded = sessionStorage.getItem("mr-reloaded") === "1"; } catch (e) { /* ignore */ }
+      if (!reloaded) {
+        try { sessionStorage.setItem("mr-reloaded", "1"); } catch (e) { /* ignore */ }
+        window.location.reload();
+        return;
+      }
+      showError("Failed to load the game files. Please refresh the page.");
+    };
     body.appendChild(script);
   })();
   </script>
