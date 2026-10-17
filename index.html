@@ -331,6 +331,9 @@
     window.mazeRunnerOnState = function (state) {
       gameState = state;
       body.setAttribute("data-game", state);
+      // The joystick and Jump button only show while playing (see style.css); let go of
+      // anything they were holding the moment play stops, so no key stays pressed.
+      if (state !== "playing") releaseAll();
       pauseBtn.hidden = state === "none";
       pauseBtn.disabled = state === "blocked";
       var paused = state === "paused";

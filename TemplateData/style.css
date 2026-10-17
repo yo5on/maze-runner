@@ -269,6 +269,14 @@ body.touch.portrait #top-controls {
 
 body.touch #touch-controls {
   display: block;
+  /* Laid out (the portrait layout measures the joystick) but invisible and untouchable
+     until a level is actually running: hidden while Unity loads, on every menu, while
+     paused and on game over / level complete. The state comes from WebBridge. */
+  visibility: hidden;
+}
+
+body.touch[data-game="playing"] #touch-controls {
+  visibility: visible;
 }
 
 body.touch .chip {
