@@ -11,6 +11,25 @@
 
 ---
 
+<div align="center"><samp><b>▶ <a href="https://yo5on.github.io/maze-runner/">Play Online</a></b></samp></div>
+
+<div align="center"><samp>Runs in desktop and mobile browsers via Unity's Web (WebGL) platform, hosted on GitHub Pages. About 16 MB to download; first load takes a few seconds.</samp></div>
+
+---
+
+<div align="center"><samp><b>Controls</b></samp></div>
+
+| <samp>Action</samp> | <samp>Desktop</samp> | <samp>Phone / tablet</samp> |
+|---|---|---|
+| <samp>Move</samp> | <samp><kbd>A</kbd>/<kbd>D</kbd> or <kbd>←</kbd>/<kbd>→</kbd></samp> | <samp>On-screen ◀ ▶ buttons</samp> |
+| <samp>Jump (hold for a higher jump)</samp> | <samp><kbd>Space</kbd></samp> | <samp>On-screen JUMP button</samp> |
+| <samp>Pause</samp> | <samp><kbd>Esc</kbd></samp> | <samp>On-screen II button</samp> |
+| <samp>Menus</samp> | <samp>Mouse click</samp> | <samp>Tap</samp> |
+
+<samp>Enemies are defeated by landing on them. The on-screen buttons appear only on touch devices; landscape gives the largest view.</samp>
+
+---
+
 <div align="center"><samp><b>Gameplay Preview</b></samp></div>
 
 <samp>A recording of Level 1 being played in the Unity Editor’s Game view: platforming between ledges, goblin enemies, the heart health display taking damage, and the level-complete menu. It was captured with Unity 6.5 (<b>6000.5.1f1</b>); the Editor’s menu bar and toolbar are visible at the top of the frame.</samp>
@@ -46,6 +65,47 @@
 5. <samp>Use the Unity Editor Play control to run the selected scene.</samp>
 
 <samp>The six intended application scenes enabled in the build settings are <code>Level1</code>, <code>Level2</code>, <code>Level3</code>, <code>LevelSelect</code>, <code>MainMenu</code>, and <code>Customization</code>.</samp>
+
+---
+
+<div align="center"><samp><b>Web Build and Deployment</b></samp></div>
+
+<samp>The Web build needs the <b>Web Build Support</b> module for your Unity Editor (Unity Hub → Installs → ⚙ → Add modules) and an activated Unity license.</samp>
+
+1. <samp>In the Editor choose <b>Maze Runner → Build Web (GitHub Pages)</b>. The build is written to <code>Builds/WebGL</code> (git-ignored). Or build from the command line:</samp>
+
+```bash
+Unity -batchmode -quit -projectPath . -buildTarget WebGL -executeMethod MazeRunner.EditorTools.WebBuild.BuildFromCommandLine -logFile build.log
+```
+
+2. <samp>Test locally (browsers block the game when it is opened as a <code>file://</code> page):</samp>
+
+```bash
+python -m http.server 8000 --directory Builds/WebGL
+```
+
+3. <samp>Publish to GitHub Pages. The script commits the build to the <code>gh-pages</code> branch only (never <code>main</code>) and pushes without force:</samp>
+
+```bash
+powershell -ExecutionPolicy Bypass -File tools/deploy-gh-pages.ps1
+```
+
+<samp>GitHub Pages serves the <code>gh-pages</code> branch root (Settings → Pages → Deploy from a branch → <code>gh-pages</code> / <code>/ (root)</code>).</samp>
+
+<samp>Web setup lives in <code>Assets/Editor/WebBuild.cs</code> and <code>Assets/WebGLTemplates/MazeRunner/</code>:</samp>
+
+- <samp>Scene order for the Web build starts at <code>MainMenu</code>; the Build Settings scene list is unchanged.</samp>
+- <samp>Gzip compression with the decompression fallback, because GitHub Pages cannot send <code>Content-Encoding</code> headers for pre-compressed files. Size-optimized IL2CPP code.</samp>
+- <samp>The page renders the game at 1920×1080 (the UI's design resolution) and scales it to fit the window with letterboxing, so menus keep their layout at every size.</samp>
+- <samp>Touch buttons send the same keyboard keys the game already reads, so gameplay code, physics, and input actions are unchanged. Pinch-zoom, double-tap zoom, and page scrolling are blocked while playing.</samp>
+
+<samp><b>Known limitations of the Web version:</b></samp>
+
+- <samp>The live build was produced with Unity <b>6000.6.5f1</b> (the project targets <b>6000.5.1f1</b>); the version upgrade was not committed.</samp>
+- <samp><b>Quit</b> does nothing in a browser; close the tab instead. <b>Settings</b> is not implemented yet (same as desktop).</samp>
+- <samp>Progress and customization are saved in the browser's storage (IndexedDB) and are lost if site data is cleared or in private windows.</samp>
+- <samp>In portrait on phones the game is small because the levels are 16:9; rotate to landscape.</samp>
+- <samp>Unity's Web player officially targets desktop browsers; mobile browsers work but performance depends on the device.</samp>
 
 ---
 
