@@ -45,7 +45,7 @@ namespace MazeRunner.Testing
                 if (anim != null && anim.isActiveAndEnabled)
                 {
                     var info = anim.GetCurrentAnimatorStateInfo(0);
-                    foreach (var s in new[] { "Idle", "Walking", "Running", "Slashing", "Hurt", "Dying" })
+                    foreach (var s in new[] { "Idle", "Walking", "Running", "Slashing", "Hurt", "Dying", "Idle Blinking" })
                         if (info.IsName(s)) state = s;
                 }
                 float swordA = -1f;
@@ -74,6 +74,25 @@ namespace MazeRunner.Testing
             }
         }
 
+        public void Damage(string names)
+        {
+            foreach (string n in names.Split('|'))
+            {
+                var g = Find(n);
+                if (g != null) g.TakeDamage(1);
+                Debug.Log("[PROBE] damage " + n + " found=" + (g != null));
+            }
+        }
+
+        public void Select(string id)
+        {
+            int index = PlayableCharacters.IndexOf(id);
+            if (index < 0) { Debug.Log("[PROBE] unknown character " + id); return; }
+            PlayableCharacters.SaveSelection(PlayableCharacters.All[index]);
+            UnityEngine.SceneManagement.SceneManager.LoadScene(UnityEngine.SceneManagement.SceneManager.GetActiveScene().name);
+            Debug.Log("[PROBE] selected " + id);
+        }
+
         public void Disable(string name)
         {
             var g = Find(name);
@@ -100,14 +119,36 @@ namespace MazeRunner.Testing
             Debug.Log("[PROBE] teleport " + xy);
         }
 
+        private static string RigInfo(MazeRunner.Player.PlayerController p)
+        {
+            if (p == null) return "none";
+            Transform rig = p.transform.Find(PlayerRigSettings.RigName);
+            if (rig == null) return "missing";
+            var marker = rig.GetComponent<PlayerRigMarker>();
+            var anim = rig.GetComponent<Animator>();
+            return (marker != null ? marker.RigId : "Fallen_Angels(scene)") + "/" + (anim != null && anim.runtimeAnimatorController != null ? anim.runtimeAnimatorController.name : "no-controller");
+        }
+
+        private static string RigState(MazeRunner.Player.PlayerController p)
+        {
+            Transform rig = p != null ? p.transform.Find(PlayerRigSettings.RigName) : null;
+            var anim = rig != null ? rig.GetComponent<Animator>() : null;
+            if (anim == null) return "?";
+            var info = anim.GetCurrentAnimatorStateInfo(0);
+            foreach (var s in new[] { "Idle", "Running", "Jump Start", "Jump Loop", "Falling Down", "Hurt", "Dying" })
+                if (info.IsName(s)) return s;
+            return "other";
+        }
+
         public void PlayerInfo(string _)
         {
             var p = FindAnyObjectByType<MazeRunner.Player.PlayerController>();
             var skin = p != null ? p.GetComponent<PlayerCharacterSkin>() : null;
             var sb = new StringBuilder();
-            sb.AppendFormat(CultureInfo.InvariantCulture, "[PROBE] player pos={0} skin={1} saved={2}\n",
+            sb.AppendFormat(CultureInfo.InvariantCulture, "[PROBE] player scene={3} rig={4} anim={5} pos={0} skin={1} saved={2}\n",
                 p != null ? (Vector2)p.transform.position : Vector2.zero,
-                skin != null && skin.Current != null ? skin.Current.Id : "none", PlayerPrefs.GetString(PlayableCharacters.SaveKey, "(unset)"));
+                skin != null && skin.Current != null ? skin.Current.Id : "none", PlayerPrefs.GetString(PlayableCharacters.SaveKey, "(unset)"),
+                UnityEngine.SceneManagement.SceneManager.GetActiveScene().name, RigInfo(p), RigState(p));
             if (p != null)
                 foreach (var sr in p.GetComponentsInChildren<SpriteRenderer>(true))
                     if (sr.sprite != null)

@@ -31,9 +31,11 @@
 
 <samp>Enemies are defeated by landing on them. The joystick and buttons appear only on touch devices and can be used at the same time (run and jump). Landscape gives the largest view.</samp>
 
-<samp><b>Characters:</b> Main Menu → Customization lets you pick one of three complete characters from the Fallen Angels pack (Silver Angel, Hooded Angel, Crowned Angel) with Previous / Next and a preview, then Apply. The choice is saved in the browser (PlayerPrefs) and used in Levels 1–3, after restarts and on later visits; movement, physics, health and combat are the same for every character.</samp>
+<samp><b>Characters:</b> Main Menu → Customization lets you pick one of six complete characters (Silver Angel, Hooded Angel and Crowned Angel from the Fallen Angels pack; Dark Oracle 2, Dark Oracle 3 and Valkyrie 1, each with its own skeleton and animations) with Previous / Next and a preview, then Apply. The choice is saved in the browser (PlayerPrefs) and used in Levels 1–3, after restarts and on later visits; movement, physics, health and combat are the same for every character.</samp>
 
 <samp><b>Goblins:</b> regular goblins patrol their platform with their swords drawn, turn at ledges, walls and the ends of their patrol, and stop to slash when you are in reach. When one of two goblins sharing a platform dies, the other patrols the whole platform. The boss stands guard until it spots you, then runs at you.</samp>
+
+<samp><b>More enemies (Level 1):</b> Villager Zombie 1 and 3, Skeleton Warrior 2 and 3, Bloody Alchemist 1, Skeleton Crusader 1, Wraith 3 and an Ogre patrol the platforms between the goblins. They use the goblins' AI (patrol, notice, slash, hurt, die) with their own speed and health; stomp them like goblins. Placement: <code>Assets/Resources/LevelEnemies/Level1.asset</code>.</samp>
 
 <samp><b>Full screen on iPhone:</b> Safari on iPhone does not let web pages enter full screen, so the fullscreen button shows how to add the game to the Home Screen instead (Share → Add to Home Screen). Opened from the Home Screen, the game runs without Safari's toolbars. Android Chrome and desktop browsers use real full screen.</samp>
 
