@@ -15,6 +15,9 @@ namespace MazeRunner.UI
     ///   "paused"  - the original pause menu is open
     ///   "blocked" - the game is stopped by another menu (game over, level complete)
     ///
+    /// Unity -> page: QuitToPreview() (main menu Quit) calls window.mazeRunnerQuit(),
+    /// which returns to the preview page.
+    ///
     /// Page -> Unity: unityInstance.SendMessage("WebBridge", "TogglePause") opens or
     /// closes the original pause menu through PauseMenuController.Pause()/Resume(),
     /// the same methods the Escape key uses. No new pause UI is created.
@@ -24,9 +27,22 @@ namespace MazeRunner.UI
 #if UNITY_WEBGL && !UNITY_EDITOR
         [DllImport("__Internal")]
         private static extern void MazeRunner_ReportState(string state);
+
+        [DllImport("__Internal")]
+        private static extern void MazeRunner_Quit();
 #else
         private static void MazeRunner_ReportState(string state) { }
+        private static void MazeRunner_Quit() { }
 #endif
+
+        /// <summary>
+        /// Web builds: Quit (main menu) leaves the game for the preview page, via
+        /// MazeRunner_Quit in MazeRunnerBridge.jslib. The page decides the destination.
+        /// </summary>
+        public static void QuitToPreview()
+        {
+            MazeRunner_Quit();
+        }
 
         private PauseMenuController pauseMenu;
         private GameObject pausePanel;

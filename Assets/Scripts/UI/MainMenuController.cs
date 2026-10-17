@@ -37,6 +37,9 @@ namespace MazeRunner.UI
         {
             #if UNITY_EDITOR
             UnityEditor.EditorApplication.isPlaying = false;
+            #elif UNITY_WEBGL
+            // A web page cannot close its own tab, so Quit returns to the preview page.
+            WebBridge.QuitToPreview();
             #else
             Application.Quit();
             #endif
