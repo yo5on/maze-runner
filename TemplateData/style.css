@@ -29,8 +29,8 @@
   --edge: 14px;
 
   /* Control sizes scale with the short side of the screen. */
-  --joy: clamp(104px, 30vmin, 148px);
-  --jump: clamp(68px, 20vmin, 94px);
+  --joy: clamp(116px, 34vmin, 156px);
+  --jump: clamp(74px, 22vmin, 98px);
   --chip: 38px;
   --chip-touch: 44px;
 }
@@ -333,13 +333,13 @@ body.touch .chip {
 
 #joystick[data-dir="left"] .joy-arrow-left {
   opacity: 1;
-  border-right-color: var(--crimson);
+  border-right-color: #f3ead7;
   transform: translateX(-2px);
 }
 
 #joystick[data-dir="right"] .joy-arrow-right {
   opacity: 1;
-  border-left-color: var(--crimson);
+  border-left-color: #f3ead7;
   transform: translateX(2px);
 }
 
@@ -365,8 +365,8 @@ body.touch .chip {
 #joystick.active .joy-thumb {
   /* Follow the finger directly while dragging; spring back on release. */
   transition: background-color 0.15s ease, border-color 0.15s ease;
-  background: rgba(175, 174, 162, 0.45);
-  border-color: var(--crimson);
+  background: rgba(175, 174, 162, 0.5);
+  border-color: #f3ead7;
 }
 
 #btn-jump {
@@ -410,12 +410,12 @@ body.touch .chip {
 
 #btn-jump.down {
   transform: scale(0.94);
-  border-color: var(--crimson);
+  border-color: var(--stone);
   background: var(--ctl-base-strong);
 }
 
 #btn-jump.down svg {
-  stroke: var(--crimson);
+  stroke: #f3ead7;
 }
 
 /* Portrait: controls sit in the space below the game, a little larger. */
