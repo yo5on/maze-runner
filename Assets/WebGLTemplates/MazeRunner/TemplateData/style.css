@@ -194,40 +194,33 @@ body.ready #loading {
 .chip svg {
   width: 18px;
   height: 18px;
-  fill: #323232;
+  fill: var(--navy);
   stroke: none;
 }
 
 #btn-fullscreen svg {
   fill: none;
-  stroke: #323232;
+  stroke: var(--navy);
   stroke-width: 2;
   stroke-linecap: square;
 }
 
+/* Neutral feedback only: no accent colour in any state (hover, press, focus,
+   paused, fullscreen). Pause/resume and enter/exit differ only by their glyph. */
 .chip:hover {
   background: #ffffff;
   border-color: rgba(50, 50, 50, 0.5);
 }
 
 .chip:active {
-  background: #c8c8c8;
-  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.2);
+  background: #d6d6d6;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.18);
 }
 
+/* Two-tone ring so focus stays visible on both the light buttons and the dark page. */
 .chip:focus-visible {
-  outline: 2px solid var(--crimson);
-  outline-offset: 2px;
-}
-
-/* Paused: the button shows "resume" and carries the crimson accent. */
-.chip.is-paused {
-  border-color: var(--crimson);
-  box-shadow: inset 0 -2px 0 var(--crimson), 0 1px 2px rgba(0, 0, 0, 0.18);
-}
-
-.chip.is-paused svg {
-  fill: var(--crimson);
+  outline: none;
+  box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px var(--navy);
 }
 
 .chip:disabled {

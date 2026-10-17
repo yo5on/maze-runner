@@ -25,7 +25,9 @@
         href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Instrument+Sans:wght@400..700&family=Instrument+Serif&display=swap">
   <style>
     /* Styled after the yo5on portfolio: navy, stone grey, crimson; Instrument Sans / Serif;
-       small letter-spaced labels; hairlines; corner-marked plates. */
+       small letter-spaced labels; hairlines; corner-marked plates.
+       Desktop (>= 900px): a landscape card - screenshot on the left, details and
+       Play Now on the right. Narrower screens: one compact column. */
     :root {
       --navy: #1b1e4a;
       --navy-deep: #15173c;
@@ -42,7 +44,7 @@
       --fs-label: 11px;
       --ls-label: 0.08em;
       --ease: cubic-bezier(0.22, 1, 0.36, 1);
-      --pad: clamp(16px, 2.6vw, 28px);
+      --pad: clamp(16px, 2.2vw, 28px);
     }
 
     * { box-sizing: border-box; }
@@ -69,13 +71,11 @@
         max(14px, env(safe-area-inset-right))
         max(16px, env(safe-area-inset-bottom))
         max(14px, env(safe-area-inset-left));
+      overflow-x: hidden;
     }
 
     .frame {
-      /* As wide as possible but never taller than the window: the chrome around the
-         1015x710 screenshot (header, summary, caption, button, footer and page padding)
-         takes about 412px; the screenshot gets the rest. */
-      width: min(100%, 1040px, max(320px, (100dvh - 412px) * 1.43 + 2 * var(--pad) + 24px));
+      width: min(100%, 560px);
       border: 1px solid var(--hair);
       border-radius: 12px;
       background: linear-gradient(180deg, rgba(27, 30, 74, 0.55), rgba(21, 23, 60, 0.95)), var(--navy-deep);
@@ -85,17 +85,17 @@
 
     /* ---- header -------------------------------------------------------- */
     .head {
-      display: grid;
-      grid-template-columns: auto 1fr auto;
+      display: flex;
       align-items: center;
-      column-gap: 14px;
-      padding: 16px var(--pad) 14px;
+      gap: 14px;
+      padding: 14px var(--pad);
       border-bottom: 1px solid var(--hair);
     }
 
     .head svg {
-      width: 26px;
-      height: 26px;
+      flex: none;
+      width: 24px;
+      height: 24px;
       fill: none;
       stroke: var(--stone);
       stroke-width: 1.5;
@@ -103,32 +103,38 @@
       stroke-linejoin: round;
     }
 
-    .titles { min-width: 0; }
-
-    .kicker {
-      display: block;
-      margin-bottom: 4px;
-      font-size: var(--fs-label);
-      font-weight: 500;
-      letter-spacing: var(--ls-label);
-      text-transform: uppercase;
-      color: var(--stone-faint);
+    .titles {
+      min-width: 0;
+      display: flex;
+      align-items: baseline;
+      flex-wrap: wrap;
+      gap: 4px 16px;
     }
-
-    .kicker b { color: var(--crimson); font-weight: 500; }
 
     h1 {
       margin: 0;
       font-family: var(--display);
       font-weight: 400;
-      font-size: clamp(26px, 3.6vw, 36px);
-      line-height: 0.95;
+      font-size: clamp(26px, 3vw, 34px);
+      line-height: 1;
       text-transform: uppercase;
       white-space: nowrap;
       color: var(--ivory);
     }
 
+    .kicker {
+      font-size: var(--fs-label);
+      font-weight: 500;
+      letter-spacing: var(--ls-label);
+      text-transform: uppercase;
+      color: var(--stone-faint);
+      white-space: nowrap;
+    }
+
+    .kicker b { color: var(--crimson); font-weight: 500; }
+
     .tags {
+      margin-left: auto;
       font-family: var(--mono);
       font-size: var(--fs-label);
       letter-spacing: 0.04em;
@@ -136,7 +142,7 @@
       white-space: nowrap;
     }
 
-    .tags span + span::before { content: " · "; color: var(--stone-faint); }
+    .tags span + span::before { content: " · "; }
 
     /* ---- body ---------------------------------------------------------- */
     .body {
@@ -145,19 +151,12 @@
       gap: 16px;
     }
 
-    .intro {
-      margin: 0;
-      max-width: 62ch;
-      font-size: 15px;
-      line-height: 1.55;
-      color: var(--stone-soft);
-    }
-
-    /* Screenshot as a portfolio "plate": hairline, corner marks, caption bar. */
+    /* Screenshot as a portfolio "plate": hairline, corner marks, caption. Shown at
+       16:9, cropped from the empty sky so the player, goblin and platforms stay. */
     .plate {
       position: relative;
       margin: 0;
-      padding: 10px;
+      padding: 8px;
       border: 1px solid var(--hair);
       border-radius: 6px;
       background: rgba(20, 22, 58, 0.6);
@@ -180,8 +179,9 @@
       display: block;
       width: 100%;
       height: auto;
-      aspect-ratio: 1015 / 710;
+      aspect-ratio: 16 / 9;
       object-fit: cover;
+      object-position: 50% 80%;
       border-radius: 3px;
       background: #2f4a75;
     }
@@ -190,7 +190,7 @@
       display: flex;
       justify-content: space-between;
       gap: 12px;
-      padding: 9px 2px 0;
+      padding: 8px 2px 0;
       font-size: var(--fs-label);
       font-weight: 500;
       letter-spacing: var(--ls-label);
@@ -198,14 +198,48 @@
       color: var(--stone-faint);
     }
 
+    .side {
+      display: grid;
+      gap: 16px;
+      align-content: start;
+    }
+
+    .intro {
+      margin: 0;
+      font-size: 15px;
+      line-height: 1.55;
+      color: var(--stone-soft);
+    }
+
+    .facts {
+      margin: 0;
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 7px 18px;
+      padding: 12px 0;
+      border-top: 1px solid var(--hair);
+      border-bottom: 1px solid var(--hair);
+      font-size: 13px;
+    }
+
+    .facts dt {
+      font-size: var(--fs-label);
+      font-weight: 500;
+      letter-spacing: var(--ls-label);
+      text-transform: uppercase;
+      color: var(--stone-faint);
+      align-self: center;
+    }
+
+    .facts dd { margin: 0; color: var(--stone); }
+
     /* ---- play now ------------------------------------------------------ */
     .play {
-      position: relative;
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 12px;
-      min-height: 58px;
+      min-height: 56px;
       padding: 14px 24px;
       border: 0;
       border-radius: 6px;
@@ -229,19 +263,9 @@
     }
 
     .play:active { transform: translateY(1px); box-shadow: 0 4px 12px rgba(210, 19, 25, 0.25); }
+    .play:focus-visible { outline: 2px solid var(--ivory); outline-offset: 3px; }
 
-    .play:focus-visible {
-      outline: 2px solid var(--ivory);
-      outline-offset: 3px;
-    }
-
-    .play svg {
-      width: 15px;
-      height: 15px;
-      fill: currentColor;
-      transition: transform 0.3s var(--ease);
-    }
-
+    .play svg { width: 15px; height: 15px; fill: currentColor; transition: transform 0.3s var(--ease); }
     .play:hover svg, .play:focus-visible svg { transform: translateX(2px); }
 
     .play .spinner {
@@ -274,20 +298,18 @@
 
     .error[hidden] { display: none; }
 
-    /* ---- footer -------------------------------------------------------- */
-    .foot {
+    /* ---- hints and links ---------------------------------------------- */
+    .meta {
       display: flex;
       flex-wrap: wrap;
-      gap: 8px 20px;
+      gap: 10px 20px;
       align-items: center;
       justify-content: space-between;
-      padding: 13px var(--pad) 15px;
-      border-top: 1px solid var(--hair);
       font-size: 12px;
       color: var(--stone-faint);
     }
 
-    .keys { display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: center; }
+    .keys { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; }
 
     kbd {
       display: inline-block;
@@ -338,22 +360,38 @@
       .touch-only { display: inline; }
     }
 
-    /* ---- narrow screens ------------------------------------------------ */
-    @media (max-width: 680px) {
+    /* ---- desktop: landscape card --------------------------------------- */
+    @media (min-width: 900px) {
+      .frame {
+        /* Wide, capped at 1240px, and narrow enough that the 16:9 screenshot
+           (about 64% of the card's width) plus header and padding fits the window
+           height. On very short windows the page scrolls instead of clipping. */
+        width: min(100%, 1240px, max(860px, (100dvh - 150px) * 16 / 9 / 0.64));
+      }
+
+      .body {
+        grid-template-columns: minmax(0, 1.85fr) minmax(280px, 1fr);
+        gap: clamp(20px, 2.4vw, 32px);
+        align-items: stretch;
+      }
+
+      .side { align-content: center; }
+
+      .meta { flex-direction: column; align-items: flex-start; gap: 12px; }
+    }
+
+    /* ---- narrower screens ---------------------------------------------- */
+    @media (max-width: 899px) {
       .tags { display: none; }
-      .head { grid-template-columns: auto 1fr; }
     }
 
     @media (max-width: 480px) {
+      .titles { flex-direction: column; gap: 3px; }
       .intro { font-size: 14px; }
-      .plate { padding: 7px; }
+      .plate { padding: 6px; }
       .plate figcaption span:last-child { display: none; }
-      .play { min-height: 56px; font-size: 15px; }
-      .foot { flex-direction: column; align-items: flex-start; }
-    }
-
-    @media (max-height: 560px) and (min-width: 681px) {
-      .intro { display: none; }
+      .facts { display: none; }
+      .play { font-size: 15px; }
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -372,44 +410,52 @@
         <circle cx="17.8" cy="13.4" r="0.6"/>
       </svg>
       <div class="titles">
-        <span class="kicker"><b>N° 05</b> — Game development</span>
         <h1 id="title">Maze Runner</h1>
+        <span class="kicker"><b>N° 05</b> — Game development</span>
       </div>
       <div class="tags"><span>Unity</span><span>C#</span><span>WebGL</span></div>
     </header>
 
     <div class="body">
-      <p class="intro">A 2D side-scrolling platformer built with Unity — three levels, enemies, checkpoints and level goals.</p>
-
       <figure class="plate">
         <img src="maze-runner.webp" width="1015" height="710"
              alt="Maze Runner Level 1: the hooded player character mid-jump above a large green goblin standing on a platform">
         <figcaption><span>Level 1, mid-jump</span><span>In-game screenshot</span></figcaption>
       </figure>
 
-      <!-- A real link, so Play Now works without JavaScript too. The game is not
-           loaded until it is clicked. -->
-      <a class="play" id="play" href="../" aria-describedby="play-note">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15l13-7.5z"/></svg>
-        <span class="spinner" aria-hidden="true"></span>
-        <span class="label">Play now</span>
-      </a>
-      <p class="error" id="error" role="alert" hidden></p>
-    </div>
+      <div class="side">
+        <p class="intro">A 2D side-scrolling platformer built with Unity — three levels, enemies, checkpoints and level goals.</p>
 
-    <footer class="foot">
-      <div class="keys" id="play-note">
-        <span class="desktop-only"><kbd>A</kbd><kbd>D</kbd> move</span>
-        <span class="desktop-only"><kbd>Space</kbd> jump</span>
-        <span class="desktop-only"><kbd>Esc</kbd> pause</span>
-        <span class="desktop-only"><kbd>F</kbd> fullscreen</span>
-        <span class="touch-only">Joystick to move · Jump button to jump · best in landscape</span>
+        <dl class="facts">
+          <dt>Levels</dt><dd>3</dd>
+          <dt>Engine</dt><dd>Unity 6 · C#</dd>
+          <dt>Plays on</dt><dd>Desktop &amp; mobile browsers</dd>
+        </dl>
+
+        <!-- A real link, so Play Now works without JavaScript too. The game is not
+             loaded until it is clicked. -->
+        <a class="play" id="play" href="../" aria-describedby="play-note">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15l13-7.5z"/></svg>
+          <span class="spinner" aria-hidden="true"></span>
+          <span class="label">Play now</span>
+        </a>
+        <p class="error" id="error" role="alert" hidden></p>
+
+        <div class="meta">
+          <div class="keys" id="play-note">
+            <span class="desktop-only"><kbd>A</kbd><kbd>D</kbd> move</span>
+            <span class="desktop-only"><kbd>Space</kbd> jump</span>
+            <span class="desktop-only"><kbd>Esc</kbd> pause</span>
+            <span class="desktop-only"><kbd>F</kbd> fullscreen</span>
+            <span class="touch-only">Joystick to move · Jump button to jump · best in landscape</span>
+          </div>
+          <nav class="links" aria-label="More about Maze Runner">
+            <a href="https://yo5on.runs-at.dev/#work/maze">Portfolio<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a>
+            <a href="https://github.com/yo5on/maze-runner">Source<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a>
+          </nav>
+        </div>
       </div>
-      <nav class="links" aria-label="More about Maze Runner">
-        <a href="https://yo5on.runs-at.dev/#work/maze">Portfolio<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a>
-        <a href="https://github.com/yo5on/maze-runner">Source<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a>
-      </nav>
-    </footer>
+    </div>
   </main>
 
   <script>
