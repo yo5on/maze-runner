@@ -29,15 +29,13 @@
        Desktop (>= 900px): a landscape card - screenshot on the left, details and
        Play Now on the right. Narrower screens: one compact column. */
     :root {
+      /* The portfolio's three colours; everything else is one of them or a transparency of it. */
       --navy: #1b1e4a;
-      --navy-deep: #15173c;
       --stone: #afaea2;
-      --stone-soft: rgba(175, 174, 162, 0.86);
-      --stone-faint: rgba(175, 174, 162, 0.55);
-      --hair: rgba(175, 174, 162, 0.2);
       --crimson: #d21319;
-      --crimson-deep: #b40f14;
-      --ivory: #f3ead7;
+      --stone-soft: rgba(175, 174, 162, 0.9);
+      --stone-faint: rgba(175, 174, 162, 0.75);
+      --hair: rgba(175, 174, 162, 0.2);
       --ui: "Instrument Sans", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
       --display: "Instrument Serif", "Times New Roman", serif;
       --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
@@ -49,12 +47,12 @@
 
     * { box-sizing: border-box; }
 
+    ::selection { background: var(--stone); color: var(--navy); }
+
     html, body {
       margin: 0;
       min-height: 100%;
-      background:
-        radial-gradient(120% 80% at 50% 0%, rgba(210, 19, 25, 0.06), transparent 60%),
-        var(--navy);
+      background: var(--navy);
       color: var(--stone);
       font-family: var(--ui);
       -webkit-font-smoothing: antialiased;
@@ -78,8 +76,7 @@
       width: min(100%, 560px);
       border: 1px solid var(--hair);
       border-radius: 12px;
-      background: linear-gradient(180deg, rgba(27, 30, 74, 0.55), rgba(21, 23, 60, 0.95)), var(--navy-deep);
-      box-shadow: 0 30px 80px rgba(8, 9, 28, 0.5), inset 0 1px 0 rgba(243, 234, 215, 0.04);
+      background: var(--navy);
       overflow: hidden;
     }
 
@@ -119,7 +116,7 @@
       line-height: 1;
       text-transform: uppercase;
       white-space: nowrap;
-      color: var(--ivory);
+      color: var(--stone);
     }
 
     .kicker {
@@ -159,7 +156,7 @@
       padding: 8px;
       border: 1px solid var(--hair);
       border-radius: 6px;
-      background: rgba(20, 22, 58, 0.6);
+      background: rgba(175, 174, 162, 0.05);
     }
 
     .plate::before,
@@ -183,7 +180,7 @@
       object-fit: cover;
       object-position: 50% 80%;
       border-radius: 3px;
-      background: #2f4a75;
+      background: var(--navy);
     }
 
     .plate figcaption {
@@ -241,11 +238,10 @@
       gap: 12px;
       min-height: 56px;
       padding: 14px 24px;
-      border: 0;
+      border: 2px solid var(--crimson);
       border-radius: 6px;
-      background: var(--crimson);
-      box-shadow: 0 10px 26px rgba(210, 19, 25, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.14);
-      color: #fff;
+      background: rgba(210, 19, 25, 0.16);
+      color: var(--stone);
       font-family: var(--ui);
       font-size: 16px;
       font-weight: 700;
@@ -253,32 +249,30 @@
       text-transform: uppercase;
       text-decoration: none;
       cursor: pointer;
-      transition: background-color 0.2s var(--ease), box-shadow 0.2s var(--ease), transform 0.12s ease;
+      transition: background-color 0.2s var(--ease), transform 0.12s ease;
       -webkit-tap-highlight-color: transparent;
     }
 
-    .play:hover {
-      background: var(--crimson-deep);
-      box-shadow: 0 12px 30px rgba(210, 19, 25, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.12);
-    }
+    .play:hover { background: rgba(210, 19, 25, 0.3); }
 
-    .play:active { transform: translateY(1px); box-shadow: 0 4px 12px rgba(210, 19, 25, 0.25); }
-    .play:focus-visible { outline: 2px solid var(--ivory); outline-offset: 3px; }
+    .play:active { transform: translateY(1px); background: rgba(210, 19, 25, 0.4); }
+    .play:focus-visible { outline: 2px solid var(--stone); outline-offset: 3px; }
+    .play:disabled, .play[aria-disabled="true"] { border-color: var(--hair); background: transparent; color: var(--stone-faint); }
 
-    .play svg { width: 15px; height: 15px; fill: currentColor; transition: transform 0.3s var(--ease); }
+    .play svg { width: 15px; height: 15px; fill: var(--crimson); transition: transform 0.3s var(--ease); }
     .play:hover svg, .play:focus-visible svg { transform: translateX(2px); }
 
     .play .spinner {
       display: none;
       width: 16px;
       height: 16px;
-      border: 2px solid rgba(255, 255, 255, 0.35);
-      border-top-color: #fff;
+      border: 2px solid rgba(175, 174, 162, 0.35);
+      border-top-color: var(--stone);
       border-radius: 50%;
       animation: spin 0.8s linear infinite;
     }
 
-    .play[aria-busy="true"] { cursor: progress; background: var(--crimson-deep); }
+    .play[aria-busy="true"] { cursor: progress; background: rgba(210, 19, 25, 0.3); }
     .play[aria-busy="true"] svg { display: none; }
     .play[aria-busy="true"] .spinner { display: block; }
 
@@ -292,7 +286,7 @@
       border-radius: 6px;
       font-size: 14px;
       line-height: 1.45;
-      color: var(--ivory);
+      color: var(--stone);
       background: rgba(210, 19, 25, 0.08);
     }
 
@@ -340,8 +334,8 @@
       transition: color 0.2s var(--ease);
     }
 
-    .links a:hover { color: var(--ivory); }
-    .links a:focus-visible { outline: 2px solid var(--ivory); outline-offset: 3px; }
+    .links a:hover { color: var(--stone); border-bottom-width: 2px; }
+    .links a:focus-visible { outline: 2px solid var(--stone); outline-offset: 3px; }
 
     .links svg {
       width: 0.95em;
