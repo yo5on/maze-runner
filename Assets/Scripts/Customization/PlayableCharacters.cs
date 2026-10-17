@@ -4,8 +4,8 @@ using UnityEngine;
 namespace MazeRunner.Customization
 {
     /// <summary>
-    /// One complete playable character from the Fallen Angels pack. All three share the same skeleton and
-    /// animations; each has its own full set of 13 body-part sprites, which are always applied together.
+    /// One complete playable character. Each runs on a skeletal rig (with its own animations) and is either
+    /// that rig's own look or a full set of body-part sprites for the same skeleton, always applied together.
     /// </summary>
     public sealed class PlayableCharacter
     {
@@ -15,15 +15,19 @@ namespace MazeRunner.Customization
         /// <summary>Folder under Resources/ holding this character's parts and Preview sprite.</summary>
         public string ResourceFolder { get; }
 
-        /// <summary>True for the character the Player prefab is built with (its parts live in Assets/Vector Parts).</summary>
+        /// <summary>True when the character is its rig's own look (no part sprites to swap in).</summary>
         public bool IsBuiltIn { get; }
 
-        public PlayableCharacter(string id, string displayName, bool isBuiltIn)
+        /// <summary>The skeletal rig this character runs on (see <see cref="PlayerRigSettings"/>).</summary>
+        public string RigId { get; }
+
+        public PlayableCharacter(string id, string displayName, bool isBuiltIn, string rigId = PlayerRigSettings.DefaultRigId)
         {
             Id = id;
             DisplayName = displayName;
             ResourceFolder = "Characters/" + id;
             IsBuiltIn = isBuiltIn;
+            RigId = rigId;
         }
     }
 
@@ -47,6 +51,9 @@ namespace MazeRunner.Customization
             new PlayableCharacter("Fallen_Angels_1", "Silver Angel", false),
             new PlayableCharacter("Fallen_Angels_2", "Hooded Angel", true),
             new PlayableCharacter("Fallen_Angels_3", "Crowned Angel", false),
+            new PlayableCharacter("Dark_Oracle_2", "Dark Oracle 2", true, "Dark_Oracle"),
+            new PlayableCharacter("Dark_Oracle_3", "Dark Oracle 3", false, "Dark_Oracle"),
+            new PlayableCharacter("Valkyrie_1", "Valkyrie 1", true, "Valkyrie"),
         };
 
         private const int DefaultIndex = 1;
@@ -79,6 +86,16 @@ namespace MazeRunner.Customization
             if (character == null) return;
             PlayerPrefs.SetString(SaveKey, character.Id);
             PlayerPrefs.Save();
+        }
+
+        /// <summary>The character that is the plain look of a rig (used when a variant's parts are missing).</summary>
+        public static PlayableCharacter BuiltInFor(string rigId)
+        {
+            foreach (PlayableCharacter character in Characters)
+            {
+                if (character.IsBuiltIn && character.RigId == rigId) return character;
+            }
+            return Default;
         }
 
         public static Sprite LoadPreview(PlayableCharacter character)
