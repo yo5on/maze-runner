@@ -49,6 +49,9 @@ namespace MazeRunner.UI
         
         private void OnPausePerformed(InputAction.CallbackContext context)
         {
+            // While Settings is open (from the pause menu), Escape is its Back key.
+            if (SettingsMenu.IsOpen) return;
+
             if (isPaused)
             {
                 Resume();

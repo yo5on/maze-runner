@@ -31,6 +31,8 @@
   /* Control sizes scale with the short side of the screen. */
   --joy: clamp(116px, 34vmin, 156px);
   --jump: clamp(74px, 22vmin, 98px);
+  --move: clamp(68px, 20vmin, 88px);
+  --move-gap: clamp(10px, 3vmin, 16px);
   --chip: 38px;
   --chip-touch: 44px;
 }
@@ -426,14 +428,74 @@ body.touch .chip {
   stroke: #f3ead7;
 }
 
+/* Layout B (Settings > Mobile Controls): Left / Right buttons instead of the joystick.
+   The two movement layouts are mutually exclusive: body[data-controls] picks exactly one. */
+#move-buttons {
+  display: none;
+  position: fixed;
+  left: calc(var(--safe-l) + var(--edge) + 6px);
+  bottom: calc(var(--safe-b) + var(--edge) + (var(--joy) - var(--move)) / 2);
+  gap: var(--move-gap);
+  z-index: 15;
+  touch-action: none;
+}
+
+body[data-controls="buttons"] #move-buttons {
+  display: flex;
+}
+
+body[data-controls="buttons"] #joystick {
+  display: none;
+}
+
+.move-btn {
+  width: var(--move);
+  height: var(--move);
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 16px;
+  border: 1px solid var(--ctl-line);
+  background: var(--ctl-base);
+  box-shadow: inset 0 0 0 4px rgba(21, 23, 60, 0.35), 0 4px 14px rgba(8, 9, 28, 0.35);
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+  transition: transform 0.08s ease, background-color 0.12s ease, border-color 0.12s ease;
+}
+
+.move-btn svg {
+  width: 42%;
+  height: 42%;
+  fill: none;
+  stroke: var(--stone);
+  stroke-width: 2.4;
+  stroke-linecap: square;
+  stroke-linejoin: miter;
+  pointer-events: none;
+}
+
+.move-btn.down {
+  transform: scale(0.94);
+  border-color: var(--crimson);
+  background: var(--ctl-base-strong);
+}
+
+.move-btn.down svg {
+  stroke: #f3ead7;
+}
+
 /* Portrait: controls sit in the space below the game, a little larger. */
 body.touch.portrait {
   --edge: 26px;
   --joy: clamp(120px, 36vmin, 156px);
   --jump: clamp(80px, 24vmin, 102px);
+  --move: clamp(72px, 22vmin, 92px);
 }
 
 body.touch.portrait #joystick,
+body.touch.portrait #move-buttons,
 body.touch.portrait #btn-jump {
   margin-bottom: 4vh;
 }

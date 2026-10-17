@@ -7,6 +7,14 @@ mergeInto(LibraryManager.library, {
     }
   },
 
+  // Settings > Mobile Controls: "joystick" or "buttons". The page shows only that layout.
+  MazeRunner_SetControlMode: function (modePtr) {
+    var mode = UTF8ToString(modePtr);
+    if (typeof window.mazeRunnerOnControls === "function") {
+      try { window.mazeRunnerOnControls(mode); } catch (e) { console.warn(e); }
+    }
+  },
+
   // Main menu Quit: the page decides where to go (the preview page).
   MazeRunner_Quit: function () {
     if (typeof window.mazeRunnerQuit === "function") {

@@ -5,6 +5,7 @@ using System.Runtime.InteropServices;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using MazeRunner.Settings;
 
 namespace MazeRunner.UI
 {
@@ -28,6 +29,13 @@ namespace MazeRunner.UI
     /// e.g. the hearts) are moved in by that amount; centred and full-screen UI such as
     /// the menus is left alone.
     ///
+    /// Unity -> page: MazeRunner_SetControlMode calls window.mazeRunnerOnControls(mode) with
+    /// "joystick" or "buttons" (Settings > Mobile Controls) at start-up, whenever the setting
+    /// changes and on RequestState. The page shows exactly one movement layout.
+    ///
+    /// Page -> Unity: SendMessage("WebBridge", "SetInputDevice", "touch" | "desktop") tells the
+    /// settings menu whether the on-screen controls are in use on this device.
+    ///
     /// Page -> Unity: unityInstance.SendMessage("WebBridge", "TogglePause") opens or
     /// closes the original pause menu through PauseMenuController.Pause()/Resume(),
     /// the same methods the Escape key uses. No new pause UI is created.
@@ -40,10 +48,20 @@ namespace MazeRunner.UI
 
         [DllImport("__Internal")]
         private static extern void MazeRunner_Quit();
+
+        [DllImport("__Internal")]
+        private static extern void MazeRunner_SetControlMode(string mode);
 #else
         private static void MazeRunner_ReportState(string state) { }
         private static void MazeRunner_Quit() { }
+        private static void MazeRunner_SetControlMode(string mode) { }
 #endif
+
+        /// <summary>True when the page reports a touch screen (on-screen controls in use).</summary>
+        public static bool IsTouchDevice { get; private set; }
+
+        /// <summary>Raised when the page reports its input device.</summary>
+        public static event System.Action InputDeviceChanged;
 
         /// <summary>
         /// Web builds: Quit (main menu) leaves the game for the preview page, via
@@ -72,12 +90,29 @@ namespace MazeRunner.UI
         private void Awake()
         {
             SceneManager.sceneLoaded += OnSceneLoaded;
+            GameSettings.ControlModeChanged += ReportControlMode;
             FindPauseMenu();
+            ReportControlMode(GameSettings.ControlMode);
         }
 
         private void OnDestroy()
         {
             SceneManager.sceneLoaded -= OnSceneLoaded;
+            GameSettings.ControlModeChanged -= ReportControlMode;
+        }
+
+        private static void ReportControlMode(TouchControlMode mode)
+        {
+            MazeRunner_SetControlMode(mode == TouchControlMode.Buttons ? "buttons" : "joystick");
+        }
+
+        // Called from the page via SendMessage: "touch" or "desktop".
+        public void SetInputDevice(string device)
+        {
+            bool touch = device == "touch";
+            if (touch == IsTouchDevice) return;
+            IsTouchDevice = touch;
+            InputDeviceChanged?.Invoke();
         }
 
         private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
@@ -176,6 +211,7 @@ namespace MazeRunner.UI
         public void RequestState()
         {
             lastState = null;
+            ReportControlMode(GameSettings.ControlMode);
         }
     }
 }

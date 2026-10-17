@@ -48,6 +48,7 @@ namespace MazeRunner.Levels
                 GameObject enemy = Instantiate(spawn.prefab, new Vector3(spawn.position.x, spawn.position.y, 0f), Quaternion.identity);
                 SceneManager.MoveGameObjectToScene(enemy, scene);
                 if (!string.IsNullOrEmpty(spawn.label)) enemy.name = spawn.label;
+                Audio.VolumeChannelSource.AttachAll(enemy); // any enemy audio follows the volume settings
 
                 var goblin = enemy.GetComponent<Enemies.GoblinEnemy>();
                 if (goblin != null) goblin.ConfigurePatrol(spawn.startDirection, spawn.patrolDistance);
