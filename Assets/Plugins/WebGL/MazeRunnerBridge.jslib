@@ -5,5 +5,14 @@ mergeInto(LibraryManager.library, {
     if (typeof window.mazeRunnerOnState === "function") {
       try { window.mazeRunnerOnState(state); } catch (e) { console.warn(e); }
     }
+  },
+
+  // Main menu Quit: the page decides where to go (the preview page).
+  MazeRunner_Quit: function () {
+    if (typeof window.mazeRunnerQuit === "function") {
+      window.mazeRunnerQuit();
+    } else {
+      window.location.assign("preview/");
+    }
   }
 });
