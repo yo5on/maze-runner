@@ -157,6 +157,7 @@ namespace MazeRunner.EditorTools
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
+            EnemyRigFixes.Run(); // non-looping death clips, Wraith size
             Debug.Log("[RosterImport] Done.");
         }
 

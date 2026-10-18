@@ -444,6 +444,7 @@ namespace MazeRunner.Enemies
         public void DealDamage()
         {
             hitDealtThisAttack = true;
+            if (isDead) return; // a slash interrupted by death never lands
             if (attackPoint == null) return;
 
             Collider2D[] hits = Physics2D.OverlapCircleAll(attackPoint.position, attackRadius, playerLayer);
@@ -482,11 +483,15 @@ namespace MazeRunner.Enemies
             if (isDead) return;
 
             isDead = true;
+            hitDealtThisAttack = true;
             rb.linearVelocity = Vector2.zero;
             SetLocomotion(false, false);
+            // Clear anything queued before the killing blow so nothing interrupts the death clip.
+            animator.ResetTrigger(AttackTriggerHash);
+            animator.ResetTrigger(HurtTriggerHash);
             animator.SetTrigger(DeathTriggerHash);
 
-            // Tell a platform partner right away, not when the corpse is destroyed 1.5 s later.
+            // Tell a platform partner right away, not when the corpse is removed after its death clip.
             LeavePlatformGroup();
 
             if (Levels.EnemyTracker.Instance != null)
@@ -494,7 +499,36 @@ namespace MazeRunner.Enemies
                 Levels.EnemyTracker.Instance.NotifyEnemyDefeated();
             }
 
-            Destroy(gameObject, 1.5f);
+            StartCoroutine(RemoveAfterDeathAnimation());
+        }
+
+        /// <summary>
+        /// Waits for the Dying clip to play through once (it does not loop), holds the last frame
+        /// briefly, then removes the enemy. Falls back to a time limit if the state never starts.
+        /// </summary>
+        private System.Collections.IEnumerator RemoveAfterDeathAnimation()
+        {
+            const float holdLastFrame = 0.5f;
+            const float maxWait = 3f;
+            float waited = 0f;
+            bool started = false;
+            while (waited < maxWait)
+            {
+                AnimatorStateInfo state = animator.GetCurrentAnimatorStateInfo(0);
+                if (state.IsName("Dying"))
+                {
+                    started = true;
+                    if (state.normalizedTime >= 1f && !animator.IsInTransition(0)) break;
+                }
+                else if (started || animator.runtimeAnimatorController == null)
+                {
+                    break;
+                }
+                waited += Time.deltaTime;
+                yield return null;
+            }
+            yield return new WaitForSeconds(holdLastFrame);
+            Destroy(gameObject);
         }
 
         private void OnDrawGizmosSelected()

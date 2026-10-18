@@ -209,6 +209,25 @@ namespace MazeRunner.Testing
             if (MazeRunner.Levels.LevelProgressionManager.Instance != null) MazeRunner.Levels.LevelProgressionManager.Instance.ResetProgress();
             Debug.Log("[PROBE] progress reset");
         }
+
+        /// <summary>Rendered size of every enemy (visible body sprites, slash effects excluded) and its collider.</summary>
+        public void EnemySizes(string _)
+        {
+            var sb = new StringBuilder("[PROBE] sizes\n");
+            foreach (var g in FindObjectsByType<GoblinEnemy>(FindObjectsInactive.Exclude))
+            {
+                Bounds? bounds = null;
+                foreach (var sr in g.GetComponentsInChildren<SpriteRenderer>())
+                {
+                    if (sr.sprite == null || !sr.enabled || sr.color.a <= 0.01f || sr.name.Contains("FX")) continue;
+                    if (bounds == null) bounds = sr.bounds; else { var b = bounds.Value; b.Encapsulate(sr.bounds); bounds = b; }
+                }
+                var col = g.GetComponent<Collider2D>();
+                sb.AppendFormat(CultureInfo.InvariantCulture, "{0} scale={1:F2} spriteH={2:F2} spriteW={3:F2} colH={4:F2} colW={5:F2}\n", g.name, Mathf.Abs(g.transform.localScale.y),
+                    bounds?.size.y ?? 0f, bounds?.size.x ?? 0f, col != null ? col.bounds.size.y : 0f, col != null ? col.bounds.size.x : 0f);
+            }
+            Debug.Log(sb.ToString());
+        }
     }
 }
 #endif
