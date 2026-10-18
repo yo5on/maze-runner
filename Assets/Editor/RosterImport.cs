@@ -25,7 +25,7 @@ namespace MazeRunner.EditorTools
     ///   rig's clip of the same name (with a fallback where a pack has no such clip);
     /// - makes enemy prefab variants with the existing GoblinEnemy AI, and skin variants for enemies that
     ///   share a skeleton (RigSpriteSkin);
-    /// - registers the player rigs in Resources/PlayerRig and writes Level 1's spawn table.
+    /// - registers the player rigs in Resources/PlayerRig. Level placement is LevelLayoutBuilder's job.
     /// It can be run again: existing assets are updated in place, keeping their GUIDs.
     ///
     /// Menu: Maze Runner > Import Character Roster
@@ -92,17 +92,6 @@ namespace MazeRunner.EditorTools
 
         // Level 1 placements on platforms without goblins, the checkpoint (x 64) or the goal (x 168).
         // y = platform top (centre + 0.25) + 0.05.
-        private static readonly (string enemy, float x, float y, int dir, float patrol)[] Level1Spawns =
-        {
-            ("Villager_Zombie_1", 16f, -0.2f, 1, 1.5f),
-            ("Villager_Zombie_3", 30f, 0.1f, -1, 1.2f),
-            ("Skeleton_Warrior_2", 47f, 0.3f, 1, 2f),
-            ("Skeleton_Warrior_3", 85f, 0.3f, -1, 2f),
-            ("Wraith_3", 103f, 0.3f, 1, 2f),
-            ("Ogre", 127.5f, 0.8f, -1, 1.2f),
-            ("Skeleton_Crusader_1", 130.5f, 0.8f, 1, 1.2f),
-            ("Bloody_Alchemist_1", 148f, 0.8f, -1, 0.6f),
-        };
 
         // Clip used when a pack has no clip named like the template state.
         private static readonly Dictionary<string, string[]> ClipFallbacks = new Dictionary<string, string[]>
@@ -164,7 +153,7 @@ namespace MazeRunner.EditorTools
                 enemyPrefabs[spec.Name] = BuildEnemy(spec, rig, rigPrefabs[rig.Id], enemyControllers[rig.Id]);
             }
 
-            WriteSpawnTable(enemyPrefabs);
+            // Where enemies appear in the levels is set by LevelLayoutBuilder (Maze Runner > Build Level Layouts).
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
@@ -446,36 +435,6 @@ namespace MazeRunner.EditorTools
         {
             root.gameObject.layer = layer;
             foreach (Transform child in root) SetLayerRecursively(child, layer);
-        }
-
-        private static void WriteSpawnTable(Dictionary<string, GameObject> enemyPrefabs)
-        {
-            const string folder = "Assets/Resources/" + LevelEnemySpawnTable.ResourceFolder;
-            const string path = folder + "/Level1.asset";
-            if (!AssetDatabase.IsValidFolder(folder)) AssetDatabase.CreateFolder("Assets/Resources", LevelEnemySpawnTable.ResourceFolder);
-
-            var table = AssetDatabase.LoadAssetAtPath<LevelEnemySpawnTable>(path);
-            if (table == null)
-            {
-                table = ScriptableObject.CreateInstance<LevelEnemySpawnTable>();
-                AssetDatabase.CreateAsset(table, path);
-            }
-
-            var so = new SerializedObject(table);
-            SerializedProperty list = so.FindProperty("spawns");
-            list.arraySize = Level1Spawns.Length;
-            for (int i = 0; i < Level1Spawns.Length; i++)
-            {
-                var s = Level1Spawns[i];
-                SerializedProperty entry = list.GetArrayElementAtIndex(i);
-                entry.FindPropertyRelative("label").stringValue = s.enemy;
-                entry.FindPropertyRelative("prefab").objectReferenceValue = enemyPrefabs[s.enemy];
-                entry.FindPropertyRelative("position").vector2Value = new Vector2(s.x, s.y);
-                entry.FindPropertyRelative("startDirection").intValue = s.dir;
-                entry.FindPropertyRelative("patrolDistance").floatValue = s.patrol;
-            }
-            so.ApplyModifiedPropertiesWithoutUndo();
-            EditorUtility.SetDirty(table);
         }
     }
 }

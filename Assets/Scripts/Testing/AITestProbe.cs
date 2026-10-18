@@ -173,6 +173,42 @@ namespace MazeRunner.Testing
             }
             Debug.Log(sb.ToString());
         }
+
+        /// <summary>Scene, player health, enemies left, unlocks, and where every enemy / moving platform is.</summary>
+        public void LevelInfo(string _)
+        {
+            var sb = new StringBuilder();
+            var health = FindAnyObjectByType<MazeRunner.Player.PlayerHealth>();
+            var progression = MazeRunner.Levels.LevelProgressionManager.Instance;
+            var tracker = MazeRunner.Levels.EnemyTracker.Instance;
+            sb.AppendFormat(CultureInfo.InvariantCulture, "[PROBE] level scene={0} hp={1}/{2} remaining={3} index={4} unlocked={5}{6}{7} timeScale={8}\n",
+                UnityEngine.SceneManagement.SceneManager.GetActiveScene().name,
+                health != null ? health.CurrentHealth : -1, health != null ? health.MaxHealth : -1,
+                tracker != null ? tracker.RemainingEnemyCount : -1, progression != null ? progression.CurrentLevelIndex : -2,
+                progression != null && progression.IsLevelUnlocked(0) ? 1 : 0, progression != null && progression.IsLevelUnlocked(1) ? 1 : 0,
+                progression != null && progression.IsLevelUnlocked(2) ? 1 : 0, Time.timeScale);
+            foreach (var g in FindObjectsByType<GoblinEnemy>(FindObjectsInactive.Exclude))
+            {
+                var platform = Field<Collider2D>(g, "platform");
+                sb.AppendFormat(CultureInfo.InvariantCulture, "E {0} x={1:F2} y={2:F2} plat={3} top={4:F2} dead={5}\n", g.name, g.transform.position.x, g.transform.position.y,
+                    platform != null ? platform.name : "none", platform != null ? platform.bounds.max.y : 0f, Field<bool>(g, "isDead"));
+            }
+            foreach (var m in FindObjectsByType<MazeRunner.Levels.MovingPlatform>(FindObjectsInactive.Exclude))
+                sb.AppendFormat(CultureInfo.InvariantCulture, "M {0} x={1:F2} y={2:F2}\n", m.name, m.transform.position.x, m.transform.position.y);
+            Debug.Log(sb.ToString());
+        }
+
+        public void LoadScene(string scene)
+        {
+            Time.timeScale = 1f;
+            UnityEngine.SceneManagement.SceneManager.LoadScene(scene);
+        }
+
+        public void ResetProgress(string _)
+        {
+            if (MazeRunner.Levels.LevelProgressionManager.Instance != null) MazeRunner.Levels.LevelProgressionManager.Instance.ResetProgress();
+            Debug.Log("[PROBE] progress reset");
+        }
     }
 }
 #endif
