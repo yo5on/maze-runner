@@ -202,6 +202,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 7627768709106960875, guid: cdea59beecb6cc549b5153fbd48d2a6b, type: 3}
       insertIndex: -1
       addedObject: {fileID: 8622396360211979621}
+    - targetCorrespondingSourceObject: {fileID: 7627768709106960875, guid: cdea59beecb6cc549b5153fbd48d2a6b, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 612391536901945734}
   m_SourcePrefab: {fileID: 100100000, guid: cdea59beecb6cc549b5153fbd48d2a6b, type: 3}
 --- !u!1 &8739160698521388180 stripped
 GameObject:
@@ -347,6 +350,28 @@ MonoBehaviour:
   - {fileID: 21300000, guid: 1b60cd6e655151643908087066832ed9, type: 3}
   - {fileID: 21300000, guid: 8ce301edcb1098744914920fe963b182, type: 3}
   - {fileID: 21300000, guid: 447d02448a049f3449dc1e1a9e0fd2c4, type: 3}
+--- !u!114 &612391536901945734
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8739160698521388180}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a96c064818528d242892a928aace3638, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MazeRunner.Enemies.ZombieRusherBehaviour
+  prowlSpeed: 1.5
+  rushSpeed: 3
+  noticeRange: 7
+  lungeMin: 2.2
+  lungeMax: 4.5
+  lungeWindUp: 0.45
+  lungeSpeed: 9
+  lungeDistance: 3.5
+  lungeRecovery: 0.9
+  lungeCooldown: 3
 --- !u!4 &8910856265704221642 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 7725155432160306869, guid: cdea59beecb6cc549b5153fbd48d2a6b, type: 3}

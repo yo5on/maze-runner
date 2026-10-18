@@ -199,6 +199,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 7627768709106960875, guid: cdea59beecb6cc549b5153fbd48d2a6b, type: 3}
       insertIndex: -1
       addedObject: {fileID: 4361447584112823027}
+    - targetCorrespondingSourceObject: {fileID: 7627768709106960875, guid: cdea59beecb6cc549b5153fbd48d2a6b, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 3181729803727401740}
   m_SourcePrefab: {fileID: 100100000, guid: cdea59beecb6cc549b5153fbd48d2a6b, type: 3}
 --- !u!4 &3842736803969469110 stripped
 Transform:
@@ -323,3 +326,25 @@ MonoBehaviour:
   rearDetectionRange: 2
   maxHealth: 2
   fallDeathY: -10
+--- !u!114 &3181729803727401740
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4015557299876308456}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 26949d71f49f0c64ab3110bea9073ff2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MazeRunner.Enemies.ZombieShamblerBehaviour
+  wanderSpeed: 0.7
+  chaseSpeed: 1.3
+  noticeRange: 5.5
+  giveUpRange: 9
+  biteRange: 1.4
+  biteWindUp: 0.55
+  biteRecovery: 0.8
+  biteCooldown: 2.6
+  slowMultiplier: 0.5
+  slowDuration: 1.5

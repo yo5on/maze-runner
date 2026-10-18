@@ -228,6 +228,44 @@ namespace MazeRunner.Testing
             }
             Debug.Log(sb.ToString());
         }
+
+        private void OnEnable() { EnemyBehaviour.Traced += OnTraced; }
+        private void OnDisable() { EnemyBehaviour.Traced -= OnTraced; }
+
+        private static void OnTraced(EnemyBehaviour b, string what)
+        {
+            Debug.Log(string.Format(CultureInfo.InvariantCulture, "[TRACE] {0:F2} {1} {2}", Time.time, b != null ? b.name : "?", what));
+        }
+
+        /// <summary>Each enemy's personality, whether a special is running, animator state and speed.</summary>
+        public void Brains(string _)
+        {
+            var sb = new StringBuilder("[PROBE] brains\n");
+            foreach (var g in FindObjectsByType<GoblinEnemy>(FindObjectsInactive.Exclude))
+            {
+                var b = g.GetComponent<EnemyBehaviour>();
+                var anim = g.GetComponent<Animator>();
+                string state = "?";
+                float t = 0f;
+                if (anim != null && anim.isActiveAndEnabled && anim.runtimeAnimatorController != null)
+                {
+                    var info = anim.GetCurrentAnimatorStateInfo(0);
+                    t = info.normalizedTime;
+                    foreach (var s in new[] { "Idle", "Idle Blinking", "Walking", "Running", "Slashing", "Run Slashing", "Kicking", "Throwing", "Sliding", "Hurt", "Dying" })
+                        if (info.IsName(s)) state = s;
+                }
+                sb.AppendFormat(CultureInfo.InvariantCulture, "{0} brain={1} busy={2} x={3:F2} y={4:F2} vx={5:F2} hp={6}/{7} anim={8}@{9:F2} dead={10}\n",
+                    g.name, b != null ? b.GetType().Name : "none", b != null && b.IsBusy, g.transform.position.x, g.transform.position.y,
+                    g.GetComponent<Rigidbody2D>().linearVelocity.x, g.CurrentHealth, g.MaxHealth, state, t, g.IsDead);
+            }
+            Debug.Log(sb.ToString());
+        }
+
+        public void HealPlayer(string _)
+        {
+            var h = FindAnyObjectByType<MazeRunner.Player.PlayerHealth>();
+            if (h != null) h.Heal(99);
+        }
     }
 }
 #endif

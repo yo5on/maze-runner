@@ -202,6 +202,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 982746264575100938, guid: 9520544df82131f46a94d668983b330d, type: 3}
       insertIndex: -1
       addedObject: {fileID: 7455237565224121450}
+    - targetCorrespondingSourceObject: {fileID: 982746264575100938, guid: 9520544df82131f46a94d668983b330d, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 8652611969365358260}
   m_SourcePrefab: {fileID: 100100000, guid: 9520544df82131f46a94d668983b330d, type: 3}
 --- !u!4 &169880985947962123 stripped
 Transform:
@@ -352,3 +355,22 @@ MonoBehaviour:
   - {fileID: 21300000, guid: e9468b947133f6d4fa4e66963ad5eda0, type: 3}
   - {fileID: 21300000, guid: edf3d2da1ca4267468944bcedd56ce9d, type: 3}
   - {fileID: 21300000, guid: 398ddb28c075c424aad86410daef2b03, type: 3}
+--- !u!114 &8652611969365358260
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4181434805402782423}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d58533412ed0b274fba030e9f1bada7e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MazeRunner.Enemies.DuelistBehaviour
+  noticeRange: 6
+  advanceSpeed: 2.6
+  comboRange: 1.5
+  comboWarning: 0.25
+  betweenHits: 0.45
+  recovery: 1.2
+  cooldown: 2.2

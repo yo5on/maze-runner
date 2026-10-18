@@ -199,6 +199,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 982746264575100938, guid: 9520544df82131f46a94d668983b330d, type: 3}
       insertIndex: -1
       addedObject: {fileID: 8864528485320877302}
+    - targetCorrespondingSourceObject: {fileID: 982746264575100938, guid: 9520544df82131f46a94d668983b330d, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 3219319055426942626}
   m_SourcePrefab: {fileID: 100100000, guid: 9520544df82131f46a94d668983b330d, type: 3}
 --- !u!1 &6437050460666589459 stripped
 GameObject:
@@ -318,6 +321,25 @@ MonoBehaviour:
   rearDetectionRange: 2
   maxHealth: 3
   fallDeathY: -10
+--- !u!114 &3219319055426942626
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6437050460666589459}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cbf180d5db61ce9448c8cb964a3230ab, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MazeRunner.Enemies.ShieldWarriorBehaviour
+  engageRange: 5
+  disengageRange: 7.5
+  guardMin: 1.8
+  guardMax: 2.6
+  openingTime: 1.2
+  counterWindUp: 0.3
+  counterReach: 1.3
 --- !u!4 &6991845429062287567 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 3890990863625419222, guid: 9520544df82131f46a94d668983b330d, type: 3}
