@@ -13,40 +13,45 @@ namespace MazeRunner.UI
     /// The Settings menu: Music and Sound Effects volume sliders (0-100%) and the touch
     /// control layout (A: joystick + Jump, B: Left/Right buttons + Jump).
     ///
-    /// It is built when a scene loads, from that scene's own menu buttons, so it keeps the
-    /// game's menu style:
-    /// - Main menu: opened by the existing Settings button (MainMenuController.OpenSettings).
-    /// - Levels: a Settings button is added to the pause menu, so volumes and the control
-    ///   layout can be changed during play. Leaving the menu returns to the pause menu and the
-    ///   new layout shows as soon as play resumes.
+    /// Styled after the yo5on portfolio and drawn only in its three colours: midnight navy
+    /// #1b1e4a (surfaces), warm stone #afaea2 (text, borders, inactive tracks) and crimson
+    /// #d21319 (active slider fill, chosen option, focus). The heading uses the portfolio's
+    /// Instrument Serif Italic (Resources/Fonts, see UiFontSetup).
+    ///
+    /// It is built when a scene loads:
+    /// - Main menu: opened by the existing Settings button (MainMenuController.OpenSettings),
+    ///   over a solid navy screen.
+    /// - Levels: a Settings button is added to the pause menu; the menu opens over the paused
+    ///   game dimmed with navy. Back returns to the pause menu, and a new control layout shows
+    ///   as soon as play resumes.
     /// Every change applies immediately and is saved by <see cref="GameSettings"/>.
     /// </summary>
     public class SettingsMenu : MonoBehaviour
     {
-        // Portfolio palette.
-        private static readonly Color Navy = new Color32(0x1b, 0x1e, 0x4a, 0xff);
-        private static readonly Color Stone = new Color32(0xaf, 0xae, 0xa2, 0xff);
-        private static readonly Color Crimson = new Color32(0xd2, 0x13, 0x19, 0xff);
-        private static readonly Color CardColor = new Color32(0x1b, 0x1e, 0x4a, 0xf2);
-        private static readonly Color TrackColor = new Color(0.686f, 0.682f, 0.635f, 0.35f);
+        private static Color Navy => PaletteButton.Navy;
+        private static Color Stone => PaletteButton.Stone;
+        private static Color Crimson => PaletteButton.Crimson;
 
-        private const float CardWidth = 720f;
-        private const float CardHeight = 580f;
+        private const float CardWidth = 760f;
+        private const float CardHeight = 620f;
+        private const float Margin = 56f;            // inner left/right margin of the card
+        private const float ContentWidth = CardWidth - 2f * Margin;
+        private const string HeadingFont = "Fonts/InstrumentSerif-Italic SDF";
 
         public static SettingsMenu Current { get; private set; }
         public static bool IsOpen => Current != null && Current.gameObject.activeSelf;
 
         private GameObject returnPanel;
         private bool inGame;
+        private RectTransform card;
 
         private Slider musicSlider;
         private Slider sfxSlider;
         private TMP_Text musicValue;
         private TMP_Text sfxValue;
-        private Button joystickButton;
-        private Button buttonsButton;
+        private PaletteButton joystickButton;
+        private PaletteButton buttonsButton;
         private TMP_Text hint;
-        private Color buttonTextColor = new Color(0.196f, 0.196f, 0.196f, 1f);
         private float lastPreviewTime;
 
         // ------------------------------------------------------------------ set-up
@@ -88,34 +93,22 @@ namespace MazeRunner.UI
         {
             Button template = panel.GetComponentInChildren<Button>(true);
             if (template == null || panel.parent == null) return null;
+            TMP_Text templateText = template.GetComponentInChildren<TMP_Text>(true);
 
             var root = new GameObject("SettingsPanel", typeof(RectTransform), typeof(Image));
             var rect = (RectTransform)root.transform;
             rect.SetParent(panel.parent, false);
             rect.SetAsLastSibling();
-            rect.anchorMin = Vector2.zero;
-            rect.anchorMax = Vector2.one;
-            rect.offsetMin = Vector2.zero;
-            rect.offsetMax = Vector2.zero;
+            Stretch(rect);
 
-            // Same backdrop as the menu it replaces (it also blocks clicks to the game).
+            // Main menu: a clean navy screen. In a level: the paused game, dimmed with navy.
             Image backdrop = root.GetComponent<Image>();
-            Image panelImage = panel.GetComponent<Image>();
-            if (panelImage != null)
-            {
-                backdrop.sprite = panelImage.sprite;
-                backdrop.type = panelImage.type;
-                backdrop.color = panelImage.color;
-            }
-            else
-            {
-                backdrop.color = new Color(1f, 1f, 1f, 0.392f);
-            }
+            backdrop.color = inGame ? new Color(Navy.r, Navy.g, Navy.b, 0.9f) : Navy;
 
             var menu = root.AddComponent<SettingsMenu>();
             menu.returnPanel = panel.gameObject;
             menu.inGame = inGame;
-            menu.BuildContent(template);
+            menu.BuildContent(templateText != null ? templateText.font : null);
             root.SetActive(false);
             Current = menu;
             return menu;
@@ -148,6 +141,7 @@ namespace MazeRunner.UI
             Refresh();
             if (returnPanel != null) returnPanel.SetActive(false);
             gameObject.SetActive(true);
+            FitCard();
             // Paused game: let the music play while the menu is open so its volume can be heard.
             if (inGame && AudioManager.Instance != null) AudioManager.Instance.ResumeMusic();
             Select(musicSlider);
@@ -175,56 +169,65 @@ namespace MazeRunner.UI
             if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame) Close();
         }
 
+        private void OnRectTransformDimensionsChange()
+        {
+            FitCard();
+        }
+
+        /// <summary>Shrinks the card (never enlarges it) so it always fits inside the screen with a margin.</summary>
+        private void FitCard()
+        {
+            if (card == null) return;
+            Rect area = ((RectTransform)transform).rect;
+            if (area.width <= 0f || area.height <= 0f) return;
+            float scale = Mathf.Min(1f, (area.width - 48f) / CardWidth, (area.height - 48f) / CardHeight);
+            card.localScale = new Vector3(scale, scale, 1f);
+        }
+
         // ---------------------------------------------------------------- content
 
-        private void BuildContent(Button template)
+        private void BuildContent(TMP_FontAsset bodyFont)
         {
-            TMP_Text templateText = template.GetComponentInChildren<TMP_Text>(true);
-            TMP_FontAsset font = templateText != null ? templateText.font : null;
-            if (templateText != null) buttonTextColor = templateText.color;
+            var headingFont = Resources.Load<TMP_FontAsset>(HeadingFont);
+            if (headingFont == null) headingFont = bodyFont;
 
-            var card = NewRect("Card", transform);
+            // Card: a thin stone frame around a navy surface.
+            card = NewRect("Card", transform);
             card.anchorMin = card.anchorMax = new Vector2(0.5f, 0.5f);
             card.sizeDelta = new Vector2(CardWidth, CardHeight);
-            var cardImage = card.gameObject.AddComponent<Image>();
-            cardImage.color = CardColor;
-            var outline = card.gameObject.AddComponent<Outline>();
-            outline.effectColor = new Color(Stone.r, Stone.g, Stone.b, 0.45f);
-            outline.effectDistance = new Vector2(1f, -1f);
+            card.gameObject.AddComponent<Image>().color = Stone;
+            var surface = NewRect("Surface", card);
+            Stretch(surface, 1.5f);
+            surface.gameObject.AddComponent<Image>().color = Navy;
+            Transform c = surface;
 
-            // Crimson accent bar along the top edge.
-            var accent = NewRect("Accent", card);
-            accent.anchorMin = new Vector2(0f, 1f);
-            accent.anchorMax = new Vector2(1f, 1f);
-            accent.pivot = new Vector2(0.5f, 1f);
-            accent.sizeDelta = new Vector2(0f, 4f);
-            accent.gameObject.AddComponent<Image>().color = Crimson;
+            float left = -ContentWidth / 2f;
 
-            float y = -34f;
-            Text(card, font, "Settings", 40f, Color.white, TextAlignmentOptions.Center, new Vector2(0f, y), new Vector2(CardWidth, 54f));
+            Label(c, bodyFont, "MAZE RUNNER", 15f, Stone, left, -36f, ContentWidth, 22f, TextAlignmentOptions.Left, 14f, FontStyles.Bold);
+            Label(c, headingFont, "Settings", 72f, Stone, left, -52f, ContentWidth, 86f, TextAlignmentOptions.Left);
+            Bar(c, left, -140f, 48f, 3f, Crimson);
 
-            y -= 70f;
-            SectionLabel(card, font, "AUDIO", y);
-            y -= 58f;
-            musicSlider = SliderRow(card, font, "Music", y, out musicValue);
-            y -= 58f;
-            sfxSlider = SliderRow(card, font, "Sound Effects", y, out sfxValue);
+            Section(c, bodyFont, "AUDIO", -168f);
+            musicSlider = SliderRow(c, bodyFont, "Music", -240f, out musicValue);
+            sfxSlider = SliderRow(c, bodyFont, "Sound Effects", -298f, out sfxValue);
 
-            y -= 62f;
-            SectionLabel(card, font, "MOBILE CONTROLS", y);
-            y -= 62f;
-            joystickButton = CloneButton(template, card, "A  Joystick + Jump", new Vector2(-160f, y), new Vector2(300f, 56f),
+            Section(c, bodyFont, "MOBILE CONTROLS", -344f);
+            float optionWidth = (ContentWidth - 16f) / 2f;
+            joystickButton = MakeButton(c, bodyFont, "A", "Joystick + Jump", PaletteButton.Style.Option,
+                new Vector2(left + optionWidth / 2f, -424f), new Vector2(optionWidth, 64f),
                 () => GameSettings.SetControlMode(TouchControlMode.Joystick));
-            buttonsButton = CloneButton(template, card, "B  Left / Right + Jump", new Vector2(160f, y), new Vector2(300f, 56f),
+            buttonsButton = MakeButton(c, bodyFont, "B", "Left / Right + Jump", PaletteButton.Style.Option,
+                new Vector2(-left - optionWidth / 2f, -424f), new Vector2(optionWidth, 64f),
                 () => GameSettings.SetControlMode(TouchControlMode.Buttons));
 
-            y -= 46f;
-            hint = Text(card, font, "", 19f, Stone, TextAlignmentOptions.Top, new Vector2(0f, y), new Vector2(620f, 72f));
+            hint = Label(c, bodyFont, "", 18f, Stone, left, -468f, ContentWidth, 56f, TextAlignmentOptions.TopLeft);
             hint.textWrappingMode = TextWrappingModes.Normal;
 
-            float buttonsY = -CardHeight + 48f;
-            CloneButton(template, card, "Reset to Defaults", new Vector2(-125f, buttonsY), new Vector2(230f, 50f), GameSettings.ResetToDefaults);
-            CloneButton(template, card, "Back", new Vector2(125f, buttonsY), new Vector2(230f, 50f), Close);
+            float buttonsY = -CardHeight + 60f;
+            MakeButton(c, bodyFont, null, "Reset to Defaults", PaletteButton.Style.Quiet,
+                new Vector2(left + 120f, buttonsY), new Vector2(240f, 54f), GameSettings.ResetToDefaults);
+            MakeButton(c, bodyFont, null, "Back", PaletteButton.Style.Strong,
+                new Vector2(-left - 120f, buttonsY), new Vector2(240f, 54f), Close);
 
             musicSlider.onValueChanged.AddListener(v => GameSettings.SetMusicPercent(Mathf.RoundToInt(v)));
             sfxSlider.onValueChanged.AddListener(v =>
@@ -256,8 +259,8 @@ namespace MazeRunner.UI
             sfxSlider.SetValueWithoutNotify(GameSettings.SfxPercent);
             musicValue.text = GameSettings.MusicPercent + "%";
             sfxValue.text = GameSettings.SfxPercent + "%";
-            StyleModeButton(joystickButton, GameSettings.ControlMode == TouchControlMode.Joystick);
-            StyleModeButton(buttonsButton, GameSettings.ControlMode == TouchControlMode.Buttons);
+            joystickButton.IsOn = GameSettings.ControlMode == TouchControlMode.Joystick;
+            buttonsButton.IsOn = GameSettings.ControlMode == TouchControlMode.Buttons;
             RefreshHint();
         }
 
@@ -265,20 +268,9 @@ namespace MazeRunner.UI
         {
             if (hint == null) return;
             hint.text = WebBridge.IsTouchDevice
-                ? "The chosen layout appears on screen while a level is running, and switching takes effect as soon as play resumes."
+                ? "The chosen layout appears on screen while a level is running and switches as soon as play resumes."
                 : "On-screen controls appear only on touch screens, so this choice has no effect on this computer. " +
                   "Move with A / D or the arrow keys and jump with Space.";
-        }
-
-        private void StyleModeButton(Button button, bool selected)
-        {
-            var image = button.targetGraphic as Image;
-            if (image != null) image.color = selected ? Crimson : Color.white;
-            foreach (TMP_Text text in button.GetComponentsInChildren<TMP_Text>(true))
-            {
-                text.color = selected ? Color.white : buttonTextColor;
-                text.fontStyle = selected ? FontStyles.Bold : FontStyles.Normal;
-            }
         }
 
         // ---------------------------------------------------------------- helpers
@@ -291,61 +283,74 @@ namespace MazeRunner.UI
             return rect;
         }
 
-        /// <summary>A text box whose top-centre sits at position (relative to the card's top).</summary>
-        private static TMP_Text Text(Transform parent, TMP_FontAsset font, string value, float size, Color color,
-            TextAlignmentOptions alignment, Vector2 position, Vector2 boxSize)
+        private static void Stretch(RectTransform rect, float inset = 0f)
         {
-            var rect = NewRect("Text", parent);
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+            rect.offsetMin = new Vector2(inset, inset);
+            rect.offsetMax = new Vector2(-inset, -inset);
+        }
+
+        /// <summary>Places a rect by its top-left corner, relative to the card's top centre.</summary>
+        private static RectTransform TopLeft(Transform parent, string name, float x, float y, float width, float height)
+        {
+            var rect = NewRect(name, parent);
             rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 1f);
-            rect.pivot = new Vector2(0.5f, 1f);
-            rect.anchoredPosition = position;
-            rect.sizeDelta = boxSize;
+            rect.pivot = new Vector2(0f, 1f);
+            rect.anchoredPosition = new Vector2(x, y);
+            rect.sizeDelta = new Vector2(width, height);
+            return rect;
+        }
+
+        private static TMP_Text Label(Transform parent, TMP_FontAsset font, string value, float size, Color color,
+            float x, float y, float width, float height, TextAlignmentOptions alignment, float spacing = 0f,
+            FontStyles style = FontStyles.Normal)
+        {
+            var rect = TopLeft(parent, "Text", x, y, width, height);
             var text = rect.gameObject.AddComponent<TextMeshProUGUI>();
             if (font != null) text.font = font;
             text.text = value;
             text.fontSize = size;
             text.color = color;
             text.alignment = alignment;
+            text.characterSpacing = spacing;
+            text.fontStyle = style;
             text.textWrappingMode = TextWrappingModes.NoWrap;
             text.raycastTarget = false;
             return text;
         }
 
-        private static void SectionLabel(Transform parent, TMP_FontAsset font, string value, float y)
+        private static Image Bar(Transform parent, float x, float y, float width, float height, Color color)
         {
-            var text = Text(parent, font, value, 18f, Stone, TextAlignmentOptions.Left, new Vector2(0f, y), new Vector2(CardWidth - 100f, 26f));
-            text.characterSpacing = 8f;
-            text.fontStyle = FontStyles.Bold;
-
-            var rule = NewRect("Rule", parent);
-            rule.anchorMin = rule.anchorMax = new Vector2(0.5f, 1f);
-            rule.pivot = new Vector2(0.5f, 1f);
-            rule.anchoredPosition = new Vector2(0f, y - 30f);
-            rule.sizeDelta = new Vector2(CardWidth - 100f, 1f);
-            var image = rule.gameObject.AddComponent<Image>();
-            image.color = new Color(Stone.r, Stone.g, Stone.b, 0.3f);
+            var image = TopLeft(parent, "Bar", x, y, width, height).gameObject.AddComponent<Image>();
+            image.color = color;
             image.raycastTarget = false;
+            return image;
+        }
+
+        /// <summary>Spaced capitals with a hairline rule under them.</summary>
+        private static void Section(Transform parent, TMP_FontAsset font, string title, float y)
+        {
+            float left = -ContentWidth / 2f;
+            Label(parent, font, title, 15f, Stone, left, y, ContentWidth, 22f, TextAlignmentOptions.Left, 14f, FontStyles.Bold);
+            Bar(parent, left, y - 30f, ContentWidth, 1.5f, Stone);
         }
 
         /// <summary>"Label  [====o-----]  80%" centred on y (relative to the card's top).</summary>
         private static Slider SliderRow(Transform parent, TMP_FontAsset font, string label, float y, out TMP_Text value)
         {
-            const float handleWidth = 22f;
-            float left = -(CardWidth - 100f) / 2f;
+            const float labelWidth = 210f;
+            const float valueWidth = 84f;
+            const float handleWidth = 16f;
+            float left = -ContentWidth / 2f;
 
-            Text(parent, font, label, 24f, Color.white, TextAlignmentOptions.Left,
-                new Vector2(left + 100f, y + 17f), new Vector2(200f, 34f));
-            value = Text(parent, font, "", 24f, Color.white, TextAlignmentOptions.Right,
-                new Vector2(-left - 40f, y + 17f), new Vector2(80f, 34f));
-            value.fontStyle = FontStyles.Bold;
+            Label(parent, font, label, 24f, Stone, left, y + 17f, labelWidth, 34f, TextAlignmentOptions.Left);
+            value = Label(parent, font, "", 24f, Stone, -left - valueWidth, y + 17f, valueWidth, 34f, TextAlignmentOptions.Right, 0f, FontStyles.Bold);
 
-            var root = NewRect(label.Replace(" ", "") + "Slider", parent);
-            root.anchorMin = root.anchorMax = new Vector2(0.5f, 1f);
-            root.pivot = new Vector2(0.5f, 0.5f);
-            root.anchoredPosition = new Vector2(30f, y);
-            root.sizeDelta = new Vector2(320f, 48f); // tall, easy-to-touch hit area
+            float sliderWidth = ContentWidth - labelWidth - valueWidth - 24f;
+            var root = TopLeft(parent, label.Replace(" ", "") + "Slider", left + labelWidth, y + 24f, sliderWidth, 48f);
             var hitArea = root.gameObject.AddComponent<Image>();
-            hitArea.color = new Color(0f, 0f, 0f, 0f);
+            hitArea.color = new Color(Navy.r, Navy.g, Navy.b, 0f); // invisible, makes the whole row easy to touch
 
             RectTransform Inset(string name, Transform p, float height)
             {
@@ -356,64 +361,81 @@ namespace MazeRunner.UI
                 return r;
             }
 
-            var track = Inset("Track", root, 10f);
-            track.gameObject.AddComponent<Image>().color = TrackColor;
+            var track = Inset("Track", root, 4f);
+            track.gameObject.AddComponent<Image>().color = Stone;
 
-            var fillArea = Inset("Fill Area", root, 10f);
+            var fillArea = Inset("Fill Area", root, 4f);
             var fill = NewRect("Fill", fillArea);
-            fill.anchorMin = Vector2.zero;
-            fill.anchorMax = Vector2.one;
-            fill.sizeDelta = Vector2.zero;
+            Stretch(fill);
             fill.gameObject.AddComponent<Image>().color = Crimson;
 
-            var handleArea = Inset("Handle Slide Area", root, 0f);
-            handleArea.anchorMin = new Vector2(0f, 0f);
-            handleArea.anchorMax = new Vector2(1f, 1f);
+            var handleArea = NewRect("Handle Slide Area", root);
+            handleArea.anchorMin = Vector2.zero;
+            handleArea.anchorMax = Vector2.one;
             handleArea.sizeDelta = new Vector2(-handleWidth, 0f);
             var handle = NewRect("Handle", handleArea);
-            handle.sizeDelta = new Vector2(handleWidth, -12f);
+            handle.sizeDelta = new Vector2(handleWidth, -18f);
             var handleImage = handle.gameObject.AddComponent<Image>();
-            handleImage.color = Color.white;
-            var handleOutline = handle.gameObject.AddComponent<Outline>();
-            handleOutline.effectColor = Navy;
+            handleImage.color = Stone;
 
             var slider = root.gameObject.AddComponent<Slider>();
             slider.fillRect = fill;
             slider.handleRect = handle;
             slider.targetGraphic = handleImage;
+            slider.transition = Selectable.Transition.None;
             slider.direction = Slider.Direction.LeftToRight;
             slider.minValue = 0f;
             slider.maxValue = 100f;
             slider.wholeNumbers = true;
-            var colors = slider.colors;
-            colors.highlightedColor = new Color(0.95f, 0.92f, 0.84f);
-            colors.pressedColor = Stone;
-            colors.selectedColor = new Color(0.95f, 0.92f, 0.84f);
-            slider.colors = colors;
+            root.gameObject.AddComponent<PaletteSliderHandle>().Init(handleImage);
             return slider;
         }
 
-        /// <summary>A copy of one of the scene's menu buttons with a new label and action.</summary>
-        private static Button CloneButton(Button template, Transform parent, string label, Vector2 position, Vector2 size,
-            UnityEngine.Events.UnityAction action)
+        private static PaletteButton MakeButton(Transform parent, TMP_FontAsset font, string key, string label,
+            PaletteButton.Style style, Vector2 center, Vector2 size, UnityEngine.Events.UnityAction action)
         {
-            Button button = Instantiate(template, parent, false);
-            button.name = label.Replace(" ", "") + "Button";
-            button.onClick = new Button.ButtonClickedEvent();
-            button.onClick.AddListener(action);
-            var layout = button.GetComponent<LayoutElement>();
-            if (layout != null) layout.ignoreLayout = true;
-            var rect = (RectTransform)button.transform;
+            var rect = NewRect(label.Replace(" ", "") + "Button", parent);
             rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 1f);
             rect.pivot = new Vector2(0.5f, 0.5f);
-            rect.anchoredPosition = position;
+            rect.anchoredPosition = center;
             rect.sizeDelta = size;
-            foreach (TMP_Text text in button.GetComponentsInChildren<TMP_Text>(true))
+            var frame = rect.gameObject.AddComponent<Image>();
+            var fillRect = NewRect("Fill", rect);
+            Stretch(fillRect, 1.5f);
+            var fill = fillRect.gameObject.AddComponent<Image>();
+            fill.raycastTarget = false;
+
+            if (key != null)
             {
-                text.text = label;
-                text.textWrappingMode = TextWrappingModes.NoWrap;
+                var keyText = NewRect("Key", rect);
+                keyText.anchorMin = new Vector2(0f, 0f);
+                keyText.anchorMax = new Vector2(0f, 1f);
+                keyText.pivot = new Vector2(0f, 0.5f);
+                keyText.anchoredPosition = new Vector2(22f, 0f);
+                keyText.sizeDelta = new Vector2(30f, 0f);
+                var k = keyText.gameObject.AddComponent<TextMeshProUGUI>();
+                if (font != null) k.font = font;
+                k.text = key;
+                k.fontSize = 22f;
+                k.alignment = TextAlignmentOptions.Left;
+                k.raycastTarget = false;
             }
-            button.gameObject.SetActive(true);
+
+            var textRect = NewRect("Label", rect);
+            Stretch(textRect);
+            textRect.offsetMin = new Vector2(key != null ? 52f : 12f, 0f);
+            textRect.offsetMax = new Vector2(-12f, 0f);
+            var text = textRect.gameObject.AddComponent<TextMeshProUGUI>();
+            if (font != null) text.font = font;
+            text.text = label;
+            text.fontSize = key != null ? 21f : 22f;
+            text.alignment = key != null ? TextAlignmentOptions.Left : TextAlignmentOptions.Center;
+            text.textWrappingMode = TextWrappingModes.NoWrap;
+            text.raycastTarget = false;
+
+            var button = rect.gameObject.AddComponent<PaletteButton>();
+            button.Init(style, frame, fill);
+            button.onClick.AddListener(action);
             return button;
         }
     }
