@@ -266,6 +266,41 @@ namespace MazeRunner.Testing
             var h = FindAnyObjectByType<MazeRunner.Player.PlayerHealth>();
             if (h != null) h.Heal(99);
         }
+
+        /// <summary>Player size on screen (sprite height / camera view height), rig scale, animator state, dying flag.</summary>
+        public void PlayerState(string _)
+        {
+            var p = FindAnyObjectByType<MazeRunner.Player.PlayerController>();
+            if (p == null) { Debug.Log("[PROBE] pstate none"); return; }
+            Bounds? bounds = null;
+            foreach (var sr in p.GetComponentsInChildren<SpriteRenderer>())
+            {
+                if (sr.sprite == null || !sr.enabled || sr.color.a <= 0.01f || sr.name.Contains("FX")) continue;
+                if (bounds == null) bounds = sr.bounds; else { var b = bounds.Value; b.Encapsulate(sr.bounds); bounds = b; }
+            }
+            var cam = UnityEngine.Camera.main;
+            Transform rig = p.transform.Find(PlayerRigSettings.RigName);
+            var anim = rig != null ? rig.GetComponent<Animator>() : null;
+            string state = "?";
+            float t = 0f;
+            if (anim != null && anim.runtimeAnimatorController != null)
+            {
+                var info = anim.GetCurrentAnimatorStateInfo(0);
+                t = info.normalizedTime;
+                foreach (var s in new[] { "Idle", "Running", "Jump Start", "Jump Loop", "Falling Down", "Hurt", "Dying" })
+                    if (info.IsName(s)) state = s;
+            }
+            var h = p.GetComponent<MazeRunner.Player.PlayerHealth>();
+            var rb = p.GetComponent<Rigidbody2D>();
+            float height = bounds?.size.y ?? 0f;
+            Debug.Log(string.Format(CultureInfo.InvariantCulture,
+                "[PROBE] pstate scene={0} pos=({1:F2},{2:F2}) rootScale={3:F2} rigScale={4:F2} spriteH={5:F2} camSize={6:F2} screenFrac={7:F3} camDX={8:F2} anim={9}@{10:F2} dying={11} hp={12} ctrl={13} sim={14}",
+                UnityEngine.SceneManagement.SceneManager.GetActiveScene().name, p.transform.position.x, p.transform.position.y,
+                p.transform.lossyScale.y, rig != null ? Mathf.Abs(rig.localScale.y) : 0f, height,
+                cam != null ? cam.orthographicSize : 0f, cam != null ? height / (2f * cam.orthographicSize) : 0f,
+                cam != null ? cam.transform.position.x - p.transform.position.x : 0f, state, t,
+                h != null && h.IsDying, h != null ? h.CurrentHealth : -1, p.enabled, rb != null && rb.simulated));
+        }
     }
 }
 #endif

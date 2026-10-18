@@ -213,8 +213,20 @@ namespace MazeRunner.Player
             return false;
         }
         
+        /// <summary>True once the rig's Dying state has played through (or when there is nothing to wait for).</summary>
+        public bool IsDeathAnimationFinished
+        {
+            get
+            {
+                if (fallenAngelsAnimator == null || fallenAngelsAnimator.runtimeAnimatorController == null) return true;
+                AnimatorStateInfo state = fallenAngelsAnimator.GetCurrentAnimatorStateInfo(0);
+                return state.IsName("Dying") && state.normalizedTime >= 1f && !fallenAngelsAnimator.IsInTransition(0);
+            }
+        }
+        
         public void ResetAnimationState()
         {
+            CancelInvoke(nameof(EndHurt));
             isDead = false;
             isHurt = false;
             
