@@ -171,6 +171,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 3318865631947981765, guid: 63a9e58982262214abf1f8998ac23065, type: 3}
       insertIndex: -1
       addedObject: {fileID: 41452424716431803}
+    - targetCorrespondingSourceObject: {fileID: 3318865631947981765, guid: 63a9e58982262214abf1f8998ac23065, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 6274841123159492578}
   m_SourcePrefab: {fileID: 100100000, guid: 63a9e58982262214abf1f8998ac23065, type: 3}
 --- !u!1 &151982668468816336 stripped
 GameObject:
@@ -290,6 +293,29 @@ MonoBehaviour:
   rearDetectionRange: 2
   maxHealth: 3
   fallDeathY: -10
+--- !u!114 &6274841123159492578
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 151982668468816336}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fba3e115d78091f4bb081552164ec090, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MazeRunner.Enemies.WraithPhaseBehaviour
+  noticeRange: 7
+  driftSpeed: 1.3
+  preferredDistance: 2
+  evadeSpeed: 3.2
+  dashMin: 1.5
+  dashMax: 4
+  dashWindUp: 0.4
+  dashSpeed: 10
+  dashDistance: 3.5
+  recovery: 0.7
+  cooldown: 3.5
 --- !u!4 &2991694149023910335 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 401286704095675306, guid: 63a9e58982262214abf1f8998ac23065, type: 3}

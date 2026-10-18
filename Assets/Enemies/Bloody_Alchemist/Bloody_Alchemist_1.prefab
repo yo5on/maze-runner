@@ -199,6 +199,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 800568784026933741, guid: cddc7880190a4be4683dfbc8055bbb41, type: 3}
       insertIndex: -1
       addedObject: {fileID: 7596737703769230000}
+    - targetCorrespondingSourceObject: {fileID: 800568784026933741, guid: cddc7880190a4be4683dfbc8055bbb41, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 4981452182545367576}
   m_SourcePrefab: {fileID: 100100000, guid: cddc7880190a4be4683dfbc8055bbb41, type: 3}
 --- !u!4 &4687687981459841903 stripped
 Transform:
@@ -323,3 +326,24 @@ MonoBehaviour:
   rearDetectionRange: 2
   maxHealth: 2
   fallDeathY: -10
+--- !u!114 &4981452182545367576
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6512307817704281838}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0a2db13f78dc9ea41b7ee46a74103801, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MazeRunner.Enemies.AlchemistBehaviour
+  noticeRange: 9
+  tooClose: 3.5
+  tooFar: 6.5
+  retreatSpeed: 2
+  approachSpeed: 1.4
+  throwWindUp: 0.5
+  throwCooldown: 2.8
+  flightTime: 0.85
+  poolLifetime: 2.5

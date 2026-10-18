@@ -46,6 +46,7 @@ GameObject:
   - component: {fileID: 8422173584990014834}
   - component: {fileID: 1807587159154210379}
   - component: {fileID: 4754183442969767031}
+  - component: {fileID: 8291042802387308131}
   m_Layer: 7
   m_Name: Goblin_Enemy
   m_TagString: Untagged
@@ -221,6 +222,25 @@ MonoBehaviour:
   rearDetectionRange: 3
   maxHealth: 2
   fallDeathY: -10
+--- !u!114 &8291042802387308131
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 233922221346323506}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 82023ff9a2bbbc143b510403cb708471, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MazeRunner.Enemies.GoblinSkirmisherBehaviour
+  slideSpeed: 7
+  slideDistance: 2.2
+  slideCooldown: 3
+  dashSpeed: 6
+  dashMin: 2
+  dashMax: 4.5
+  dashCooldown: 3.5
 --- !u!1 &640025928850498138
 GameObject:
   m_ObjectHideFlags: 0

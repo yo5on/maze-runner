@@ -28,6 +28,11 @@ namespace MazeRunner.EditorTools
     /// narrow ledges, chained moving platforms, spike gauntlets and the boss. Recovery gets
     /// sparser: 3 checkpoints + 2 hearts, 2 + 1, then a single checkpoint.
     ///
+    /// Enemies (each has its own EnemyBehaviour personality): Level 1 introduces every type on its
+    /// own; Level 2 pairs abilities that cover each other (shield guard + alchemist, duelist + ogre,
+    /// crusader charge + zombie lunge, wraith + alchemist); Level 3 puts lungers and snipers on narrow
+    /// landings and ends with a crusader and a duelist before the Boss Goblin.
+    ///
     /// All three levels use Level 1's player settings (7 hearts, jumpForce 9).
     ///
     /// Menu: Maze Runner > Build Level Layouts
@@ -82,18 +87,18 @@ namespace MazeRunner.EditorTools
                 .P(20f, 24f, 1.25f).E("Goblin", 22f, 1.25f, -1, 1f)
                 .P(28.5f, 37f, 0.25f).Spike(31.5f, 33f, 0.25f).E("Goblin", 35.5f, 0.25f, -1, 1f)
                 .P(41.5f, 45f, 2.25f)
-                .P(49.5f, 60f, 0.75f).CP(51f, 0.75f).E("Villager_Zombie_3", 55f, 0.75f, -1, 1.5f).E("Goblin", 58.5f, 0.75f, 1, 1f)
+                .P(49.5f, 60f, 0.75f).CP(51f, 0.75f).E("Villager_Zombie_3", 56f, 0.75f, -1, 1.5f)
                 .Mover(65.5f, 0.75f, 3f, 5f, 0f, 4.5f)
                 .P(76f, 84f, 0.75f).E("Skeleton_Warrior_2", 80f, 0.75f, 1, 2f)
                 .P(88.5f, 92f, 3f).Heart(90.25f, 3f)
                 .P(96.5f, 107f, 1.25f).Spike(101f, 102f, 1.25f).E("Goblin", 99.5f, 1.25f, 1, 1f).E("Goblin", 104.5f, 1.25f, -1, 1f)
                 .P(111.5f, 115f, 3.25f).Heart(113.25f, 3.25f)
-                .P(120f, 132f, 0.75f).CP(121.5f, 0.75f).E("Skeleton_Warrior_3", 125f, 0.75f, -1, 2f).E("Wraith_3", 130f, 0.75f, 1, 1f)
-                .P(137f, 147f, 0.75f).Trap(139.5f, 144.5f, 0.75f, 1.4f, 1.4f, 0f)
+                .P(120f, 132f, 0.75f).CP(121.5f, 0.75f).E("Skeleton_Warrior_3", 127f, 0.75f, -1, 2f)
+                .P(137f, 147f, 0.75f).Trap(139.5f, 144.5f, 0.75f, 1.4f, 1.4f, 0f).E("Wraith_3", 145.5f, 0.75f, -1, 1f)
                 .P(151.5f, 156f, 2.25f).E("Goblin", 154f, 2.25f, -1, 1f)
-                .P(161f, 174f, 0.75f).CP(162.5f, 0.75f).E("Ogre", 166f, 0.75f, -1, 1.2f).E("Skeleton_Crusader_1", 171f, 0.75f, 1, 1.2f)
-                .P(178.5f, 183f, 2.25f).E("Bloody_Alchemist_1", 181f, 2.25f, -1, 0.6f)
-                .P(188f, 202f, 0.75f).E("Goblin", 192f, 0.75f, 1, 1.5f).E("Goblin", 196f, 0.75f, -1, 1.5f)
+                .P(161f, 174f, 0.75f).CP(162.5f, 0.75f).E("Ogre", 168f, 0.75f, -1, 1.2f)
+                .P(178.5f, 183f, 2.25f).E("Skeleton_Crusader_1", 181f, 2.25f, -1, 0.6f)
+                .P(188f, 202f, 0.75f).E("Bloody_Alchemist_1", 196f, 0.75f, -1, 1f)
                 .Goal(200.5f, 0.75f);
 
             var l2 = new Level { Scene = "Assets/Scenes/Levels/Level2.unity", StartX = -7f, StartTop = -1.25f }
@@ -102,19 +107,19 @@ namespace MazeRunner.EditorTools
                 .P(19.5f, 30f, 0.25f).Spike(22.5f, 24f, 0.25f).Spike(26.5f, 28f, 0.25f).E("Goblin", 25.25f, 0.25f, 1, 0.6f)
                 .P(35.5f, 38.5f, 2.75f)
                 .P(44.5f, 47.5f, 2.75f)
-                .P(53.5f, 66f, 0.75f).CP(55f, 0.75f).E("Skeleton_Warrior_2", 60f, 0.75f, 1, 1.5f).E("Goblin", 64f, 0.75f, -1, 1f)
+                .P(53.5f, 66f, 0.75f).CP(55f, 0.75f).E("Skeleton_Warrior_2", 59f, 0.75f, -1, 1.5f).E("Bloody_Alchemist_1", 64.5f, 0.75f, -1, 0.8f)
                 .Mover(71.5f, 0.75f, 3f, 0f, 6f, 5f)
                 .P(77f, 81f, 7.25f)
                 .P(86.5f, 90f, 5.25f).E("Goblin", 88.25f, 5.25f, -1, 0.8f)
                 .P(96f, 108f, 2.75f).Trap(98f, 101f, 2.75f, 1.2f, 1.2f, 0f).Trap(102f, 105f, 2.75f, 1.2f, 1.2f, 1.2f).E("Villager_Zombie_3", 106.5f, 2.75f, -1, 0.8f)
                 .Mover(114.25f, 2.75f, 2.5f, 7f, 0f, 5f)
-                .P(128f, 140f, 2.75f).CP(129.5f, 2.75f).E("Skeleton_Warrior_3", 134f, 2.75f, -1, 1.5f).E("Ogre", 138f, 2.75f, 1, 1f)
+                .P(128f, 140f, 2.75f).CP(129.5f, 2.75f).E("Skeleton_Warrior_3", 133f, 2.75f, -1, 1.5f).E("Ogre", 138f, 2.75f, -1, 1f)
                 .P(146f, 149f, 5f).Heart(147.5f, 5f)
                 .P(155f, 158f, 2f)
                 .P(164f, 167f, 4.5f)
-                .P(173f, 190f, 1.25f).E("Skeleton_Crusader_1", 177f, 1.25f, 1, 1.2f).Trap(180f, 183f, 1.25f, 1.0f, 1.3f, 0.5f)
-                    .E("Bloody_Alchemist_1", 186f, 1.25f, -1, 0.8f).E("Goblin", 188.5f, 1.25f, -1, 0.8f)
-                .P(196f, 210f, 1.25f).E("Goblin", 200f, 1.25f, 1, 1.5f).E("Wraith_3", 204.5f, 1.25f, -1, 1.2f)
+                .P(173f, 190f, 1.25f).E("Skeleton_Crusader_1", 177f, 1.25f, -1, 1.2f).Trap(180f, 183f, 1.25f, 1.0f, 1.3f, 0.5f)
+                    .E("Villager_Zombie_3", 187f, 1.25f, -1, 0.8f)
+                .P(196f, 210f, 1.25f).E("Wraith_3", 200f, 1.25f, -1, 1.2f).E("Bloody_Alchemist_1", 206f, 1.25f, -1, 0.8f)
                 .Goal(208.5f, 1.25f);
 
             var l3 = new Level { Scene = "Assets/Scenes/Levels/Level3.unity", StartX = -7f, StartTop = -1.25f }
@@ -126,7 +131,7 @@ namespace MazeRunner.EditorTools
                 .Mover(63.25f, 0.25f, 2.5f, 0f, 5f, 3.5f, 0.5f)
                 .P(70f, 72.5f, 5.75f)
                 .P(80.5f, 83f, 4.25f).E("Villager_Zombie_3", 81.75f, 4.25f, 1, 0.5f)
-                .P(90.5f, 103f, 2.25f).CP(92f, 2.25f).Spike(95f, 96.5f, 2.25f).Spike(99.5f, 101f, 2.25f).E("Skeleton_Warrior_2", 98f, 2.25f, 1, 1f)
+                .P(90.5f, 103f, 2.25f).CP(92f, 2.25f).Spike(95f, 96.5f, 2.25f).Spike(99.5f, 101f, 2.25f).E("Skeleton_Warrior_2", 98f, 2.25f, -1, 1f).E("Bloody_Alchemist_1", 102f, 2.25f, -1, 0.5f)
                 .P(109f, 111.5f, 4.75f)
                 .P(119f, 121.5f, 4.75f).E("Wraith_3", 120.25f, 4.75f, -1, 0.5f)
                 .P(129.5f, 132f, 2.75f)
@@ -136,8 +141,8 @@ namespace MazeRunner.EditorTools
                 .P(175f, 177.5f, 5f).E("Skeleton_Crusader_1", 176.25f, 5f, -1, 0.5f)
                 .P(185f, 187.5f, 2.5f)
                 .P(195f, 197.5f, 4f).E("Bloody_Alchemist_1", 196.25f, 4f, -1, 0.5f)
-                // Boss arena: two guards, then the boss in front of the goal.
-                .P(205f, 233f, 1.25f).E("Goblin", 210f, 1.25f, 1, 1.5f).E("Villager_Zombie_1", 214.5f, 1.25f, -1, 1.5f).E("Boss", 224f, 1.25f, -1, 0f)
+                // Boss arena: a shield guard and a duelist, then the boss in front of the goal.
+                .P(205f, 233f, 1.25f).E("Skeleton_Crusader_1", 210f, 1.25f, -1, 1f).E("Skeleton_Warrior_3", 215f, 1.25f, -1, 1.5f).E("Boss", 224f, 1.25f, -1, 0f)
                 .Goal(231.5f, 1.25f);
 
             return new[] { l1, l2, l3 };

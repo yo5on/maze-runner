@@ -95,8 +95,107 @@ namespace MazeRunner.Enemies
         private static readonly int HurtTriggerHash = Animator.StringToHash("Hurt");
         private static readonly int DeathTriggerHash = Animator.StringToHash("Death");
 
+        private EnemyBehaviour behaviour;
+
         /// <summary>True once this goblin has taken over patrolling its whole platform.</summary>
         public bool PatrolsWholePlatform => patrolsWholePlatform;
+
+        // ------------------------------------------------ API for EnemyBehaviour personalities
+        // GoblinEnemy is the shared body of every enemy: health, damage, death and the defeat count,
+        // platform awareness, facing, locomotion animation, the basic patrol / slash and the boss chase.
+        // An optional EnemyBehaviour on the same object is its personality: it decides how the enemy
+        // moves and attacks, using the methods below.
+
+        public bool IsDead => isDead;
+        public bool IsBoss => isBoss;
+        public Transform Player => player;
+        public int Direction => direction;
+        public float MoveSpeed => moveSpeed;
+        public float AttackRange => attackRange;
+        public Rigidbody2D Body => rb;
+        public Animator Anim => animator;
+        public Collider2D BodyCollider => bodyCollider;
+        public LayerMask PlayerLayer => playerLayer;
+        public Collider2D Platform => platform;
+        /// <summary>True while a basic slash (or a behaviour's attack lock) holds the enemy still.</summary>
+        public bool IsAttackLocked => attackLockTimer > 0f;
+
+        /// <summary>The walkable span of the platform under the enemy (its real edges, minus a margin).</summary>
+        public bool TryGetPlatformLimits(out float min, out float max)
+        {
+            min = max = transform.position.x;
+            if (platform == null) return false;
+            GetPlatformLimits(out min, out max);
+            return true;
+        }
+
+        public void Face(int newDirection)
+        {
+            if (newDirection == 0) return;
+            direction = newDirection > 0 ? 1 : -1;
+            ApplyFacing();
+        }
+
+        /// <summary>
+        /// Walks or runs in a direction, but never off a ledge or into a wall: returns false (and stands
+        /// still) when the next step is blocked or would leave the platform.
+        /// </summary>
+        public bool MoveHorizontal(int moveDirection, float speed, bool running = false)
+        {
+            Face(moveDirection);
+            float x = rb.position.x;
+            bool outOfBounds = platform != null && TryGetPlatformLimits(out float min, out float max) &&
+                               ((direction > 0 && x >= max) || (direction < 0 && x <= min));
+            if (outOfBounds || IsBlockedAhead())
+            {
+                Halt();
+                return false;
+            }
+            rb.linearVelocity = new Vector2(direction * speed, rb.linearVelocity.y);
+            SetLocomotion(!running, running);
+            return true;
+        }
+
+        public void Halt()
+        {
+            rb.linearVelocity = new Vector2(0f, rb.linearVelocity.y);
+            SetLocomotion(false, false);
+        }
+
+        /// <summary>The original patrol (bounded, turns at ledges, walls and other goblins).</summary>
+        public void PatrolStep() => Patrol();
+
+        /// <summary>The original boss chase (runs at the player, stops at ledges).</summary>
+        public void BossChaseStep() => BossChase();
+
+        /// <summary>True when the basic slash is off cooldown and the player is in front, in reach.</summary>
+        public bool CanBasicAttack => !isDead && attackTimer <= 0f && player != null && (isBoss ? IsPlayerInBossRange() : IsPlayerInVision());
+
+        /// <summary>The original slash (Attack trigger, hit at attackPoint).</summary>
+        public void BasicAttack() => Attack();
+
+        /// <summary>Holds the enemy still for a while (used by behaviours for wind-ups and recoveries).</summary>
+        public void LockMovement(float seconds) => attackLockTimer = Mathf.Max(attackLockTimer, seconds);
+
+        /// <summary>Delays the next basic slash.</summary>
+        public void DelayBasicAttack(float seconds) => attackTimer = Mathf.Max(attackTimer, seconds);
+
+        /// <summary>Plays an animator state directly (e.g. "Kicking", "Throwing", "Sliding") if this rig has it.</summary>
+        public bool PlayState(string stateName, float fade = 0.05f)
+        {
+            if (animator == null || animator.runtimeAnimatorController == null) return false;
+            int hash = Animator.StringToHash(stateName);
+            if (!animator.HasState(0, hash)) return false;
+            animator.CrossFadeInFixedTime(hash, fade, 0);
+            return true;
+        }
+
+        /// <summary>Returns to the locomotion states after a special move.</summary>
+        public void ReturnToLocomotion()
+        {
+            animator.speed = 1f;
+            PlayState("Idle", 0.08f);
+        }
 
         /// <summary>True while the boss is chasing the player.</summary>
         public bool IsBossAlerted => isBoss && bossAlerted;
@@ -113,6 +212,7 @@ namespace MazeRunner.Enemies
             patrolMinX = startPosition.x - patrolDistance;
             patrolMaxX = startPosition.x + patrolDistance;
             hasRunParameter = HasAnimatorParameter(IsRunningHash);
+            behaviour = GetComponent<EnemyBehaviour>();
         }
 
         /// <summary>
@@ -178,6 +278,12 @@ namespace MazeRunner.Enemies
                 }
             }
 
+            if (behaviour != null && behaviour.enabled)
+            {
+                behaviour.Think();
+                if (behaviour.ControlsAttack) return;
+            }
+
             if (player != null)
             {
                 if (!isBoss)
@@ -206,6 +312,12 @@ namespace MazeRunner.Enemies
         private void FixedUpdate()
         {
             if (isDead) return;
+
+            if (behaviour != null && behaviour.enabled && behaviour.ControlsMovement)
+            {
+                behaviour.Act();
+                return;
+            }
 
             if (isBoss)
             {
@@ -467,6 +579,9 @@ namespace MazeRunner.Enemies
         {
             if (isDead) return;
 
+            // A guarding personality (shield, parry, phasing) can turn the hit away.
+            if (behaviour != null && behaviour.enabled && behaviour.TryBlock(damage)) return;
+
             currentHealth -= damage;
 
             if (currentHealth <= 0)
@@ -476,7 +591,11 @@ namespace MazeRunner.Enemies
             }
 
             animator.SetTrigger(HurtTriggerHash);
+            if (behaviour != null && behaviour.enabled) behaviour.OnHurt();
         }
+
+        public int CurrentHealth => currentHealth;
+        public int MaxHealth => maxHealth;
 
         private void Die()
         {
@@ -490,6 +609,9 @@ namespace MazeRunner.Enemies
             animator.ResetTrigger(AttackTriggerHash);
             animator.ResetTrigger(HurtTriggerHash);
             animator.SetTrigger(DeathTriggerHash);
+            animator.speed = 1f;
+            // Death interrupts any special move: its coroutines, telegraphs and hit boxes stop now.
+            if (behaviour != null) behaviour.OnDeath();
 
             // Tell a platform partner right away, not when the corpse is removed after its death clip.
             LeavePlatformGroup();

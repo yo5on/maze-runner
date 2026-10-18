@@ -48,6 +48,10 @@ namespace MazeRunner.Player
         private float lastJumpPressedTime;
         private bool isJumping;
         private bool isFalling;
+        
+        // Temporary slow from enemy attacks (e.g. a zombie bite). 1 = normal speed.
+        private float slowMultiplier = 1f;
+        private float slowTimer;
 
         private void Awake()
         {
@@ -78,6 +82,11 @@ namespace MazeRunner.Player
             
             // Update timers
             UpdateTimers();
+            if (slowTimer > 0f)
+            {
+                slowTimer -= Time.deltaTime;
+                if (slowTimer <= 0f) slowMultiplier = 1f;
+            }
             
             // Check ground state
             CheckGrounded();
@@ -133,7 +142,7 @@ namespace MazeRunner.Player
 
         private void HandleMovement()
         {
-            float targetSpeed = moveInput.x * moveSpeed;
+            float targetSpeed = moveInput.x * moveSpeed * slowMultiplier;
             float speedDifference = targetSpeed - rb.linearVelocity.x;
             
             // Choose acceleration or deceleration
@@ -213,6 +222,20 @@ namespace MazeRunner.Player
                 Gizmos.DrawLine(transform.position, transform.position + (Vector3)rb.linearVelocity * 0.1f);
             }
         }
+
+        /// <summary>
+        /// Slows the player's running speed for a while (jumping is unaffected). A new slow replaces a
+        /// weaker or shorter one; it never stacks below the given multiplier.
+        /// </summary>
+        public void ApplySlow(float multiplier, float duration)
+        {
+            multiplier = Mathf.Clamp(multiplier, 0.2f, 1f);
+            if (slowTimer > 0f && slowMultiplier < multiplier) multiplier = slowMultiplier;
+            slowMultiplier = multiplier;
+            slowTimer = Mathf.Max(slowTimer, duration);
+        }
+
+        public bool IsSlowed => slowTimer > 0f;
 
         // Public getters for other systems
         public bool IsGrounded => isGrounded;

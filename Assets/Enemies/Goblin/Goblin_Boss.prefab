@@ -612,6 +612,7 @@ GameObject:
   - component: {fileID: 98386539423176754}
   - component: {fileID: 78411729967078123}
   - component: {fileID: 7172410105118830262}
+  - component: {fileID: 1345592516937193437}
   m_Layer: 7
   m_Name: Goblin_Boss
   m_TagString: Untagged
@@ -787,6 +788,23 @@ MonoBehaviour:
   rearDetectionRange: 4
   maxHealth: 7
   fallDeathY: -10
+--- !u!114 &1345592516937193437
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5575556807089044050}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 987fcac3a2872e4429d19d3653ffe481, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MazeRunner.Enemies.BossHunterBehaviour
+  comboCooldown: 1.6
+  recovery: 1
+  enragedCooldown: 1.1
+  enragedRecovery: 0.6
+  heavyWindUp: 0.7
 --- !u!1 &5660852178447532750
 GameObject:
   m_ObjectHideFlags: 0
