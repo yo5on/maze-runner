@@ -33,7 +33,7 @@ namespace MazeRunner.EditorTools
     /// crusader charge + zombie lunge, wraith + alchemist); Level 3 puts lungers and snipers on narrow
     /// landings and ends with a crusader and a duelist before the Boss Goblin.
     ///
-    /// All three levels use Level 1's player settings (7 hearts, jumpForce 9).
+    /// All three levels use Level 1's player settings (7 hearts, jumpForce 9) and Level 1's camera.
     ///
     /// Menu: Maze Runner > Build Level Layouts
     /// CLI:  Unity -batchmode -quit -projectPath . -executeMethod MazeRunner.EditorTools.LevelLayoutBuilder.BuildFromCommandLine
@@ -341,7 +341,12 @@ namespace MazeRunner.EditorTools
 
             MakeGoal(layout, square, level.GoalX, level.GoalTop);
             SetUpPlayer(level);
-            if (level.Scene != level1Path) MatchLevel1Hud(scene, level1Path);
+            if (level.Scene != level1Path)
+            {
+                MatchLevel1Hud(scene, level1Path);
+                MatchLevel1Camera(scene, level1Path);
+                MatchLevel1Player(scene, level1Path);
+            }
 
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene);
@@ -473,6 +478,103 @@ namespace MazeRunner.EditorTools
             if (text != null) text.gameObject.SetActive(false);
             Transform customization = canvas.Find("CustomizationPanel");
             if (customization != null) customization.gameObject.SetActive(false);
+        }
+
+        /// <summary>
+        /// Levels 2 and 3 were saved with an orthographic size of 5 where Level 1 uses 7 (every other camera
+        /// and follow setting already matched), so the player looked bigger and less of the level showed.
+        /// Level 1's Camera and CameraFollow settings are copied over; each scene keeps its own follow target.
+        /// </summary>
+        private static void MatchLevel1Camera(Scene scene, string level1Path)
+        {
+            UnityEngine.Camera camera = Object.FindObjectsByType<UnityEngine.Camera>(FindObjectsInactive.Include)
+                .FirstOrDefault(c => c.gameObject.scene == scene && c.GetComponent<MazeRunner.Camera.CameraFollow>() != null);
+            if (camera == null) return;
+
+            Scene l1 = EditorSceneManager.OpenScene(level1Path, OpenSceneMode.Additive);
+            try
+            {
+                UnityEngine.Camera reference = Object.FindObjectsByType<UnityEngine.Camera>(FindObjectsInactive.Include)
+                    .First(c => c.gameObject.scene == l1 && c.GetComponent<MazeRunner.Camera.CameraFollow>() != null);
+
+                EditorUtility.CopySerialized(reference, camera);
+
+                var follow = camera.GetComponent<MazeRunner.Camera.CameraFollow>();
+                var followSo = new SerializedObject(follow);
+                Object target = followSo.FindProperty("target").objectReferenceValue;
+                EditorUtility.CopySerialized(reference.GetComponent<MazeRunner.Camera.CameraFollow>(), follow);
+                followSo.Update();
+                followSo.FindProperty("target").objectReferenceValue = target;
+                followSo.ApplyModifiedPropertiesWithoutUndo();
+                Debug.Log($"[LevelLayoutBuilder] {scene.name}: camera matches Level 1 (orthographic size {camera.orthographicSize})");
+            }
+            finally
+            {
+                EditorSceneManager.CloseScene(l1, true);
+            }
+        }
+
+        /// <summary>
+        /// Level 1's Player instance overrides the prefab: the old paper-doll body parts (Body, Hat, Hair, ...)
+        /// are hidden and their CharacterRenderer / CharacterCustomizationManager disabled (the character rig
+        /// draws the player), and the collider is 2 units tall with continuous collision detection. Levels 2
+        /// and 3 used the raw prefab. Level 1's child visibility, component states, collider and body settings
+        /// are copied onto their Player.
+        /// </summary>
+        private static void MatchLevel1Player(Scene scene, string level1Path)
+        {
+            PlayerController player = Object.FindObjectsByType<PlayerController>(FindObjectsInactive.Include)
+                .FirstOrDefault(p => p.gameObject.scene == scene);
+            if (player == null) return;
+
+            Scene l1 = EditorSceneManager.OpenScene(level1Path, OpenSceneMode.Additive);
+            try
+            {
+                PlayerController reference = Object.FindObjectsByType<PlayerController>(FindObjectsInactive.Include)
+                    .First(p => p.gameObject.scene == l1);
+
+                // Child objects that exist in both (the rig is added at run time and is not touched here).
+                foreach (Transform refChild in reference.transform)
+                {
+                    Transform child = player.transform.Find(refChild.name);
+                    if (child != null && child.gameObject.activeSelf != refChild.gameObject.activeSelf)
+                    {
+                        child.gameObject.SetActive(refChild.gameObject.activeSelf);
+                    }
+                }
+
+                foreach (MonoBehaviour refBehaviour in reference.GetComponents<MonoBehaviour>())
+                {
+                    if (refBehaviour == null) continue;
+                    var own = player.GetComponent(refBehaviour.GetType()) as MonoBehaviour;
+                    if (own != null) own.enabled = refBehaviour.enabled;
+                }
+
+                var refCollider = reference.GetComponent<CapsuleCollider2D>();
+                var collider = player.GetComponent<CapsuleCollider2D>();
+                if (refCollider != null && collider != null)
+                {
+                    collider.size = refCollider.size;
+                    collider.offset = refCollider.offset;
+                    collider.direction = refCollider.direction;
+                }
+
+                var refBody = reference.GetComponent<Rigidbody2D>();
+                var body = player.GetComponent<Rigidbody2D>();
+                if (refBody != null && body != null)
+                {
+                    body.collisionDetectionMode = refBody.collisionDetectionMode;
+                    body.interpolation = refBody.interpolation;
+                    body.gravityScale = refBody.gravityScale;
+                    body.mass = refBody.mass;
+                }
+
+                Debug.Log($"[LevelLayoutBuilder] {scene.name}: player matches Level 1 (collider {(collider != null ? collider.size.ToString() : "-")})");
+            }
+            finally
+            {
+                EditorSceneManager.CloseScene(l1, true);
+            }
         }
 
         // ------------------------------------------------------------------ assets

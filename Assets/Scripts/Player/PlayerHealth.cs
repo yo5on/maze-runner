@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using UnityEngine.SceneManagement;
 using System;
+using System.Collections;
 
 namespace MazeRunner.Player
 {
@@ -9,6 +10,8 @@ namespace MazeRunner.Player
         [SerializeField] private int maxHealth = 3;
         [SerializeField] private float invincibilityDuration = 1f;
         [SerializeField] private float fallDeathY = -10f;
+        [Tooltip("Longest time the death animation may take before the respawn (the clip normally ends sooner).")]
+        [SerializeField] private float maxDeathAnimationTime = 1.5f;
         
         private int currentHealth;
         private float invincibilityTimer;
@@ -16,7 +19,10 @@ namespace MazeRunner.Player
         private PlayerAnimationController animationController;
         private bool hasUsedRespawn;
         private bool isGameOver;
+        private bool isDying;
         private Rigidbody2D body;
+        private PlayerController controller;
+        private Coroutine deathRoutine;
         
         public event Action OnPlayerDeath;
         public event Action OnGameOver;
@@ -25,6 +31,19 @@ namespace MazeRunner.Player
         public int CurrentHealth => currentHealth;
         public int MaxHealth => maxHealth;
         public bool IsInvincible => invincibilityTimer > 0;
+        /// <summary>True from the moment the player dies until the respawn has finished.</summary>
+        public bool IsDying => isDying;
+
+        // Levels 2 and 3 get their PlayerAnimationController (with the character rig) only when the scene has
+        // loaded, after this Awake, so it is looked up when needed rather than cached once.
+        private PlayerAnimationController AnimationController
+        {
+            get
+            {
+                if (animationController == null) animationController = GetComponent<PlayerAnimationController>();
+                return animationController;
+            }
+        }
         
         private void Awake()
         {
@@ -32,6 +51,7 @@ namespace MazeRunner.Player
             lastCheckpointPosition = transform.position;
             animationController = GetComponent<PlayerAnimationController>();
             body = GetComponent<Rigidbody2D>();
+            controller = GetComponent<PlayerController>();
             hasUsedRespawn = false;
         }
         
@@ -44,7 +64,7 @@ namespace MazeRunner.Player
             
             // After game over the player stays below the kill height (time is stopped),
             // so stop checking; otherwise Die/OnGameOver would fire every frame.
-            if (!isGameOver && transform.position.y < fallDeathY)
+            if (!isGameOver && !isDying && transform.position.y < fallDeathY)
             {
                 Die();
             }
@@ -52,7 +72,7 @@ namespace MazeRunner.Player
         
         public void TakeDamage(int amount = 1)
         {
-            if (IsInvincible) return;
+            if (IsInvincible || isDying || isGameOver) return;
             
             currentHealth = Mathf.Max(0, currentHealth - amount);
             invincibilityTimer = invincibilityDuration;
@@ -63,9 +83,9 @@ namespace MazeRunner.Player
                 Audio.AudioManager.Instance.PlayDamage();
             }
             
-            if (animationController != null)
+            if (AnimationController != null)
             {
-                animationController.TriggerHurt();
+                AnimationController.TriggerHurt();
             }
             
             if (currentHealth <= 0)
@@ -76,45 +96,94 @@ namespace MazeRunner.Player
         
         public void Heal(int amount = 1)
         {
+            if (isDying || isGameOver) return;
             currentHealth = Mathf.Min(maxHealth, currentHealth + amount);
             OnHealthChanged?.Invoke(currentHealth);
         }
         
         public void Die()
         {
-            if (isGameOver) return;
+            // One death at a time: hazards, enemies and the fall check cannot start another one.
+            if (isGameOver || isDying) return;
 
             OnPlayerDeath?.Invoke();
             
             if (!hasUsedRespawn)
             {
                 hasUsedRespawn = true;
-                Respawn();
+                deathRoutine = StartCoroutine(DieThenRespawn());
             }
             else
             {
                 GameOver();
             }
         }
+
+        /// <summary>
+        /// The player stops (no input, no physics, no damage) while the death animation plays once,
+        /// then the existing respawn runs.
+        /// </summary>
+        private IEnumerator DieThenRespawn()
+        {
+            isDying = true;
+            SetAlive(false);
+
+            float waited = 0f;
+            // Let the Death trigger reach the Dying state, then wait for the clip to finish.
+            yield return null;
+            while (waited < maxDeathAnimationTime &&
+                   !(AnimationController != null && AnimationController.IsDeathAnimationFinished))
+            {
+                waited += Time.deltaTime;
+                yield return null;
+            }
+
+            deathRoutine = null;
+            Respawn();
+        }
+
+        /// <summary>Freezes or restores the player's own movement and collisions.</summary>
+        private void SetAlive(bool alive)
+        {
+            if (body != null)
+            {
+                body.linearVelocity = Vector2.zero;
+                body.angularVelocity = 0f;
+                body.simulated = alive;
+            }
+            if (controller != null) controller.enabled = alive;
+        }
         
         public void Respawn()
         {
+            if (deathRoutine != null)
+            {
+                StopCoroutine(deathRoutine);
+                deathRoutine = null;
+            }
+
             // Move the physics body too and drop the fall speed: keeping it let the player
             // pass through the checkpoint's platform after respawning and die again at once.
             if (body != null)
             {
-                body.linearVelocity = Vector2.zero;
                 body.position = lastCheckpointPosition;
             }
             transform.position = lastCheckpointPosition;
+            SetAlive(true);
+            isDying = false;
             currentHealth = maxHealth;
             invincibilityTimer = invincibilityDuration;
             OnHealthChanged?.Invoke(currentHealth);
             
-            if (animationController != null)
+            // Back to the living animation: clears the Death trigger / isDead and plays Idle.
+            if (AnimationController != null)
             {
-                animationController.ResetAnimationState();
+                AnimationController.ResetAnimationState();
             }
+
+            // The camera jumps to the respawn point instead of sweeping across the level.
+            var follow = FindAnyObjectByType<MazeRunner.Camera.CameraFollow>();
+            if (follow != null) follow.SnapToTarget();
             
             // Play respawn sound
             if (Audio.AudioManager.Instance != null)
