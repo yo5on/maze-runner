@@ -5,8 +5,8 @@ using UnityEngine.SceneManagement;
 namespace MazeRunner.Levels
 {
     /// <summary>
-    /// Tracks level unlocks and loads the configured level sequence.
-    /// The default sequence uses TestLevel as Level 1.
+    /// Tracks level unlocks and loads the configured level sequence (Level1 -> Level2 -> Level3).
+    /// Unlocks are saved in PlayerPrefs.
     /// </summary>
     [DefaultExecutionOrder(-100)]
     public sealed class LevelProgressionManager : MonoBehaviour
@@ -14,10 +14,10 @@ namespace MazeRunner.Levels
         private const string UnlockKeyPrefix = "MazeRunner.LevelUnlocked.";
 
         /// <summary>
-        /// How many levels of the sequence can be played. Temporarily 1: Levels 2 and 3 are on hold while
-        /// Level 1 is finished. Their scenes stay in the build; raise this to 3 to bring them back.
+        /// How many levels of the sequence can be played: all three. Completing a level unlocks the
+        /// next; completing the last one shows the victory screen (LevelCompleteController).
         /// </summary>
-        public const int EnabledLevelCount = 1;
+        public const int EnabledLevelCount = 3;
 
         private static LevelProgressionManager instance;
 
