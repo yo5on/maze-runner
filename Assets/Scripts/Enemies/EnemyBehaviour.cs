@@ -239,7 +239,7 @@ namespace MazeRunner.Enemies
         protected HeldShield HoldShield(Sprite sprite = null)
         {
             float height = Enemy.BodyCollider != null ? Enemy.BodyCollider.bounds.size.y : 2f;
-            return HeldShield.Attach(transform, sprite, height * 0.55f);
+            return HeldShield.Attach(transform, sprite, height * 0.48f); // clear of the ground on the short-armed rigs
         }
 
         /// <summary>A short kick of the raised shield when it turns a stomp away.</summary>
