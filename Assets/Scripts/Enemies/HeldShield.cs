@@ -15,7 +15,7 @@ namespace MazeRunner.Enemies
     public class HeldShield : MonoBehaviour
     {
         private const float LoweredAngle = -40f;
-        private const float ArmRaise = 65f;    // degrees the upper arm swings forward while guarding
+        private const float ArmRaise = 80f;    // degrees the upper arm swings forward while guarding
         private const float BlendSpeed = 5f;   // raise/lower in about 0.2 s
         private const float BraceLift = 25f;   // extra lift while bracing against a blocked hit
         private const float BraceTime = 0.3f;
@@ -66,7 +66,7 @@ namespace MazeRunner.Enemies
             {
                 anchor = hand.transform;
                 grip = hand.sprite.bounds.center;
-                forward = 0.32f; // of the shield's width: the fist holds the back of the shield
+                forward = 0.2f; // of the shield's width: the fist sits on the grip, a little behind the boss
             }
             else
             {

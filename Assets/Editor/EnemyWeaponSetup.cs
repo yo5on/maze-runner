@@ -10,9 +10,9 @@ namespace MazeRunner.EditorTools
     /// <summary>
     /// Gives the enemies their weapon art and checks it is in place:
     /// - Shields: imports the two shields used in game from the craftpix shield pack kept (unchanged) at
-    ///   weapons/shield.zip - Shield_3 tier 3 (iron-rimmed kite shield) for Skeleton Warrior 2 and
-    ///   Shield_6 tier 3 (steel-rimmed tower shield) for Skeleton Crusader 1 - into
-    ///   Assets/Sprites/Weapons/Shields. The pack's other designs are left in the archive.
+    ///   weapons/shield.zip - PNG/Shield_5/1.png (dark iron-banded round shield) for Skeleton Warrior 2 and
+    ///   PNG/Shield_1/5.png (riveted steel round shield) for Skeleton Crusader 1 - into
+    ///   Assets/Sprites/Weapons/Shields, unchanged. The pack's other designs are left in the archive.
     /// - Potions: builds the potion sprites (<see cref="PotionArtBuilder"/>) and gives Bloody Alchemist 1
     ///   the green faceted potion (from the reference sheet), its splash pieces and puddle.
     /// - Enemy Intel: points Resources/EnemyIntelArt at the potion and shields so the panel shows them.
@@ -33,11 +33,14 @@ namespace MazeRunner.EditorTools
 
         private static readonly (string entry, string target)[] Shields =
         {
-            ("PNG/Shield_3/3.png", "Shield_3_3.png"), // Skeleton Warrior 2
-            ("PNG/Shield_6/3.png", "Shield_6_3.png"), // Skeleton Crusader 1
+            ("PNG/Shield_5/1.png", "Shield_5_1.png"), // Skeleton Warrior 2
+            ("PNG/Shield_1/5.png", "Shield_1_5.png"), // Skeleton Crusader 1
         };
 
         private static string Potion(string file) => PotionArtBuilder.Folder + "/" + file + ".png";
+
+        private const string WarriorShield = ShieldFolder + "/Shield_5_1.png";
+        private const string CrusaderShield = ShieldFolder + "/Shield_1_5.png";
 
         [MenuItem("Maze Runner/Set Up Enemy Weapons")]
         public static bool Run()
@@ -49,8 +52,8 @@ namespace MazeRunner.EditorTools
             Sprite droplet = Load(Potion("fx_droplet"));
             Sprite shard = Load(Potion("fx_glass_shard"));
             Sprite puddle = Load(Potion("fx_puddle"));
-            Sprite warriorShield = Load(ShieldFolder + "/Shield_3_3.png");
-            Sprite crusaderShield = Load(ShieldFolder + "/Shield_6_3.png");
+            Sprite warriorShield = Load(WarriorShield);
+            Sprite crusaderShield = Load(CrusaderShield);
             Color green = PotionArtBuilder.Liquids[1].liquid;
 
             EditPrefab(Alchemist, typeof(AlchemistBehaviour), so =>
@@ -79,6 +82,41 @@ namespace MazeRunner.EditorTools
             EditorUtility.SetDirty(art);
             AssetDatabase.SaveAssets();
             return Verify();
+        }
+
+        /// <summary>
+        /// Only the shields: imports them, gives each shield enemy its shield and points the Enemy Intel icons
+        /// at them. Potions and every other weapon are left as they are.
+        /// Menu: Maze Runner > Set Up Enemy Shields
+        /// </summary>
+        [MenuItem("Maze Runner/Set Up Enemy Shields")]
+        public static bool RunShields()
+        {
+            ImportShields();
+            Sprite warriorShield = Load(WarriorShield);
+            Sprite crusaderShield = Load(CrusaderShield);
+            EditPrefab(Warrior, typeof(ShieldWarriorBehaviour), so => so.FindProperty("shieldSprite").objectReferenceValue = warriorShield);
+            EditPrefab(Crusader, typeof(CrusaderBehaviour), so => so.FindProperty("shieldSprite").objectReferenceValue = crusaderShield);
+            var art = AssetDatabase.LoadAssetAtPath<EnemyIntelArt>(IntelArtPath);
+            if (art != null && art.icons != null)
+            {
+                for (int i = 0; i < art.icons.Length; i++)
+                {
+                    if (art.icons[i].id == "skeleton_warrior_2") art.icons[i].sprite = warriorShield;
+                    else if (art.icons[i].id == "skeleton_crusader_1") art.icons[i].sprite = crusaderShield;
+                }
+                EditorUtility.SetDirty(art);
+            }
+            AssetDatabase.SaveAssets();
+            return Verify();
+        }
+
+        public static void RunShieldsFromCommandLine()
+        {
+            bool ok;
+            try { ok = RunShields(); }
+            catch (Exception e) { Debug.LogException(e); ok = false; }
+            EditorApplication.Exit(ok ? 0 : 1);
         }
 
         private static void ImportShields()

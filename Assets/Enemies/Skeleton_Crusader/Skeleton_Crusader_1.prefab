@@ -352,7 +352,7 @@ MonoBehaviour:
   cooldown: 4
   leash: 2.5
   turnDelay: 0.7
-  shieldSprite: {fileID: 21300000, guid: 7beedb78857b6fc4a89921996a522273, type: 3}
+  shieldSprite: {fileID: 21300000, guid: 109be48bb88c87f44ab5c5959d6decea, type: 3}
 --- !u!4 &2304478658932964421 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 6635247873734426167, guid: 48c14c66738d46941936bcb72c560573, type: 3}
