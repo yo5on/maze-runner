@@ -1,4 +1,4 @@
-#if MAZE_AI_TEST
+﻿#if MAZE_AI_TEST
 using System.Globalization;
 using System.Reflection;
 using System.Text;
@@ -265,6 +265,60 @@ namespace MazeRunner.Testing
         {
             var h = FindAnyObjectByType<MazeRunner.Player.PlayerHealth>();
             if (h != null) h.Heal(99);
+        }
+
+        /// <summary>Hurts the player by the given amount (default 1), the same way an enemy hit does.</summary>
+        public void HurtPlayer(string amount)
+        {
+            var h = FindAnyObjectByType<MazeRunner.Player.PlayerHealth>();
+            if (h != null) h.TakeDamage(int.TryParse(amount, out int n) && n > 0 ? n : 1);
+            HudInfo("");
+        }
+
+        /// <summary>Kills the player outright, like falling off the level.</summary>
+        public void KillPlayer(string _)
+        {
+            var h = FindAnyObjectByType<MazeRunner.Player.PlayerHealth>();
+            if (h != null) h.Die();
+            HudInfo("");
+        }
+
+        /// <summary>Health and spare lives as PlayerHealth counts them, and the sprites the HUD hearts show.</summary>
+        public void HudInfo(string _)
+        {
+            var h = FindAnyObjectByType<MazeRunner.Player.PlayerHealth>();
+            var sb = new StringBuilder();
+            sb.AppendFormat(CultureInfo.InvariantCulture, "[PROBE] hud scene={0} hp={1}/{2} spare={3} dying={4} timeScale={5} hearts=",
+                UnityEngine.SceneManagement.SceneManager.GetActiveScene().name,
+                h != null ? h.CurrentHealth : -1, h != null ? h.MaxHealth : -1, h != null ? h.SpareLives : -1,
+                h != null && h.IsDying, Time.timeScale);
+            var display = FindAnyObjectByType<MazeRunner.UI.HealthDisplay>();
+            if (display != null)
+            {
+                var container = Field<GameObject>(display, "heartContainer");
+                foreach (Transform child in container.transform)
+                {
+                    var img = child.GetComponent<UnityEngine.UI.Image>();
+                    if (img != null) sb.Append(img.sprite != null ? img.sprite.name : "null").Append(',');
+                }
+                sb.Append(" spareRow=");
+                Transform row = container.transform.Find("SpareLives");
+                if (row == null) sb.Append("MISSING");
+                else
+                {
+                    var rt = (RectTransform)row;
+                    foreach (Transform life in row)
+                    {
+                        var img = life.GetComponent<UnityEngine.UI.Image>();
+                        var r = img.rectTransform.rect;
+                        sb.Append(img.sprite != null ? img.sprite.name : "null").Append('(').Append(r.width).Append('x').Append(r.height).Append(")");
+                    }
+                    sb.AppendFormat(CultureInfo.InvariantCulture, " rowPos=({0:F0},{1:F0})", rt.anchoredPosition.x, rt.anchoredPosition.y);
+                }
+                sb.Append(" displays=").Append(FindObjectsByType<MazeRunner.UI.HealthDisplay>(FindObjectsSortMode.None).Length);
+            }
+            else sb.Append("no HealthDisplay");
+            Debug.Log(sb.ToString());
         }
 
         /// <summary>Player size on screen (sprite height / camera view height), rig scale, animator state, dying flag.</summary>

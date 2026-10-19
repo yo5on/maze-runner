@@ -27,12 +27,18 @@ namespace MazeRunner.Player
         public event Action OnPlayerDeath;
         public event Action OnGameOver;
         public event Action<int> OnHealthChanged;
+        /// <summary>Fires with the new count when the spare life is used up.</summary>
+        public event Action<int> OnSpareLivesChanged;
         
         public int CurrentHealth => currentHealth;
         public int MaxHealth => maxHealth;
         public bool IsInvincible => invincibilityTimer > 0;
         /// <summary>True from the moment the player dies until the respawn has finished.</summary>
         public bool IsDying => isDying;
+        /// <summary>Spare lives the player starts each level attempt with: one respawn before Game Over.</summary>
+        public int StartingSpareLives => 1;
+        /// <summary>Spare lives left: the respawn is spent by the first death and comes back only when the level is loaded again.</summary>
+        public int SpareLives => hasUsedRespawn ? 0 : StartingSpareLives;
 
         // Levels 2 and 3 get their PlayerAnimationController (with the character rig) only when the scene has
         // loaded, after this Awake, so it is looked up when needed rather than cached once.
@@ -111,6 +117,7 @@ namespace MazeRunner.Player
             if (!hasUsedRespawn)
             {
                 hasUsedRespawn = true;
+                OnSpareLivesChanged?.Invoke(SpareLives);
                 deathRoutine = StartCoroutine(DieThenRespawn());
             }
             else

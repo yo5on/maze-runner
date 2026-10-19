@@ -3574,6 +3574,7 @@ MonoBehaviour:
   heartPrefab: {fileID: 1423026579546237900, guid: cb4f43fe3f2d5374b9b0a146ca942088, type: 3}
   fullHeartSprite: {fileID: 1564688358316481467, guid: a5e9763b0f048fb4490601c4a1428f02, type: 3}
   emptyHeartSprite: {fileID: 7885684081779559860, guid: a5e9763b0f048fb4490601c4a1428f02, type: 3}
+  spareLifeSprite: {fileID: 8522625820373494394, guid: a5e9763b0f048fb4490601c4a1428f02, type: 3}
 --- !u!1001 &695212720
 PrefabInstance:
   m_ObjectHideFlags: 0
