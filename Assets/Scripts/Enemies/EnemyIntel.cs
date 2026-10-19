@@ -90,7 +90,7 @@ namespace MazeRunner.Enemies
             {
                 Id = "villager_zombie_1", Prefab = "Assets/Enemies/Zombie_Villager/Villager_Zombie_1.prefab",
                 Behaviour = typeof(ZombieShamblerBehaviour),
-                Name = "Villager Zombie I", Role = "SLOW, RELENTLESS PURSUER", Health = 2,
+                Name = "Villager Zombie 1", Role = "SLOW, RELENTLESS PURSUER", Health = 2,
                 Ability = "Heavy Bite", Style = AttackStyle.Melee,
                 Description = "Stops, then bites at close range. A bite deals 1 damage and slows you to half speed for 1.5 s.",
                 Stats = new[]
@@ -106,7 +106,7 @@ namespace MazeRunner.Enemies
             {
                 Id = "villager_zombie_3", Prefab = "Assets/Enemies/Zombie_Villager/Villager_Zombie_3.prefab",
                 Behaviour = typeof(ZombieRusherBehaviour),
-                Name = "Villager Zombie III", Role = "ERRATIC RUSHER", Health = 2,
+                Name = "Villager Zombie 3", Role = "ERRATIC RUSHER", Health = 2,
                 Ability = "Lunge", Style = AttackStyle.Dash,
                 Description = "Freezes in a crouch, then lunges up to 3.5 units. A hit deals 1 damage and knocks you back.",
                 Stats = new[]
@@ -122,9 +122,9 @@ namespace MazeRunner.Enemies
             {
                 Id = "skeleton_warrior_2", Prefab = "Assets/Enemies/Skeleton_Warrior/Skeleton_Warrior_2.prefab",
                 Behaviour = typeof(ShieldWarriorBehaviour),
-                Name = "Skeleton Warrior II", Role = "DISCIPLINED GUARD", Health = 3,
-                Ability = "Guard and Counter", Style = AttackStyle.Counter,
-                Description = "Raises its shield, then lowers it for a short opening. A stomp on the raised shield is blocked and answered with a counter-slash.",
+                Name = "Skeleton Warrior 2", Role = "DISCIPLINED GUARD", Health = 3,
+                Ability = "Shield Guard", Style = AttackStyle.Counter,
+                Description = "Raises its kite shield, then lowers it for a short opening. A stomp on its front is blocked and answered with a counter-slash. It is slow to turn while guarding.",
                 Stats = new[]
                 {
                     IntelStat.SecondsRange("GUARD", 1.8f, 2.6f, "guardMin", "guardMax"),
@@ -132,13 +132,13 @@ namespace MazeRunner.Enemies
                     IntelStat.Seconds("COUNTER", 0.3f, "counterWindUp"),
                     IntelStat.Damage(1),
                 },
-                Counter = "Wait for the stone shield bar to disappear, then stomp.",
+                Counter = "Stomp in the opening, or land on its back before it turns.",
             },
             new EnemyIntelEntry
             {
                 Id = "skeleton_warrior_3", Prefab = "Assets/Enemies/Skeleton_Warrior/Skeleton_Warrior_3.prefab",
                 Behaviour = typeof(DuelistBehaviour),
-                Name = "Skeleton Warrior III", Role = "AGGRESSIVE DUELIST", Health = 3,
+                Name = "Skeleton Warrior 3", Role = "AGGRESSIVE DUELIST", Health = 3,
                 Ability = "Two-Hit Combo", Style = AttackStyle.Combo,
                 Description = "Advances at a run and strikes twice, stepping forward between the slashes. Each slash deals 1 damage.",
                 Stats = new[]
@@ -154,9 +154,9 @@ namespace MazeRunner.Enemies
             {
                 Id = "bloody_alchemist_1", Prefab = "Assets/Enemies/Bloody_Alchemist/Bloody_Alchemist_1.prefab",
                 Behaviour = typeof(AlchemistBehaviour),
-                Name = "Bloody Alchemist", Role = "CAUTIOUS RANGED THROWER", Health = 2,
-                Ability = "Acid Flask", Style = AttackStyle.Ranged,
-                Description = "Keeps its distance and lobs a flask at where you stand. A direct hit deals 1 damage; the acid pool it leaves hurts for 2.5 s.",
+                Name = "Bloody Alchemist 1", Role = "CAUTIOUS RANGED THROWER", Health = 2,
+                Ability = "Potion Throw", Style = AttackStyle.Ranged,
+                Description = "Keeps its distance and lobs a potion at where you stand. A direct hit deals 1 damage; the spilled potion hurts for 2.5 s.",
                 Stats = new[]
                 {
                     IntelStat.Seconds("WIND-UP", 0.5f, "throwWindUp"),
@@ -164,15 +164,15 @@ namespace MazeRunner.Enemies
                     IntelStat.Seconds("COOLDOWN", 2.8f, "throwCooldown"),
                     IntelStat.Distance("SIGHT", 9f, "noticeRange"),
                 },
-                Counter = "The flask arcs slowly: outrun it or jump it, then close in.",
+                Counter = "The potion arcs slowly: outrun it or jump it, then close in.",
             },
             new EnemyIntelEntry
             {
                 Id = "skeleton_crusader_1", Prefab = "Assets/Enemies/Skeleton_Crusader/Skeleton_Crusader_1.prefab",
                 Behaviour = typeof(CrusaderBehaviour),
-                Name = "Skeleton Crusader", Role = "ARMOURED GUARDIAN", Health = 3,
+                Name = "Skeleton Crusader 1", Role = "ARMOURED GUARDIAN", Health = 3,
                 Ability = "Shield Charge", Style = AttackStyle.Charge,
-                Description = "Marks a lane on the ground, then charges up to 4 units. A hit deals 1 damage and knocks you back. Its shield blocks stomps.",
+                Description = "Holds its post behind a tower shield that blocks stomps on its front, then marks a lane and charges up to 4 units: 1 damage and a knock-back.",
                 Stats = new[]
                 {
                     IntelStat.Seconds("WIND-UP", 0.8f, "chargeWindUp"),
@@ -180,13 +180,13 @@ namespace MazeRunner.Enemies
                     IntelStat.Seconds("COOLDOWN", 4f, "cooldown"),
                     IntelStat.DistanceRange("RANGE", 2.2f, 6f, "chargeMin", "chargeMax"),
                 },
-                Counter = "Its shield is down during the charge and for 1.4 s after it. Stomp then.",
+                Counter = "Its shield is down during the charge and for 1.4 s after. Or land on its back.",
             },
             new EnemyIntelEntry
             {
                 Id = "wraith_3", Prefab = "Assets/Enemies/Wraith/Wraith_3.prefab",
                 Behaviour = typeof(WraithPhaseBehaviour),
-                Name = "Wraith", Role = "ELUSIVE PHANTOM", Health = 3,
+                Name = "Wraith 3", Role = "ELUSIVE PHANTOM", Health = 3,
                 Ability = "Phase Dash", Style = AttackStyle.Dash,
                 Description = "Fades, then phases straight through you for up to 3.5 units, dealing 1 damage. It cannot be hurt while phased.",
                 Stats = new[]
@@ -218,7 +218,7 @@ namespace MazeRunner.Enemies
             {
                 Id = "goblin", Prefab = "Assets/Enemies/Goblin/Goblin_Enemy.prefab",
                 Behaviour = typeof(GoblinSkirmisherBehaviour),
-                Name = "Goblin", Role = "CUNNING SKIRMISHER", Health = 2,
+                Name = "Regular Goblin", Role = "CUNNING SKIRMISHER", Health = 2,
                 Ability = "Flanking Dash", Style = AttackStyle.Dash,
                 Description = "Dashes in and slashes for 1 damage when you move away from it. When you drop on it, it slides about 2 units clear.",
                 Stats = new[]

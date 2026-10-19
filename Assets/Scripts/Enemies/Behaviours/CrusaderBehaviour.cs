@@ -5,8 +5,9 @@ namespace MazeRunner.Enemies
 {
     /// <summary>
     /// Skeleton Crusader 1: a slow, heavily armoured guardian that holds a post (where it was placed).
-    /// While it holds its ground its shield is up (stone bar): stomps glance off. It never strays far
-    /// and walks back to its post afterwards.
+    /// While it holds its ground its tower shield is up: stomps landing on its front glance off. It is
+    /// slow to turn (turnDelay), so a stomp on its back gets past the shield. It never strays far and
+    /// walks back to its post afterwards.
     /// Signature: Shield Charge. When the player is 2.2-6 units away on its floor: a 0.8 s wind-up with a
     /// warning and the charge lane marked on the ground, then a charge of up to 4 units (stops at
     /// ledges) that hits for 1 and knocks the player back. The shield is down during the charge and the
@@ -24,11 +25,15 @@ namespace MazeRunner.Enemies
         [SerializeField] private float recovery = 1.4f;
         [SerializeField] private float cooldown = 4f;
         [SerializeField] private float leash = 2.5f;
+        [Tooltip("How long the player must stay behind it before it turns around.")]
+        [SerializeField] private float turnDelay = 0.7f;
+        [Tooltip("Shield art held up while guarding (Assets/Sprites/Weapons/Shields).")]
+        [SerializeField] private Sprite shieldSprite;
 
         private float post;
         private float nextCharge;
         private bool shieldUp = true;
-        private GameObject shield;
+        private HeldShield shield;
 
         protected override bool HasSuperArmor => true;
 
@@ -36,13 +41,17 @@ namespace MazeRunner.Enemies
         {
             base.Start();
             post = transform.position.x;
+            shield = HoldShield(shieldSprite);
             SetShield(true);
         }
 
         public override bool TryBlock(int damage)
         {
-            if (shieldUp) Trace("blocked stomp");
-            return shieldUp;
+            if (!shieldUp) return false;
+            if (!PlayerInFront()) { Trace("stomp landed behind the shield"); return false; }
+            Trace("blocked stomp");
+            ShieldBlocked(shield != null ? shield.Visual : null);
+            return true;
         }
 
         public override void Think()
@@ -74,7 +83,7 @@ namespace MazeRunner.Enemies
             else
             {
                 Enemy.Halt();
-                if (watching) Enemy.Face(DirToPlayer);
+                if (watching) FacePlayerAfter(turnDelay);
             }
         }
 
@@ -116,8 +125,7 @@ namespace MazeRunner.Enemies
         private void SetShield(bool up)
         {
             shieldUp = up;
-            if (up && shield == null) shield = ShieldMarker();
-            else if (!up && shield != null) { Destroy(shield); shield = null; }
+            if (shield != null) shield.Raised = up; // lowered, never dropped: it stays in hand
         }
 
         public override void OnDeath()

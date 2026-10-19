@@ -6,11 +6,13 @@ namespace MazeRunner.Enemies
     /// <summary>
     /// Skeleton Warrior 2: a disciplined guard. It patrols; when the player comes within 5 units on its
     /// floor it stops, faces the player and alternates two stances:
-    /// - Guard (1.8-2.6 s, a stone shield bar shows in front): stomps are blocked (the player bounces
-    ///   off unharmed). A blocked stomp is answered with a quick counter-slash (0.3 s wind-up).
+    /// - Guard (1.8-2.6 s, its kite shield raised in front): stomps landing on its front are blocked
+    ///   (the player bounces off unharmed) and answered with a quick counter-slash (0.3 s wind-up),
+    ///   which leaves it in the opening. While guarding it is slow to turn (guardTurnDelay), so a
+    ///   stomp on its back - the rear of the body - gets past the shield.
     /// - Opening (1.2 s, shield lowered): it can be stomped, and slashes if the player stands in reach.
     /// The player's only attack is the stomp, so "frontal attacks" are stomps landing on the guard;
-    /// waiting for the opening is the counter-play.
+    /// waiting for the opening, or getting behind it, is the counter-play.
     /// </summary>
     public class ShieldWarriorBehaviour : EnemyBehaviour
     {
@@ -21,17 +23,29 @@ namespace MazeRunner.Enemies
         [SerializeField] private float openingTime = 1.2f;
         [SerializeField] private float counterWindUp = 0.3f;
         [SerializeField] private float counterReach = 1.3f;
+        [Tooltip("While guarding, how long the player must stay behind it before it turns around.")]
+        [SerializeField] private float guardTurnDelay = 0.5f;
+        [Tooltip("Shield art held up while guarding (Assets/Sprites/Weapons/Shields).")]
+        [SerializeField] private Sprite shieldSprite;
 
         private enum Stance { Patrol, Guard, Opening }
         private Stance stance = Stance.Patrol;
         private float stanceTimer;
         private float lostTimer;
-        private GameObject shield;
+        private HeldShield shield;
+
+        protected override void Start()
+        {
+            base.Start();
+            shield = HoldShield(shieldSprite); // carried lowered while patrolling
+        }
 
         public override bool TryBlock(int damage)
         {
             if (stance != Stance.Guard || Busy) return false;
+            if (!PlayerInFront()) { Trace("stomp landed behind the shield"); return false; }
             Trace("blocked stomp");
+            ShieldBlocked(shield != null ? shield.Visual : null);
             if (HasPlayer && Mathf.Abs(DX) <= counterReach + 0.8f) RunSpecial(Counter());
             return true;
         }
@@ -68,7 +82,9 @@ namespace MazeRunner.Enemies
             if (Busy) return;
             if (stance == Stance.Patrol) { Enemy.PatrolStep(); return; }
             Enemy.Halt();
-            if (!Enemy.IsAttackLocked) Enemy.Face(DirToPlayer);
+            if (Enemy.IsAttackLocked) return;
+            if (stance == Stance.Guard) FacePlayerAfter(guardTurnDelay);
+            else Enemy.Face(DirToPlayer);
         }
 
         private void SetStance(Stance next)
@@ -78,8 +94,7 @@ namespace MazeRunner.Enemies
             Trace("stance " + next);
             stanceTimer = next == Stance.Guard ? Random.Range(guardMin, guardMax) : openingTime;
             bool raised = next == Stance.Guard;
-            if (raised && shield == null) shield = ShieldMarker();
-            else if (!raised && shield != null) { Destroy(shield); shield = null; }
+            if (shield != null) shield.Raised = raised;
             if (next != Stance.Patrol) Enemy.PlayState(raised ? "Idle" : "Idle Blinking");
         }
 
@@ -99,7 +114,7 @@ namespace MazeRunner.Enemies
 
         public override void OnDeath()
         {
-            if (shield != null) Destroy(shield);
+            if (shield != null) shield.Raised = false; // stays in hand through the death animation
             base.OnDeath();
         }
     }

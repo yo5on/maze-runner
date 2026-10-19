@@ -384,7 +384,11 @@ namespace MazeRunner.UI
             string presence = present > 0 ? present + " IN THIS LEVEL" : "NOT IN THIS LEVEL";
             presenceText.text = e == nearest ? "<color=#D21319>NEAREST</color>   " + presence : presence;
 
-            styleIcon.sprite = IntelIcons.For(e.Style);
+            // The ability's own artwork (potion, shield) when there is some, else the attack-style line icon.
+            Sprite art = EnemyIntelArt.IconFor(e.Id);
+            styleIcon.sprite = art != null ? art : IntelIcons.For(e.Style);
+            styleIcon.color = art != null ? Color.white : PaletteUI.Crimson;
+            styleIcon.preserveAspect = true;
             abilityText.text = e.Ability;
             styleTagText.text = EnemyIntel.StyleLabel(e.Style);
             // The tag sits just after the ability name.
