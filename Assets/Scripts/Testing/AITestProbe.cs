@@ -301,33 +301,33 @@ namespace MazeRunner.Testing
             Transform root = throwWatch.transform;
             int facing = root.lossyScale.x < 0f ? -1 : 1;
             var sb = new StringBuilder();
-            sb.AppendFormat(CultureInfo.InvariantCulture, "[PROBE] arm t={0:F3}", Time.time);
+            sb.AppendFormat(CultureInfo.InvariantCulture, "[PROBE] arm t={0:F3} facing={1} alchemistX={2:F2}", Time.time, facing > 0 ? "right" : "left", root.position.x);
             foreach (var sr in root.GetComponentsInChildren<SpriteRenderer>())
             {
                 if (sr.name != "HeldPotion" && sr.name != "Sword") continue;
                 Vector3 d = sr.transform.position - root.position;
                 sb.AppendFormat(CultureInfo.InvariantCulture, " {0}(fwd={1:F2},up={2:F2})", sr.name == "Sword" ? "knife" : "bottle", d.x * facing, d.y);
             }
-            // The left arm as the behaviour drives it: requested offset, the bone's angle, and where the hand is.
-            object leftArm = throwWatch.GetType().GetField("leftArm", Flags)?.GetValue(throwWatch);
-            if (leftArm != null)
+            // The throwing (right) arm as the behaviour drives it: requested offset, the bone's angle, and where the hand is.
+            object throwArm = throwWatch.GetType().GetField("throwArm", Flags)?.GetValue(throwWatch);
+            if (throwArm != null)
             {
-                var bone = leftArm.GetType().GetField("bone", Flags)?.GetValue(leftArm) as Transform;
-                var angle = leftArm.GetType().GetField("Angle")?.GetValue(leftArm);
-                sb.AppendFormat(CultureInfo.InvariantCulture, " leftArm[{0} offset={1} z={2:F0}]", bone != null ? bone.name : "null", angle, bone != null ? bone.localEulerAngles.z : -1f);
+                var bone = throwArm.GetType().GetField("bone", Flags)?.GetValue(throwArm) as Transform;
+                var angle = throwArm.GetType().GetField("Angle")?.GetValue(throwArm);
+                sb.AppendFormat(CultureInfo.InvariantCulture, " throwArm[{0} offset={1} z={2:F0}]", bone != null ? bone.name : "null", angle, bone != null ? bone.localEulerAngles.z : -1f);
             }
             Transform hand = null;
-            foreach (Transform t in root.GetComponentsInChildren<Transform>()) if (t.name == "Left Hand") hand = t;
+            foreach (Transform t in root.GetComponentsInChildren<Transform>()) if (t.name == "Right Hand") hand = t;
             if (hand != null)
             {
                 Vector3 h = hand.position - root.position;
-                sb.AppendFormat(CultureInfo.InvariantCulture, " hand(fwd={0:F2},up={1:F2})", h.x * facing, h.y);
+                sb.AppendFormat(CultureInfo.InvariantCulture, " rightHand(fwd={0:F2},up={1:F2})", h.x * facing, h.y);
             }
             foreach (var sr in FindObjectsByType<SpriteRenderer>(FindObjectsSortMode.None))
             {
                 if (sr.name != "Potion") continue;
                 Vector3 d = sr.transform.position - root.position;
-                sb.AppendFormat(CultureInfo.InvariantCulture, " flying(fwd={0:F2},up={1:F2})", d.x * facing, d.y);
+                sb.AppendFormat(CultureInfo.InvariantCulture, " flying(fwd={0:F2},up={1:F2},worldX={2:F2},size={3:F2}x{4:F2})", d.x * facing, d.y, sr.transform.position.x, sr.bounds.size.x, sr.bounds.size.y);
             }
             Debug.Log(sb.ToString());
         }
