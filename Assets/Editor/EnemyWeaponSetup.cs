@@ -13,8 +13,11 @@ namespace MazeRunner.EditorTools
     ///   weapons/shield.zip - PNG/Shield_5/1.png (dark iron-banded round shield) for Skeleton Warrior 2 and
     ///   PNG/Shield_1/5.png (riveted steel round shield) for Skeleton Crusader 1 - into
     ///   Assets/Sprites/Weapons/Shields, unchanged. The pack's other designs are left in the archive.
-    /// - Potions: builds the potion sprites (<see cref="PotionArtBuilder"/>) and gives Bloody Alchemist 1
-    ///   the green faceted potion (from the reference sheet), its splash pieces and puddle.
+    /// - Potions: Bloody Alchemist 1 throws the original green potion artwork,
+    ///   Assets/Sprites/Weapons/Potions/potion_green_original.png - the bottle cut out of the supplied
+    ///   reference (Potions/Source/potion_reference_original.png, kept unchanged) with only the background
+    ///   removed and a transparent crop; its pixels are untouched. The splash pieces and puddle come from
+    ///   <see cref="PotionArtBuilder"/>.
     /// - Enemy Intel: points Resources/EnemyIntelArt at the potion and shields so the panel shows them.
     /// Then reports every assigned sprite and fails if one is missing.
     ///
@@ -48,7 +51,7 @@ namespace MazeRunner.EditorTools
             ImportShields();
             PotionArtBuilder.Build();
 
-            Sprite bottle = Load(Potion("potion_faceted_green"));
+            Sprite bottle = ImportOriginalPotion();
             Sprite droplet = Load(Potion("fx_droplet"));
             Sprite shard = Load(Potion("fx_glass_shard"));
             Sprite puddle = Load(Potion("fx_puddle"));
@@ -109,6 +112,59 @@ namespace MazeRunner.EditorTools
             }
             AssetDatabase.SaveAssets();
             return Verify();
+        }
+
+        private const string OriginalPotion = PotionArtBuilder.Folder + "/potion_green_original.png";
+
+        /// <summary>
+        /// Imports the original potion cut-out as a sprite exactly as it is (no compression, no resizing, no
+        /// mipmaps) and returns it.
+        /// </summary>
+        private static Sprite ImportOriginalPotion()
+        {
+            var importer = (TextureImporter)AssetImporter.GetAtPath(OriginalPotion);
+            if (importer == null) throw new Exception("Missing " + OriginalPotion);
+            importer.textureType = TextureImporterType.Sprite;
+            importer.spriteImportMode = SpriteImportMode.Single;
+            importer.spritePixelsPerUnit = 100; // in-game size is set by AlchemistFlask.BottleHeight
+            importer.alphaIsTransparency = true;
+            importer.mipmapEnabled = false;
+            importer.filterMode = FilterMode.Bilinear;
+            importer.wrapMode = TextureWrapMode.Clamp;
+            importer.npotScale = TextureImporterNPOTScale.None;
+            importer.maxTextureSize = 2048;
+            importer.textureCompression = TextureImporterCompression.Uncompressed;
+            importer.SaveAndReimport();
+            return Load(OriginalPotion);
+        }
+
+        /// <summary>
+        /// Only the potion bottle: gives Bloody Alchemist 1 (and its Enemy Intel icon) the original potion
+        /// artwork. Shields, splash pieces and everything else are left as they are.
+        /// Menu: Maze Runner > Set Up Original Potion
+        /// </summary>
+        [MenuItem("Maze Runner/Set Up Original Potion")]
+        public static bool RunPotion()
+        {
+            Sprite bottle = ImportOriginalPotion();
+            EditPrefab(Alchemist, typeof(AlchemistBehaviour), so => so.FindProperty("potion.bottle").objectReferenceValue = bottle);
+            var art = AssetDatabase.LoadAssetAtPath<EnemyIntelArt>(IntelArtPath);
+            if (art != null && art.icons != null)
+            {
+                for (int i = 0; i < art.icons.Length; i++)
+                    if (art.icons[i].id == "bloody_alchemist_1") art.icons[i].sprite = bottle;
+                EditorUtility.SetDirty(art);
+            }
+            AssetDatabase.SaveAssets();
+            return Verify();
+        }
+
+        public static void RunPotionFromCommandLine()
+        {
+            bool ok;
+            try { ok = RunPotion(); }
+            catch (Exception e) { Debug.LogException(e); ok = false; }
+            EditorApplication.Exit(ok ? 0 : 1);
         }
 
         public static void RunShieldsFromCommandLine()

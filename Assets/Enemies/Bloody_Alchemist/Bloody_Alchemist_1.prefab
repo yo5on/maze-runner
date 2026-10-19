@@ -347,8 +347,11 @@ MonoBehaviour:
   throwCooldown: 2.8
   flightTime: 0.85
   poolLifetime: 2.5
+  stabReach: 1.6
+  stabWindUp: 0.3
+  stabCooldown: 1.6
   potion:
-    bottle: {fileID: 21300000, guid: b887b16e01ed9414a97cc1b55b58ff62, type: 3}
+    bottle: {fileID: 21300000, guid: 7d2a2b37de22f97438f3bfc1836304d9, type: 3}
     droplet: {fileID: 21300000, guid: 22fe23bf1419a7f4781f38246d92868d, type: 3}
     shard: {fileID: 21300000, guid: 9239767ad8ac74e449fa7baf2cd9ee2f, type: 3}
     puddle: {fileID: 21300000, guid: b08f629ee6535fe449bae4253636d640, type: 3}
