@@ -4,17 +4,18 @@ using UnityEngine;
 namespace MazeRunner.Enemies
 {
     /// <summary>
-    /// Bloody Alchemist 1: a cautious ranged enemy with a weapon in each hand - potions in the left, the
-    /// knife in the right. It notices the player from 9 units (and a little above or below), keeps 3.5-6.5
+    /// Bloody Alchemist 1: a cautious ranged enemy with a weapon in each hand - a potion in the right hand
+    /// (the near arm; it is always holding one, and reaches for the next after a throw) and the knife in
+    /// the left, where the rig's own art has it. It notices the player from 9 units (and a little above or below), keeps 3.5-6.5
     /// units away - backing off when approached, stepping closer when the player is far - and stands its
     /// ground with its back to a ledge.
-    /// Signature: Potion Throw (left arm). Wind-up 0.5 s: the warning shows, a potion appears in the left
-    /// hand and the arm swings up and back behind the head while the body leans back; then the arm whips
+    /// Signature: Potion Throw (right arm). Wind-up 0.5 s: the warning shows and the right arm swings the
+    /// potion up and back behind the head while the body leans back; then the arm whips
     /// over and the potion leaves the hand at the top of the swing, from where the hand is, tumbling along a
     /// lobbed arc aimed where the player stands. A direct hit deals 1 damage; where it lands it shatters and
     /// leaves a spilled-potion pool (a hazard strip) for 2.5 s. At most two potions in the air and one pool
     /// per alchemist; cooldown 2.8 s. The potion is slow and arcs, so it can be outrun or jumped over.
-    /// Knife Stab (right arm): when the player gets within reach on its floor - also while the potion is
+    /// Knife Stab (left arm): when the player gets within reach on its floor - also while the potion is
     /// cooling down - it draws the knife back (0.3 s, warning shown), thrusts it straight at the player and
     /// pulls it back. It hits once, for 1, at full extension; cooldown 1.6 s.
     /// The arms are posed on the rig's bones after the Animator each frame, so the body keeps animating.
@@ -38,13 +39,13 @@ namespace MazeRunner.Enemies
 
         // Arm angles, in degrees added to the animated pose (0 = hanging at the side, as animated; negative
         // swings the hand backwards first, so the throw goes back, up behind the head and over the top).
-        private const float ThrowCocked = -145f;  // left arm drawn back and up behind the head
+        private const float ThrowCocked = -145f;  // throwing arm drawn back and up behind the head
         private const float ThrowRelease = -234f; // the arm comes over the top to up-front: the potion leaves the hand
         private const float ThrowFollow = -319f;  // follow-through, down in front
         private const float ThrowRest = -360f;    // the same as hanging at the side (0), reached going forward
         private const float WhipTime = 0.12f;
-        private const float StabDrawn = -35f;     // right arm pulled back
-        private const float StabExtended = 100f;  // right arm straight out in front
+        private const float StabDrawn = -35f;     // knife arm pulled back
+        private const float StabExtended = 100f;  // knife arm straight out in front
         private const float ThrustTime = 0.07f;
         private const float BodyLean = 8f;        // positive leans back, away from the player
         private const float TumbleSpeed = 480f;   // degrees per second, end over end in the throw direction
@@ -56,8 +57,10 @@ namespace MazeRunner.Enemies
         private int flasksInAir;
         private GameObject pool;
 
-        private Transform leftHand;
-        private BoneOffset leftArm, rightArm, knifePose, torso;
+        private Transform throwHand;
+        private GameObject heldPotion;
+        private bool throwing;
+        private BoneOffset throwArm, stabArm, knifePose, torso;
         private bool rigReady;
 
         protected override void Start()
@@ -67,33 +70,21 @@ namespace MazeRunner.Enemies
         }
 
         /// <summary>
-        /// Finds the arm bones and moves the knife from the left hand (the potion hand, whose arm the throw
-        /// swings) to the right hand, keeping its grip.
+        /// Finds the arm bones: the right arm throws (its hand holds the potion), the left arm stabs with the
+        /// knife the rig's art already puts in the left hand.
         /// </summary>
         private void SetUpRig()
         {
-            leftHand = FindPart("Left Hand");
-            Transform rightHand = FindPart("Right Hand");
+            throwHand = FindPart("Right Hand");
+            Transform knifeHand = FindPart("Left Hand");
             Transform knife = FindPart("Sword");
-            if (leftHand == null || rightHand == null || leftHand.parent == null || rightHand.parent == null) return;
+            if (throwHand == null || knifeHand == null || throwHand.parent == null || knifeHand.parent == null) return;
 
-            leftArm = new BoneOffset(leftHand.parent.parent);   // bone_002, the left upper arm
-            rightArm = new BoneOffset(rightHand.parent.parent); // bone_000, the right upper arm
-            torso = new BoneOffset(leftHand.parent.parent != null ? leftHand.parent.parent.parent : null);
-
-            if (knife != null && knife.parent == leftHand.parent)
-            {
-                // The knife's grip relative to the left hand, carried over to the right hand (in bone space,
-                // so it does not matter which way the alchemist faces).
-                Quaternion turn = Quaternion.Inverse(leftHand.localRotation) * knife.localRotation;
-                Vector3 grip = Quaternion.Inverse(leftHand.localRotation) * (knife.localPosition - leftHand.localPosition);
-                knife.SetParent(rightHand.parent, false);
-                knife.localRotation = rightHand.localRotation * turn;
-                Vector3 local = rightHand.localPosition + rightHand.localRotation * grip;
-                // Just behind the right hand (the fist closes over the handle), in front of the body.
-                knife.localPosition = new Vector3(local.x, local.y, rightHand.localPosition.z + 0.0005f);
-            }
+            throwArm = new BoneOffset(throwHand.parent.parent); // bone_000, the right upper arm
+            stabArm = new BoneOffset(knifeHand.parent.parent);  // bone_002, the left upper arm
+            torso = new BoneOffset(throwHand.parent.parent != null ? throwHand.parent.parent.parent : null);
             if (knife != null) knifePose = new BoneOffset(knife);
+            heldPotion = HoldPotion();
             rigReady = true;
         }
 
@@ -104,15 +95,19 @@ namespace MazeRunner.Enemies
             if (!Busy)
             {
                 // Back to the animated pose (also after a throw or stab is cut short).
-                leftArm.Angle = Mathf.MoveTowardsAngle(leftArm.Angle, 0f, 900f * Time.deltaTime);
-                rightArm.Angle = Mathf.MoveTowardsAngle(rightArm.Angle, 0f, 900f * Time.deltaTime);
+                throwArm.Angle = Mathf.MoveTowardsAngle(throwArm.Angle, 0f, 900f * Time.deltaTime);
+                stabArm.Angle = Mathf.MoveTowardsAngle(stabArm.Angle, 0f, 900f * Time.deltaTime);
                 torso.Angle = Mathf.MoveTowards(torso.Angle, 0f, 120f * Time.deltaTime);
+                throwing = false;
+                // A fresh potion in hand (also after a throw that was cut short).
+                if (heldPotion != null && !heldPotion.activeSelf && !Enemy.IsDead) heldPotion.SetActive(true);
             }
-            knifePose.Angle = -rightArm.Angle; // the blade keeps pointing at the target as the arm swings
-            leftArm.Apply();
-            rightArm.Apply();
+            knifePose.Angle = -stabArm.Angle; // the blade keeps pointing at the target as the arm swings
+            throwArm.Apply();
+            stabArm.Apply();
             torso.Apply();
             knifePose.Apply();
+            if (!throwing) Lean(heldPotion, 0f); // carried upright
         }
 
         public override void Think()
@@ -161,9 +156,10 @@ namespace MazeRunner.Enemies
             Enemy.Face(DirToPlayer);
             Enemy.ReturnToLocomotion();
             Warn(throwWindUp);
-            GameObject held = HoldPotion();
+            throwing = true;
+            GameObject held = heldPotion != null && heldPotion.activeSelf ? heldPotion : null;
 
-            // Wind-up: the left arm swings back and up behind the head, the body leans back.
+            // Wind-up: the right arm swings the potion back and up behind the head, the body leans back.
             for (float t = 0f; t < throwWindUp; t += Time.deltaTime)
             {
                 float k = Ease(t / throwWindUp);
@@ -191,7 +187,6 @@ namespace MazeRunner.Enemies
                 from = held.transform.position;
                 angle = held.transform.eulerAngles.z;
                 held.SetActive(false); // gone this frame, so it is never drawn next to the thrown one
-                Destroy(held);
             }
             else
             {
@@ -268,14 +263,14 @@ namespace MazeRunner.Enemies
         private void SetThrowPose(float arm, float lean)
         {
             if (!rigReady) return;
-            leftArm.Angle = arm;
+            throwArm.Angle = arm;
             torso.Angle = lean;
         }
 
         private void SetStabPose(float arm, float lean)
         {
             if (!rigReady) return;
-            rightArm.Angle = arm;
+            stabArm.Angle = arm;
             torso.Angle = lean;
         }
 
@@ -285,11 +280,11 @@ namespace MazeRunner.Enemies
             return t * t * (3f - 2f * t);
         }
 
-        /// <summary>The potion in the left hand during the wind-up; it moves with the arm and is removed if the throw is cancelled.</summary>
+        /// <summary>The potion held in the right hand: it moves with the arm, is hidden from the release until the throw is over, then a fresh one is in hand.</summary>
         private GameObject HoldPotion()
         {
             if (potion == null || potion.bottle == null) return null;
-            Transform hand = leftHand != null ? leftHand : transform;
+            Transform hand = throwHand != null ? throwHand : transform;
             var go = new GameObject("HeldPotion");
             go.transform.SetParent(hand, false);
             var sr = go.AddComponent<SpriteRenderer>();
@@ -297,8 +292,7 @@ namespace MazeRunner.Enemies
             var handRenderer = hand.GetComponent<SpriteRenderer>();
             if (handRenderer != null)
             {
-                // Drawn over the rig: the left arm is the far arm, and drawn back behind the head the bottle
-                // would otherwise vanish behind it for the whole wind-up.
+                // In front of the hand that holds it (the near arm), so it stays visible behind the head too.
                 sr.sortingLayerID = handRenderer.sortingLayerID;
                 sr.sortingOrder = handRenderer.sortingOrder + 1;
             }
@@ -310,7 +304,6 @@ namespace MazeRunner.Enemies
             Vector3 palm = handRenderer != null && handRenderer.sprite != null ? handRenderer.sprite.bounds.center : Vector3.zero;
             go.transform.localPosition = new Vector3(palm.x, palm.y, -0.0005f);
             go.transform.localRotation = Quaternion.identity;
-            TrackTelegraph(go);
             return go;
         }
 
@@ -348,8 +341,8 @@ namespace MazeRunner.Enemies
             if (rigReady)
             {
                 // The death animation takes the arms from here (this behaviour stops updating).
-                leftArm.Angle = rightArm.Angle = torso.Angle = knifePose.Angle = 0f;
-                leftArm.Apply(); rightArm.Apply(); torso.Apply(); knifePose.Apply();
+                throwArm.Angle = stabArm.Angle = torso.Angle = knifePose.Angle = 0f;
+                throwArm.Apply(); stabArm.Apply(); torso.Apply(); knifePose.Apply();
             }
             if (pool != null) Destroy(pool);
         }

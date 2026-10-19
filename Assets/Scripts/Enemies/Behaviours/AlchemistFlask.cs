@@ -31,7 +31,7 @@ namespace MazeRunner.Enemies
         private const float MaxLifetime = 3f;
         private const int GroundLayer = 3;
         /// <summary>World height of the bottle sprite (its canvas), held and in flight.</summary>
-        public const float BottleHeight = 0.9f;
+        public const float BottleHeight = 0.8f; // the bottle fills ~91 % of its cut-out, so it shows about 0.73 units tall
         private const float HitRadius = 0.192f;    // world units (unchanged from the first version)
 
         private AlchemistBehaviour owner;

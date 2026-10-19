@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::MazeRunner.Enemies.EnemyIntelArt
   icons:
   - id: bloody_alchemist_1
-    sprite: {fileID: 21300000, guid: b887b16e01ed9414a97cc1b55b58ff62, type: 3}
+    sprite: {fileID: 21300000, guid: 7d2a2b37de22f97438f3bfc1836304d9, type: 3}
   - id: skeleton_warrior_2
     sprite: {fileID: 21300000, guid: 7be665c1e58667041b61b9c56b8c0007, type: 3}
   - id: skeleton_crusader_1
