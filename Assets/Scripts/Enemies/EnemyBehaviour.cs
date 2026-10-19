@@ -23,9 +23,6 @@ namespace MazeRunner.Enemies
     [DisallowMultipleComponent]
     public abstract class EnemyBehaviour : MonoBehaviour
     {
-        protected static readonly Color WarningColor = new Color(0.82f, 0.07f, 0.1f, 1f);
-        protected static readonly Color ZoneColor = new Color(0.82f, 0.07f, 0.1f, 0.38f);
-
         protected GoblinEnemy Enemy { get; private set; }
         protected PlayerHealth PlayerHealth { get; private set; }
         protected PlayerController PlayerController { get; private set; }
@@ -169,7 +166,10 @@ namespace MazeRunner.Enemies
             }
         }
 
-        /// <summary>A crimson diamond above the head that grows and blinks until the move fires.</summary>
+        /// <summary>
+        /// The wind-up warning above the head: a crimson "!" badge that grows and then blinks, over a
+        /// stone timer bar that fills with crimson and is full when the move fires.
+        /// </summary>
         protected void Warn(float duration)
         {
             Trace("windup " + duration.ToString("0.00"));
@@ -177,32 +177,61 @@ namespace MazeRunner.Enemies
             go.transform.SetParent(transform, false);
             float scale = Mathf.Max(0.01f, Mathf.Abs(transform.lossyScale.y));
             float top = Enemy.BodyCollider != null ? Enemy.BodyCollider.bounds.max.y - transform.position.y : 2f;
-            go.transform.localPosition = new Vector3(0f, (top + 0.75f) / scale, 0f);
-            go.transform.localRotation = Quaternion.Euler(0f, 0f, 45f);
-            var sr = go.AddComponent<SpriteRenderer>();
-            sr.sprite = Square;
-            sr.color = WarningColor;
-            sr.sortingOrder = 50;
-            go.AddComponent<TelegraphPulse>().Init(0.32f / scale, 0.58f / scale, duration);
+            go.transform.localPosition = new Vector3(0f, (top + 0.8f) / scale, 0f);
+
+            var badge = new GameObject("Badge");
+            badge.transform.SetParent(go.transform, false);
+            var badgeRenderer = badge.AddComponent<SpriteRenderer>();
+            badgeRenderer.sprite = TelegraphArt.WarningBadge;
+            badgeRenderer.sortingOrder = 52;
+
+            const float barWidth = 0.7f, barHeight = 0.08f, barY = -0.5f;
+            SpriteRenderer track = TelegraphPart(go.transform, "TimerTrack", TelegraphArt.Stone, 50);
+            track.transform.localPosition = new Vector3(0f, barY, 0f);
+            track.transform.localScale = new Vector3(barWidth, barHeight, 1f);
+            SpriteRenderer fill = TelegraphPart(go.transform, "TimerFill", TelegraphArt.Crimson, 51);
+            fill.transform.localPosition = new Vector3(-barWidth / 2f, barY, 0f);
+            fill.transform.localScale = new Vector3(0f, barHeight, 1f);
+
+            go.AddComponent<TelegraphPulse>().Init(badge.transform, 0.5f, 0.72f, fill.transform, barWidth, duration);
             telegraphs.Add(go);
         }
 
-        /// <summary>A translucent crimson strip on the ground showing where an area attack will land.</summary>
+        /// <summary>
+        /// The ground an area attack or charge will cover: crimson hatching with a solid crimson top
+        /// edge and end marks, so the reach reads at a glance without hiding the platform.
+        /// </summary>
         protected GameObject DangerZone(float fromX, float toX, float height = 0.35f)
         {
             var go = new GameObject("DangerZone");
             float left = Mathf.Min(fromX, toX), right = Mathf.Max(fromX, toX);
+            float width = Mathf.Max(0.1f, right - left);
             go.transform.position = new Vector3((left + right) / 2f, GroundY + height / 2f, 0f);
-            go.transform.localScale = new Vector3(Mathf.Max(0.1f, right - left), height, 1f);
-            var sr = go.AddComponent<SpriteRenderer>();
-            sr.sprite = Square;
-            sr.color = ZoneColor;
+
+            var hatch = new GameObject("Hatching");
+            hatch.transform.SetParent(go.transform, false);
+            var sr = hatch.AddComponent<SpriteRenderer>();
+            sr.sprite = TelegraphArt.Hatching;
+            sr.drawMode = SpriteDrawMode.Tiled;
+            sr.tileMode = SpriteTileMode.Continuous;
+            sr.size = new Vector2(width, height);
             sr.sortingOrder = 4;
+
+            const float line = 0.05f;
+            SpriteRenderer edge = TelegraphPart(go.transform, "Edge", TelegraphArt.Crimson, 5);
+            edge.transform.localPosition = new Vector3(0f, height / 2f - line / 2f, 0f);
+            edge.transform.localScale = new Vector3(width, line, 1f);
+            foreach (float side in new[] { -1f, 1f })
+            {
+                SpriteRenderer end = TelegraphPart(go.transform, "End", TelegraphArt.Crimson, 5);
+                end.transform.localPosition = new Vector3(side * (width / 2f - line / 2f), 0f, 0f);
+                end.transform.localScale = new Vector3(line, height, 1f);
+            }
             telegraphs.Add(go);
             return go;
         }
 
-        /// <summary>A stone-coloured bar in front of the body while a shield is raised.</summary>
+        /// <summary>A rounded stone bar in front of the body while a shield is raised (stomps are blocked).</summary>
         protected GameObject ShieldMarker()
         {
             var go = new GameObject("Shield");
@@ -211,12 +240,24 @@ namespace MazeRunner.Enemies
             float height = Enemy.BodyCollider != null ? Enemy.BodyCollider.bounds.size.y : 2f;
             float halfWidth = Enemy.BodyCollider != null ? Enemy.BodyCollider.bounds.extents.x : 0.5f;
             go.transform.localPosition = new Vector3((halfWidth + 0.15f) / scale, height * 0.55f / scale, 0f);
-            go.transform.localScale = new Vector3(0.14f / scale, height * 0.7f / scale, 1f);
+            // The capsule sprite is a quarter unit wide and one unit tall.
+            go.transform.localScale = new Vector3(0.14f * 4f / scale, height * 0.7f / scale, 1f);
             var sr = go.AddComponent<SpriteRenderer>();
-            sr.sprite = Square;
+            sr.sprite = TelegraphArt.Capsule;
             sr.color = new Color32(0xaf, 0xae, 0xa2, 0xe0);
             sr.sortingOrder = 40;
             return go;
+        }
+
+        private static SpriteRenderer TelegraphPart(Transform parent, string name, Color color, int order)
+        {
+            var go = new GameObject(name);
+            go.transform.SetParent(parent, false);
+            var sr = go.AddComponent<SpriteRenderer>();
+            sr.sprite = TelegraphArt.Pixel;
+            sr.color = color;
+            sr.sortingOrder = order;
+            return sr;
         }
 
         protected void ClearTelegraphs()
