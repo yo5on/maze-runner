@@ -9,12 +9,13 @@ namespace MazeRunner.Enemies
     ///   animated bone, at the artist's grip and size, and the built-in part is hidden so only one shows.
     /// - Otherwise it is gripped by the free hand, its back edge over the fist.
     /// Raised, the shield arm is lifted forward (on top of whatever the animation does with it) and the
-    /// shield stands upright in front of the chest; lowered, the arm hangs as animated and the shield tilts
-    /// down about the grip.
+    /// shield stands upright in front of the chest; lowered, the arm carries it a little forward and the
+    /// shield tilts down about the grip, its rim clear of the floor.
     /// </summary>
     public class HeldShield : MonoBehaviour
     {
-        private const float LoweredAngle = -40f;
+        private const float LoweredAngle = -25f;
+        private const float LoweredLift = 30f; // carried a little forward when lowered, so the rim stays clear of the floor
         private const float ArmRaise = 80f;    // degrees the upper arm swings forward while guarding
         private const float BlendSpeed = 5f;   // raise/lower in about 0.2 s
         private const float BraceLift = 25f;   // extra lift while bracing against a blocked hit
@@ -131,7 +132,7 @@ namespace MazeRunner.Enemies
                 // (so the lift is never added twice).
                 if (arm.localRotation != armWritten) armBase = arm.localRotation;
                 float brace = Mathf.Sin(braceTimer / BraceTime * Mathf.PI); // out and back
-                lift = ArmRaise * raise + BraceLift * brace;
+                lift = Mathf.Lerp(LoweredLift, ArmRaise, raise) + BraceLift * brace;
                 arm.localRotation = armBase * Quaternion.Euler(0f, 0f, lift);
                 armWritten = arm.localRotation;
             }
