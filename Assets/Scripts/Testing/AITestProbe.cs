@@ -12,6 +12,7 @@ namespace MazeRunner.Testing
     /// Test-only probe, compiled only into builds made with -webBuildDefines MAZE_AI_TEST.
     /// The page drives it with SendMessage("AITestProbe", method, arg) and reads results from the console.
     /// </summary>
+    [DefaultExecutionOrder(10000)] // LateUpdate after the enemies have posed their rigs, so the arm log shows the final pose
     public class AITestProbe : MonoBehaviour
     {
         private static readonly BindingFlags Flags = BindingFlags.Instance | BindingFlags.NonPublic;
@@ -232,9 +233,11 @@ namespace MazeRunner.Testing
         private void OnEnable() { EnemyBehaviour.Traced += OnTraced; }
         private void OnDisable() { EnemyBehaviour.Traced -= OnTraced; }
 
-        private static void OnTraced(EnemyBehaviour b, string what)
+        private void OnTraced(EnemyBehaviour b, string what)
         {
             Debug.Log(string.Format(CultureInfo.InvariantCulture, "[TRACE] {0:F2} {1} {2}", Time.time, b != null ? b.name : "?", what));
+            // Start recording an alchemist's arms (see LateUpdate) when it winds up a throw or a stab.
+            if (b is AlchemistBehaviour && what.Contains("windup")) { throwWatch = b; throwFrames = 0; }
         }
 
         /// <summary>Each enemy's personality, whether a special is running, animator state and speed.</summary>
@@ -275,6 +278,75 @@ namespace MazeRunner.Testing
             HudInfo("");
         }
 
+        /// <summary>Asks an enemy's behaviour to block a hit, as a stomp would ("Skeleton_Warrior_2_01").</summary>
+        public void TryBlock(string name)
+        {
+            var g = Find(name);
+            var b = g != null ? g.GetComponent<EnemyBehaviour>() : null;
+            Debug.Log("[PROBE] tryblock " + name + " blocked=" + (b != null && b.TryBlock(1)));
+        }
+
+        private EnemyBehaviour throwWatch;
+        private int throwFrames;
+
+
+        /// <summary>
+        /// While an alchemist winds up a throw or stab: every frame, where the potion in hand and the knife are
+        /// relative to its feet ("fwd" = towards the way it faces, "up" = height), and where a thrown potion starts.
+        /// </summary>
+        private void LateUpdate()
+        {
+            if (throwWatch == null) return;
+            if (++throwFrames > 120) { throwWatch = null; return; }
+            Transform root = throwWatch.transform;
+            int facing = root.lossyScale.x < 0f ? -1 : 1;
+            var sb = new StringBuilder();
+            sb.AppendFormat(CultureInfo.InvariantCulture, "[PROBE] arm t={0:F3}", Time.time);
+            foreach (var sr in root.GetComponentsInChildren<SpriteRenderer>())
+            {
+                if (sr.name != "HeldPotion" && sr.name != "Sword") continue;
+                Vector3 d = sr.transform.position - root.position;
+                sb.AppendFormat(CultureInfo.InvariantCulture, " {0}(fwd={1:F2},up={2:F2})", sr.name == "Sword" ? "knife" : "bottle", d.x * facing, d.y);
+            }
+            // The left arm as the behaviour drives it: requested offset, the bone's angle, and where the hand is.
+            object leftArm = throwWatch.GetType().GetField("leftArm", Flags)?.GetValue(throwWatch);
+            if (leftArm != null)
+            {
+                var bone = leftArm.GetType().GetField("bone", Flags)?.GetValue(leftArm) as Transform;
+                var angle = leftArm.GetType().GetField("Angle")?.GetValue(leftArm);
+                sb.AppendFormat(CultureInfo.InvariantCulture, " leftArm[{0} offset={1} z={2:F0}]", bone != null ? bone.name : "null", angle, bone != null ? bone.localEulerAngles.z : -1f);
+            }
+            Transform hand = null;
+            foreach (Transform t in root.GetComponentsInChildren<Transform>()) if (t.name == "Left Hand") hand = t;
+            if (hand != null)
+            {
+                Vector3 h = hand.position - root.position;
+                sb.AppendFormat(CultureInfo.InvariantCulture, " hand(fwd={0:F2},up={1:F2})", h.x * facing, h.y);
+            }
+            foreach (var sr in FindObjectsByType<SpriteRenderer>(FindObjectsSortMode.None))
+            {
+                if (sr.name != "Potion") continue;
+                Vector3 d = sr.transform.position - root.position;
+                sb.AppendFormat(CultureInfo.InvariantCulture, " flying(fwd={0:F2},up={1:F2})", d.x * facing, d.y);
+            }
+            Debug.Log(sb.ToString());
+        }
+
+        /// <summary>Zooms the game camera for close-up screenshots (orthographic size, e.g. "2.5"; the levels use 7).</summary>
+        public void CameraZoom(string size)
+        {
+            var cam = UnityEngine.Camera.main;
+            if (cam != null) cam.orthographicSize = float.Parse(size, CultureInfo.InvariantCulture);
+            Debug.Log("[PROBE] camera size " + (cam != null ? cam.orthographicSize : -1f));
+        }
+
+        /// <summary>Slow motion for watching an attack frame by frame, e.g. "0.2"; "1" is normal speed.</summary>
+        public void TimeScale(string scale)
+        {
+            Time.timeScale = float.Parse(scale, CultureInfo.InvariantCulture);
+            Debug.Log("[PROBE] timeScale " + Time.timeScale);
+        }
+
         /// <summary>Kills the player outright, like falling off the level.</summary>
         public void KillPlayer(string _)
         {
@@ -301,23 +373,38 @@ namespace MazeRunner.Testing
                     var img = child.GetComponent<UnityEngine.UI.Image>();
                     if (img != null) sb.Append(img.sprite != null ? img.sprite.name : "null").Append(',');
                 }
-                sb.Append(" spareRow=");
-                Transform row = container.transform.Find("SpareLives");
-                if (row == null) sb.Append("MISSING");
-                else
-                {
-                    var rt = (RectTransform)row;
-                    foreach (Transform life in row)
-                    {
-                        var img = life.GetComponent<UnityEngine.UI.Image>();
-                        var r = img.rectTransform.rect;
-                        sb.Append(img.sprite != null ? img.sprite.name : "null").Append('(').Append(r.width).Append('x').Append(r.height).Append(")");
-                    }
-                    sb.AppendFormat(CultureInfo.InvariantCulture, " rowPos=({0:F0},{1:F0})", rt.anchoredPosition.x, rt.anchoredPosition.y);
-                }
                 sb.Append(" displays=").Append(FindObjectsByType<MazeRunner.UI.HealthDisplay>(FindObjectsSortMode.None).Length);
             }
             else sb.Append("no HealthDisplay");
+            sb.Append(" pickups=");
+            foreach (var c in FindObjectsByType<MazeRunner.Collectibles.Collectible>(FindObjectsSortMode.None))
+                sb.AppendFormat(CultureInfo.InvariantCulture, "{0}({1:F2},{2:F2}) ", c.name, c.transform.position.x, c.transform.position.y);
+            Debug.Log(sb.ToString());
+        }
+
+        /// <summary>Held shields (grip parent, raised, world size) and the alchemists' knife/potion state.</summary>
+        public void WeaponInfo(string _)
+        {
+            var sb = new StringBuilder("[PROBE] weapons\n");
+            foreach (var s in FindObjectsByType<HeldShield>(FindObjectsSortMode.None))
+            {
+                var sr = s.Visual != null ? s.Visual.GetComponent<SpriteRenderer>() : null;
+                sb.AppendFormat(CultureInfo.InvariantCulture, "shield {0} on {1}/{2} raised={3} pos=({4:F2},{5:F2}) size=({6:F2}x{7:F2}) sprite={8} flipX={9}\n",
+                    s.transform.root.name, s.transform.parent.parent != null ? s.transform.parent.parent.name : "-", s.transform.parent.name, s.Raised,
+                    s.transform.position.x, s.transform.position.y, sr != null ? sr.bounds.size.x : 0f, sr != null ? sr.bounds.size.y : 0f,
+                    sr != null && sr.sprite != null ? sr.sprite.name : "-", s.transform.lossyScale.x < 0f);
+            }
+            foreach (var sr in FindObjectsByType<SpriteRenderer>(FindObjectsSortMode.None))
+            {
+                if (sr.name == "HeldPotion" || sr.name == "Potion")
+                    sb.AppendFormat(CultureInfo.InvariantCulture, "{0} parent={1} pos=({2:F2},{3:F2}) size=({4:F2}x{5:F2}) rot={6:F0}\n", sr.name,
+                        sr.transform.parent != null ? sr.transform.parent.name : "-", sr.transform.position.x, sr.transform.position.y, sr.bounds.size.x, sr.bounds.size.y, sr.transform.eulerAngles.z);
+                else if (sr.name == "Sword" && sr.transform.root != null && sr.GetComponentInParent<AlchemistBehaviour>() != null)
+                    sb.AppendFormat(CultureInfo.InvariantCulture, "alchemist knife on {0}/{1} pos=({2:F2},{3:F2}) rot={4:F0} visible={5}\n",
+                        sr.transform.parent.parent != null ? sr.transform.parent.parent.name : "-", sr.transform.parent.name,
+                        sr.transform.position.x, sr.transform.position.y, sr.transform.eulerAngles.z, sr.enabled);
+                else if (sr.name == "Shield" && !sr.enabled) sb.Append("built-in shield hidden on ").Append(sr.transform.root.name).Append('\n');
+            }
             Debug.Log(sb.ToString());
         }
 

@@ -27,8 +27,6 @@ namespace MazeRunner.Player
         public event Action OnPlayerDeath;
         public event Action OnGameOver;
         public event Action<int> OnHealthChanged;
-        /// <summary>Fires with the new count when the spare life is used up.</summary>
-        public event Action<int> OnSpareLivesChanged;
         
         public int CurrentHealth => currentHealth;
         public int MaxHealth => maxHealth;
@@ -117,7 +115,6 @@ namespace MazeRunner.Player
             if (!hasUsedRespawn)
             {
                 hasUsedRespawn = true;
-                OnSpareLivesChanged?.Invoke(SpareLives);
                 deathRoutine = StartCoroutine(DieThenRespawn());
             }
             else

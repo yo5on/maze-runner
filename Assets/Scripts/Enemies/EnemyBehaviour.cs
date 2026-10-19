@@ -231,22 +231,61 @@ namespace MazeRunner.Enemies
             return go;
         }
 
-        /// <summary>A rounded stone bar in front of the body while a shield is raised (stomps are blocked).</summary>
-        protected GameObject ShieldMarker()
+        /// <summary>
+        /// The enemy's shield, held in its free hand for the whole fight (see <see cref="HeldShield"/>); set
+        /// <see cref="HeldShield.Raised"/> while stomps from the front are blocked. Uses the enemy's shield
+        /// sprite (weapons pack) when it has one, otherwise a rounded stone bar.
+        /// </summary>
+        protected HeldShield HoldShield(Sprite sprite = null)
         {
-            var go = new GameObject("Shield");
-            go.transform.SetParent(transform, false);
-            float scale = Mathf.Max(0.01f, Mathf.Abs(transform.lossyScale.y));
             float height = Enemy.BodyCollider != null ? Enemy.BodyCollider.bounds.size.y : 2f;
+            return HeldShield.Attach(transform, sprite, height * 0.55f);
+        }
+
+        /// <summary>A short kick of the raised shield when it turns a stomp away.</summary>
+        protected static void ShieldBlocked(GameObject shield)
+        {
+            if (shield == null) return;
+            var held = shield.GetComponentInParent<HeldShield>();
+            if (held != null) held.Brace();
+            var pulse = shield.GetComponent<ShieldBlockPulse>();
+            if (pulse == null) pulse = shield.AddComponent<ShieldBlockPulse>();
+            pulse.Play();
+        }
+
+        /// <summary>
+        /// True when the player is on the side the enemy faces (a raised shield covers it). The rear 35 %
+        /// of the body counts as behind, so a stomp landing on the back gets past the shield.
+        /// </summary>
+        protected bool PlayerInFront()
+        {
+            if (!HasPlayer) return false;
             float halfWidth = Enemy.BodyCollider != null ? Enemy.BodyCollider.bounds.extents.x : 0.5f;
-            go.transform.localPosition = new Vector3((halfWidth + 0.15f) / scale, height * 0.55f / scale, 0f);
-            // The capsule sprite is a quarter unit wide and one unit tall.
-            go.transform.localScale = new Vector3(0.14f * 4f / scale, height * 0.7f / scale, 1f);
-            var sr = go.AddComponent<SpriteRenderer>();
-            sr.sprite = TelegraphArt.Capsule;
-            sr.color = new Color32(0xaf, 0xae, 0xa2, 0xe0);
-            sr.sortingOrder = 40;
-            return go;
+            return DX * Enemy.Direction >= -halfWidth * 0.3f;
+        }
+
+        private float turnPendingSince = -1f;
+
+        /// <summary>
+        /// Turns to face the player only once the player has stayed on the other side for
+        /// <paramref name="delay"/> seconds: a guarding enemy is slow to turn, which leaves its back open.
+        /// </summary>
+        protected void FacePlayerAfter(float delay)
+        {
+            if (!HasPlayer) return;
+            if (DirToPlayer == Enemy.Direction) { turnPendingSince = -1f; return; }
+            if (turnPendingSince < 0f) turnPendingSince = Time.time;
+            if (Time.time - turnPendingSince >= delay)
+            {
+                Enemy.Face(DirToPlayer);
+                turnPendingSince = -1f;
+            }
+        }
+
+        /// <summary>Keeps a temporary object (a prop in hand, a marker) to be removed with the telegraphs.</summary>
+        protected void TrackTelegraph(GameObject go)
+        {
+            if (go != null) telegraphs.Add(go);
         }
 
         private static SpriteRenderer TelegraphPart(Transform parent, string name, Color color, int order)
