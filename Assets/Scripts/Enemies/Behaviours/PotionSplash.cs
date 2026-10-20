@@ -3,7 +3,8 @@ using UnityEngine;
 namespace MazeRunner.Enemies
 {
     /// <summary>
-    /// A potion shattering: drops of its liquid and a few glass shards burst out, fall and fade, then the
+    /// A potion shattering: the bottle bursts (a quick swell and fade of its own sprite, under 0.1 s), drops of
+    /// its liquid and a few glass shards burst out, fall and fade, then the
     /// whole effect removes itself (about half a second). Purely visual - no colliders. Built from the
     /// potion sprites (fx_droplet, fx_glass_shard); with no art it shows nothing.
     /// </summary>
@@ -18,14 +19,18 @@ namespace MazeRunner.Enemies
         private SpriteRenderer[] renderers;
         private Color[] colors;
         private float age;
+        private SpriteRenderer burst;
+        private Vector3 burstScale;
+        private const float BurstTime = 0.08f;
 
-        public static void Spawn(Vector2 position, PotionVisual visual)
+        public static void Spawn(Vector2 position, PotionVisual visual, Quaternion bottleRotation = default, float bottleScale = 0f)
         {
             if (visual == null || (visual.droplet == null && visual.shard == null)) return;
             var root = new GameObject("PotionSplash");
             root.transform.position = position;
             var splash = root.AddComponent<PotionSplash>();
             splash.Build(visual);
+            if (visual.bottle != null && bottleScale > 0f) splash.Burst(visual.bottle, bottleRotation, bottleScale);
             Destroy(root, Lifetime + 0.1f); // never outlives its animation
         }
 
@@ -50,7 +55,7 @@ namespace MazeRunner.Enemies
                 sr.sortingOrder = 21;
                 Color c = drop ? visual.liquid : Color.white;
                 sr.color = c;
-                float size = (drop ? Random.Range(0.12f, 0.2f) : Random.Range(0.12f, 0.17f)) / Mathf.Max(0.01f, sprite.bounds.size.y);
+                float size = (drop ? Random.Range(0.14f, 0.22f) : Random.Range(0.12f, 0.17f)) / Mathf.Max(0.01f, sprite.bounds.size.y);
                 go.transform.localScale = new Vector3(size, size, 1f);
 
                 // Upward fan, wider for drops.
@@ -65,9 +70,29 @@ namespace MazeRunner.Enemies
             }
         }
 
+        /// <summary>The bottle itself, swelling and fading as it breaks - it does not just vanish.</summary>
+        private void Burst(Sprite bottle, Quaternion rotation, float scale)
+        {
+            var go = new GameObject("Burst");
+            go.transform.SetParent(transform, false);
+            go.transform.rotation = rotation;
+            burstScale = new Vector3(scale, scale, 1f);
+            go.transform.localScale = burstScale;
+            burst = go.AddComponent<SpriteRenderer>();
+            burst.sprite = bottle;
+            burst.sortingOrder = 20;
+        }
+
         private void Update()
         {
             age += Time.deltaTime;
+            if (burst != null)
+            {
+                float k = Mathf.Clamp01(age / BurstTime);
+                burst.transform.localScale = burstScale * (1f + 0.25f * k);
+                burst.color = new Color(1f, 1f, 1f, 1f - k);
+                if (k >= 1f) { Destroy(burst.gameObject); burst = null; }
+            }
             float fade = Mathf.Clamp01(1f - (age - Lifetime * 0.5f) / (Lifetime * 0.5f));
             for (int i = 0; i < pieces.Length; i++)
             {

@@ -323,6 +323,16 @@ namespace MazeRunner.Testing
                 Vector3 h = hand.position - root.position;
                 sb.AppendFormat(CultureInfo.InvariantCulture, " rightHand(fwd={0:F2},up={1:F2})", h.x * facing, h.y);
             }
+            // How far the knife's grip (its point nearest the left fist) is from that fist, in world units.
+            Transform leftHand = null, knife = null;
+            foreach (Transform t in root.GetComponentsInChildren<Transform>()) { if (t.name == "Left Hand") leftHand = t; else if (t.name == "Sword") knife = t; }
+            if (leftHand != null && knife != null)
+            {
+                var la = leftHand.GetComponent<SpriteRenderer>(); var ka = knife.GetComponent<SpriteRenderer>();
+                Vector3 fist = la != null ? la.bounds.center : leftHand.position;
+                Vector3 nearest = ka != null ? ka.bounds.ClosestPoint(fist) : knife.position;
+                sb.AppendFormat(CultureInfo.InvariantCulture, " knifeGap={0:F3}", Vector2.Distance(nearest, fist));
+            }
             foreach (var sr in FindObjectsByType<SpriteRenderer>(FindObjectsSortMode.None))
             {
                 if (sr.name != "Potion") continue;
