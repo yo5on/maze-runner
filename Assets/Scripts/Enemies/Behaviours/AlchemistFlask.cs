@@ -103,7 +103,7 @@ namespace MazeRunner.Enemies
         {
             if (finished) return;
             finished = true;
-            if (shatter) PotionSplash.Spawn(transform.position, visual);
+            if (shatter) PotionSplash.Spawn(transform.position, visual, transform.rotation, transform.localScale.x);
             if (owner != null) owner.FlaskFinished(groundHit, ground);
             Destroy(gameObject);
         }

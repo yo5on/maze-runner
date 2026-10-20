@@ -16,7 +16,8 @@ namespace MazeRunner.EditorTools
     /// - Potions: Bloody Alchemist 1 throws the original green potion artwork,
     ///   Assets/Sprites/Weapons/Potions/potion_green_original.png - the bottle cut out of the supplied
     ///   reference (Potions/Source/potion_reference_original.png, kept unchanged) with only the background
-    ///   removed and a transparent crop; its pixels are untouched. The splash pieces and puddle come from
+    ///   removed and a transparent crop; the bottle's pixels are untouched apart from its one-pixel rim,
+    ///   which is un-blended from the grey background (colour-to-alpha) so the edge is smooth. The splash pieces and puddle come from
     ///   <see cref="PotionArtBuilder"/>.
     /// - Enemy Intel: points Resources/EnemyIntelArt at the potion and shields so the panel shows them.
     /// Then reports every assigned sprite and fails if one is missing.
@@ -128,8 +129,12 @@ namespace MazeRunner.EditorTools
             importer.spriteImportMode = SpriteImportMode.Single;
             importer.spritePixelsPerUnit = 100; // in-game size is set by AlchemistFlask.BottleHeight
             importer.alphaIsTransparency = true;
-            importer.mipmapEnabled = false;
-            importer.filterMode = FilterMode.Bilinear;
+            // Shown at about half its pixel size in game: mipmaps + trilinear keep it smooth instead of
+            // shimmering and jagged when scaled down; no compression, no resizing.
+            importer.mipmapEnabled = true;
+            importer.mipmapFilter = TextureImporterMipFilter.BoxFilter;
+            importer.borderMipmap = true;
+            importer.filterMode = FilterMode.Trilinear;
             importer.wrapMode = TextureWrapMode.Clamp;
             importer.npotScale = TextureImporterNPOTScale.None;
             importer.maxTextureSize = 2048;

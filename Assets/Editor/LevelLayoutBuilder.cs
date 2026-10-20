@@ -602,20 +602,23 @@ namespace MazeRunner.EditorTools
             Object.DestroyImmediate(copy);
         }
 
-        /// <summary>A row of spikes (white, tinted by the renderer), one spike per unit, pivot at the base.</summary>
+        /// <summary>
+        /// A row of spikes (white, tinted by the renderer), pivot at the base. Each 1-unit tile holds two
+        /// spikes half a unit wide - a full-height one then a half-height one - so a tiled strip alternates
+        /// full, half, full, half... along the platform. Written every time, so the pattern cannot go stale.
+        /// </summary>
         private static Sprite EnsureSpikeSprite()
         {
-            if (!File.Exists(SpikeTexturePath))
             {
-                const int w = 32, h = 16;
+                const int w = 32, h = 16, spike = w / 2;
                 var tex = new Texture2D(w, h, TextureFormat.RGBA32, false);
                 var clear = new Color(1f, 1f, 1f, 0f);
                 for (int y = 0; y < h; y++)
                 for (int x = 0; x < w; x++)
                 {
-                    // One triangle per tile: full width at the base, a point at the top.
-                    float half = (w / 2f) * (1f - (y + 0.5f) / h);
-                    bool inside = Mathf.Abs(x + 0.5f - w / 2f) <= half;
+                    int tall = x < spike ? h : h / 2; // full, then half height
+                    float half = (spike / 2f) * (1f - (y + 0.5f) / tall);
+                    bool inside = y < tall && Mathf.Abs((x % spike) + 0.5f - spike / 2f) <= half;
                     tex.SetPixel(x, y, inside ? (y < 3 ? new Color(0.8f, 0.8f, 0.8f, 1f) : Color.white) : clear);
                 }
                 Directory.CreateDirectory(Path.GetDirectoryName(SpikeTexturePath));
@@ -639,6 +642,29 @@ namespace MazeRunner.EditorTools
             importer.SetTextureSettings(settings);
             importer.SaveAndReimport();
             return AssetDatabase.LoadAssetAtPath<Sprite>(SpikeTexturePath);
+        }
+
+        /// <summary>
+        /// Only the spike art: rewrites Spikes.png (full/half alternating) without rebuilding the levels.
+        /// Every spike strip in Levels 1-3 tiles this sprite, so they all update.
+        /// Menu: Maze Runner > Rebuild Spike Sprite
+        /// </summary>
+        [MenuItem("Maze Runner/Rebuild Spike Sprite")]
+        public static void RebuildSpikeSprite() => EnsureSpikeSprite();
+
+        public static void RebuildSpikeSpriteFromCommandLine()
+        {
+            bool ok = true;
+            try { ok = RebuildSpikeSpriteChecked(); }
+            catch (System.Exception e) { Debug.LogException(e); ok = false; }
+            EditorApplication.Exit(ok ? 0 : 1);
+        }
+
+        private static bool RebuildSpikeSpriteChecked()
+        {
+            Sprite s = EnsureSpikeSprite();
+            Debug.Log($"[LevelLayoutBuilder] spike sprite {s.texture.width}x{s.texture.height}, {s.bounds.size.x:0.##}x{s.bounds.size.y:0.##} units");
+            return s != null;
         }
 
         // ---------------------------------------------------------------- test data

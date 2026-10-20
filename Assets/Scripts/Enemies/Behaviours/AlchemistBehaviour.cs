@@ -48,7 +48,7 @@ namespace MazeRunner.Enemies
         private const float StabExtended = 100f;  // knife arm straight out in front
         private const float ThrustTime = 0.07f;
         private const float BodyLean = 8f;        // positive leans back, away from the player
-        private const float TumbleSpeed = 480f;   // degrees per second, end over end in the throw direction
+        private const float TumbleSpeed = 300f;   // degrees per second, end over end in the throw direction (about one turn per flight)
         private const float BottleLean = 25f;     // the bottle in hand leans back on the wind-up, forward on the whip
 
         private bool engaged;
@@ -60,7 +60,10 @@ namespace MazeRunner.Enemies
         private Transform throwHand;
         private GameObject heldPotion;
         private bool throwing;
-        private BoneOffset throwArm, stabArm, knifePose, torso;
+        private BoneOffset throwArm, stabArm, torso;
+        private GripTurn knifePose;
+        private Vector3 throwPalm;              // the right hand's palm, in the hand's own space
+        private const float BottleGrip = 0.2f;  // the fist holds the bottle this far below its middle (of its height)
         private bool rigReady;
 
         protected override void Start()
@@ -83,7 +86,9 @@ namespace MazeRunner.Enemies
             throwArm = new BoneOffset(throwHand.parent.parent); // bone_000, the right upper arm
             stabArm = new BoneOffset(knifeHand.parent.parent);  // bone_002, the left upper arm
             torso = new BoneOffset(throwHand.parent.parent != null ? throwHand.parent.parent.parent : null);
-            if (knife != null) knifePose = new BoneOffset(knife);
+            if (knife != null) knifePose = new GripTurn(knife, Palm(knifeHand, knife.parent));
+            var throwArt = throwHand.GetComponent<SpriteRenderer>();
+            throwPalm = throwArt != null && throwArt.sprite != null ? throwArt.sprite.bounds.center : Vector3.zero;
             heldPotion = HoldPotion();
             rigReady = true;
         }
@@ -102,12 +107,14 @@ namespace MazeRunner.Enemies
                 // A fresh potion in hand (also after a throw that was cut short).
                 if (heldPotion != null && !heldPotion.activeSelf && !Enemy.IsDead) heldPotion.SetActive(true);
             }
-            knifePose.Angle = -stabArm.Angle; // the blade keeps pointing at the target as the arm swings
+            // The blade keeps pointing at the target as the arm swings, turning about the fist that holds it.
+            if (knifePose != null) knifePose.Angle = -stabArm.Angle;
             throwArm.Apply();
             stabArm.Apply();
             torso.Apply();
-            knifePose.Apply();
+            knifePose?.Apply();
             if (!throwing) Lean(heldPotion, 0f); // carried upright
+            PinPotionToHand();
         }
 
         public override void Think()
@@ -260,6 +267,28 @@ namespace MazeRunner.Enemies
             SetStabPose(0f, 0f);
         }
 
+        /// <summary>
+        /// Keeps the potion in the right fist, whatever the arm and the bottle's lean: the palm sits a little
+        /// below the bottle's middle, and the bottle is drawn just behind the fist (the fingers close over it)
+        /// and in front of the body and head.
+        /// </summary>
+        private void PinPotionToHand()
+        {
+            if (heldPotion == null || !heldPotion.activeSelf || throwHand == null) return;
+            Vector3 palm = throwHand.TransformPoint(new Vector3(throwPalm.x, throwPalm.y, 0f));
+            float up = AlchemistFlask.BottleHeight * BottleGrip;
+            Vector3 lift = heldPotion.transform.rotation * new Vector3(0f, up, 0f);
+            heldPotion.transform.position = new Vector3(palm.x + lift.x, palm.y + lift.y, throwHand.position.z + 0.0005f);
+        }
+
+        /// <summary>The middle of a hand's art, in the space of <paramref name="space"/> (where the weapon lives).</summary>
+        private static Vector3 Palm(Transform hand, Transform space)
+        {
+            var art = hand.GetComponent<SpriteRenderer>();
+            Vector3 local = art != null && art.sprite != null ? art.sprite.bounds.center : Vector3.zero;
+            return space.InverseTransformPoint(hand.TransformPoint(local));
+        }
+
         private void SetThrowPose(float arm, float lean)
         {
             if (!rigReady) return;
@@ -292,9 +321,9 @@ namespace MazeRunner.Enemies
             var handRenderer = hand.GetComponent<SpriteRenderer>();
             if (handRenderer != null)
             {
-                // In front of the hand that holds it (the near arm), so it stays visible behind the head too.
+                // Same order as the rig; PinPotionToHand puts it just behind the fist by depth.
                 sr.sortingLayerID = handRenderer.sortingLayerID;
-                sr.sortingOrder = handRenderer.sortingOrder + 1;
+                sr.sortingOrder = handRenderer.sortingOrder;
             }
             else sr.sortingOrder = 20;
             // Same size as in flight, so nothing jumps at the release.
@@ -341,10 +370,40 @@ namespace MazeRunner.Enemies
             if (rigReady)
             {
                 // The death animation takes the arms from here (this behaviour stops updating).
-                throwArm.Angle = stabArm.Angle = torso.Angle = knifePose.Angle = 0f;
-                throwArm.Apply(); stabArm.Apply(); torso.Apply(); knifePose.Apply();
+                throwArm.Angle = stabArm.Angle = torso.Angle = 0f;
+                if (knifePose != null) knifePose.Angle = 0f;
+                throwArm.Apply(); stabArm.Apply(); torso.Apply(); knifePose?.Apply();
             }
             if (pool != null) Destroy(pool);
+        }
+
+        /// <summary>
+        /// Turns a weapon about the point where it is held (not about its own pivot), so the handle stays in the
+        /// fist however far it turns. The weapon is not animated by the clips (only faded), so its rest pose is
+        /// fixed.
+        /// </summary>
+        private sealed class GripTurn
+        {
+            private readonly Transform weapon;
+            private readonly Vector3 grip, restPosition;
+            private readonly Quaternion restRotation;
+            public float Angle;
+
+            public GripTurn(Transform weapon, Vector3 grip)
+            {
+                this.weapon = weapon;
+                this.grip = grip;
+                restPosition = weapon.localPosition;
+                restRotation = weapon.localRotation;
+            }
+
+            public void Apply()
+            {
+                Quaternion turn = Quaternion.Euler(0f, 0f, Angle);
+                Vector3 p = grip + turn * (restPosition - grip);
+                weapon.localPosition = new Vector3(p.x, p.y, restPosition.z);
+                weapon.localRotation = turn * restRotation;
+            }
         }
 
         /// <summary>
