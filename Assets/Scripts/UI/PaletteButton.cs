@@ -4,22 +4,19 @@ using UnityEngine.UI;
 
 namespace MazeRunner.UI
 {
-    /// <summary>
-    /// A button drawn only in the portfolio palette (navy #1b1e4a, stone #afaea2, crimson #d21319).
-    /// Unity's colour-tint transition multiplies colours and would produce off-palette shades, so each
-    /// state sets the fill, border and label colours explicitly:
-    /// - Quiet (secondary): navy fill, thin stone border, stone label; hover/focus = crimson border.
-    /// - Strong (primary): stone fill, navy label; hover/focus = crimson fill, stone label.
-    /// - Option: like Quiet, and crimson fill while <see cref="IsOn"/> (the chosen option).
-    /// Pressed is crimson for all of them. The border is a frame image behind an inset fill image.
-    /// </summary>
+    /// <summary>Applies the shared steel-blue, navy and green UI theme to generated buttons.</summary>
     public class PaletteButton : Button
     {
         public enum Style { Quiet, Strong, Option }
 
-        public static readonly Color Navy = new Color32(0x1b, 0x1e, 0x4a, 0xff);
+        public static readonly Color SteelBlue = new Color32(0x26, 0x3f, 0x60, 0xff);
+        public static readonly Color Navy = new Color32(0x1b, 0x2b, 0x4a, 0xff);
+        public static readonly Color Green = new Color32(0x4d, 0xa8, 0x61, 0xff);
+        public static readonly Color GreenHover = new Color32(0x6d, 0xb8, 0x7d, 0xff);
+        public static readonly Color GreenPressed = new Color32(0x39, 0x7b, 0x4b, 0xff);
+        public static readonly Color SecondaryHover = new Color32(0x40, 0x49, 0x60, 0xff);
         public static readonly Color Stone = new Color32(0xaf, 0xae, 0xa2, 0xff);
-        public static readonly Color Crimson = new Color32(0xd2, 0x13, 0x19, 0xff);
+        public static readonly Color Disabled = new Color32(0x59, 0x64, 0x77, 0xff);
 
         [SerializeField] private Style style = Style.Quiet;
         [SerializeField] private bool isOn;
@@ -64,18 +61,18 @@ namespace MazeRunner.UI
             switch (style)
             {
                 case Style.Strong:
-                    fillColor = pressed || hot ? Crimson : Stone;
-                    borderColor = pressed || hot ? Crimson : Stone;
-                    textColor = pressed || hot ? Stone : Navy;
+                    fillColor = pressed ? GreenPressed : hot ? GreenHover : Green;
+                    borderColor = fillColor;
+                    textColor = Color.white;
                     break;
                 default:
                     bool on = style == Style.Option && isOn;
-                    fillColor = pressed || on ? Crimson : Navy;
-                    borderColor = pressed || on || hot ? Crimson : Stone;
-                    textColor = Stone;
+                    fillColor = pressed ? (on ? GreenPressed : new Color32(0x11, 0x1a, 0x2c, 0xff)) : on ? Green : hot ? SecondaryHover : Navy;
+                    borderColor = on ? Green : Stone;
+                    textColor = Color.white;
                     break;
             }
-            if (state == SelectionState.Disabled) textColor = WithAlpha(textColor, 0.4f);
+            if (state == SelectionState.Disabled) { fillColor = WithAlpha(Disabled, 0.55f); borderColor = Disabled; textColor = WithAlpha(Color.white, 0.55f); }
 
             fill.color = fillColor;
             if (border != null) border.color = borderColor;

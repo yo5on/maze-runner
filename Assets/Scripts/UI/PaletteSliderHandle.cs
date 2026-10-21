@@ -4,7 +4,7 @@ using UnityEngine.UI;
 
 namespace MazeRunner.UI
 {
-    /// <summary>Slider handle in palette colours: stone at rest, crimson while hovered, focused or dragged.</summary>
+    /// <summary>Slider handle in the shared theme: white at rest and stone grey while active.</summary>
     public class PaletteSliderHandle : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler,
         IPointerDownHandler, IPointerUpHandler, ISelectHandler, IDeselectHandler
     {
@@ -26,7 +26,7 @@ namespace MazeRunner.UI
 
         private void Apply()
         {
-            if (handle != null) handle.color = hover || down || selected ? PaletteButton.Crimson : PaletteButton.Stone;
+            if (handle != null) handle.color = hover || down || selected ? PaletteButton.GreenHover : Color.white;
         }
     }
 }

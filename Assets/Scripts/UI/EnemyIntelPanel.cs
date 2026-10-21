@@ -19,7 +19,7 @@ namespace MazeRunner.UI
     /// that type are in the level. Everything shown comes from <see cref="EnemyIntel"/>.
     ///
     /// Drawn like the Settings menu, in the portfolio's three colours only: midnight navy surfaces,
-    /// warm stone text and hairlines, crimson for danger (ability icon, style tag, 2-damage hits),
+    /// warm stone text and hairlines for selected details and emphasis,
     /// the chosen portrait and the counter-play label. The card is laid out for the game's 1080 px
     /// high canvas and shrinks to fit smaller screens. Portraits are captured from the enemy prefabs
     /// into Resources/EnemyPortraits by Maze Runner > Capture Enemy Portraits.
@@ -231,7 +231,7 @@ namespace MazeRunner.UI
             bodyFont = font;
             headingFont = Resources.Load<TMP_FontAsset>(HeadingFont);
             if (headingFont == null) headingFont = font;
-            Color stone = PaletteUI.Stone, crimson = PaletteUI.Crimson;
+            Color stone = PaletteUI.Stone, green = PaletteUI.Green;
 
             // Card: a thin stone frame around a navy surface (as in Settings).
             card = PaletteUI.NewRect("Card", transform);
@@ -246,8 +246,8 @@ namespace MazeRunner.UI
 
             // Header.
             PaletteUI.Eyebrow(c, font, "MAZE RUNNER", Margin, 40f, 400f, stone);
-            PaletteUI.Text(c, headingFont, "Enemy Intel", 76f, stone, Margin, 56f, 900f, 92f, TextAlignmentOptions.Left);
-            PaletteUI.Box(c, "Accent", Margin, 150f, 48f, 3f, crimson);
+            PaletteUI.Text(c, headingFont, "Enemy Intel", 76f, Color.white, Margin, 56f, 900f, 92f, TextAlignmentOptions.Left);
+            PaletteUI.Box(c, "Accent", Margin, 150f, 48f, 3f, green);
             summaryText = PaletteUI.Eyebrow(c, font, "", CardWidth - Margin - 700f, 118f, 700f, stone);
             summaryText.alignment = TextAlignmentOptions.TopRight;
 
@@ -288,7 +288,7 @@ namespace MazeRunner.UI
             TMP_Text number = PaletteUI.Text(surface, bodyFont, (index + 1).ToString("00"), 17f, PaletteUI.Stone,
                 10f, 6f, 60f, 20f, TextAlignmentOptions.TopLeft, FontStyles.Bold, 4f);
 
-            Image underline = PaletteUI.Box(parent, "Underline", x, y + TileHeight + 8f, width, 4f, PaletteUI.Crimson);
+            Image underline = PaletteUI.Box(parent, "Underline", x, y + TileHeight + 8f, width, 4f, PaletteUI.Green);
 
             var tile = rect.gameObject.AddComponent<IntelTile>();
             tile.Init(frame, surface, underline, number);
@@ -299,7 +299,7 @@ namespace MazeRunner.UI
 
         private void BuildDetail(Transform c)
         {
-            Color stone = PaletteUI.Stone, crimson = PaletteUI.Crimson;
+            Color stone = PaletteUI.Stone, green = PaletteUI.Green;
             float y = DetailY;
 
             // Portrait and health.
@@ -317,7 +317,7 @@ namespace MazeRunner.UI
 
             // Identity.
             float x = ColumnX, w = ColumnWidth;
-            nameText = PaletteUI.Text(c, headingFont, "", 66f, stone, x, y - 6f, w, 80f, TextAlignmentOptions.Left);
+            nameText = PaletteUI.Text(c, headingFont, "", 66f, Color.white, x, y - 6f, w, 80f, TextAlignmentOptions.Left);
             roleText = PaletteUI.Eyebrow(c, bodyFont, "", x, y + 82f, w * 0.6f, stone, 18f);
             presenceText = PaletteUI.Eyebrow(c, bodyFont, "", x + w * 0.4f, y + 82f, w * 0.6f, stone, 18f);
             presenceText.alignment = TextAlignmentOptions.TopRight;
@@ -326,14 +326,14 @@ namespace MazeRunner.UI
 
             // Signature ability.
             PaletteUI.Eyebrow(c, bodyFont, "SIGNATURE ABILITY", x, y + 136f, w, stone);
-            RectTransform iconBox = PaletteUI.Framed(c, "StyleIcon", x, y + 168f, 60f, 60f, crimson, 1.5f, out _);
+            RectTransform iconBox = PaletteUI.Framed(c, "StyleIcon", x, y + 168f, 60f, 60f, green, 1.5f, out _);
             var iconRect = PaletteUI.NewRect("Icon", iconBox);
             PaletteUI.Stretch(iconRect, 8f);
-            styleIcon = PaletteUI.Fill(iconRect, crimson);
+            styleIcon = PaletteUI.Fill(iconRect, green);
             abilityText = PaletteUI.Text(c, bodyFont, "", 40f, stone, x + 84f, y + 168f, w - 300f, 60f,
                 TextAlignmentOptions.Left, FontStyles.Bold);
             styleTag = PaletteUI.Place(c, "StyleTag", x + 84f, y + 182f, 120f, 32f);
-            PaletteUI.Fill(styleTag, crimson);
+            PaletteUI.Fill(styleTag, green);
             var tagLabel = PaletteUI.NewRect("Label", styleTag);
             PaletteUI.Stretch(tagLabel);
             styleTagText = tagLabel.gameObject.AddComponent<TextMeshProUGUI>();
@@ -363,7 +363,7 @@ namespace MazeRunner.UI
 
             // Counter-play.
             PaletteUI.Box(c, "Rule", x, y + 440f, w, 1.5f, stone);
-            PaletteUI.Eyebrow(c, bodyFont, "COUNTER", x, y + 464f, 160f, crimson);
+            PaletteUI.Eyebrow(c, bodyFont, "COUNTER", x, y + 464f, 160f, green);
             counterText = PaletteUI.Text(c, bodyFont, "", 24f, stone, x + 160f, y + 458f, w - 160f, 64f,
                 TextAlignmentOptions.TopLeft, FontStyles.Normal, 0f, wrap: true);
         }
@@ -382,12 +382,12 @@ namespace MazeRunner.UI
             roleText.text = e.Role;
             inLevel.TryGetValue(e, out int present);
             string presence = present > 0 ? present + " IN THIS LEVEL" : "NOT IN THIS LEVEL";
-            presenceText.text = e == nearest ? "<color=#D21319>NEAREST</color>   " + presence : presence;
+            presenceText.text = e == nearest ? "<color=#AFAEA2>NEAREST</color>   " + presence : presence;
 
             // The ability's own artwork (potion, shield) when there is some, else the attack-style line icon.
             Sprite art = EnemyIntelArt.IconFor(e.Id);
             styleIcon.sprite = art != null ? art : IntelIcons.For(e.Style);
-            styleIcon.color = art != null ? Color.white : PaletteUI.Crimson;
+            styleIcon.color = art != null ? Color.white : PaletteUI.Green;
             styleIcon.preserveAspect = true;
             abilityText.text = e.Ability;
             styleTagText.text = EnemyIntel.StyleLabel(e.Style);
@@ -402,7 +402,7 @@ namespace MazeRunner.UI
             {
                 bool has = i < e.Stats.Length;
                 statValues[i].text = has ? e.Stats[i].Value : "";
-                statValues[i].color = has && e.Stats[i].Severe ? PaletteUI.Crimson : PaletteUI.Stone;
+                statValues[i].color = has && e.Stats[i].Severe ? PaletteUI.Green : PaletteUI.Stone;
                 statLabels[i].text = has ? e.Stats[i].Label : "";
             }
             counterText.text = e.Counter;

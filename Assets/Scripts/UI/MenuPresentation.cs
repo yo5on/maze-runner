@@ -47,7 +47,60 @@ namespace MazeRunner.UI
                 }
             }
 
+            ApplyTheme();
             ScaleWebUI();
+        }
+
+        /// <summary>Restyles authored and runtime menu UI after each scene load.</summary>
+        private static void ApplyTheme()
+        {
+            foreach (RectTransform rect in Object.FindObjectsByType<RectTransform>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            {
+                if (rect.name == "MainMenuPanel" || rect.name == "LevelSelectPanel")
+                {
+                    var panelImage = rect.GetComponent<Image>();
+                    if (panelImage != null) panelImage.color = PaletteButton.SteelBlue;
+                }
+                else if (rect.name == "PauseMenuPanel" || rect.name == "LevelCompletePanel" || rect.name == "GameOverPanel")
+                {
+                    var panelImage = rect.GetComponent<Image>();
+                    if (panelImage != null) panelImage.color = new Color(PaletteButton.SteelBlue.r, PaletteButton.SteelBlue.g, PaletteButton.SteelBlue.b, 0.94f);
+                }
+            }
+
+            foreach (Button button in Object.FindObjectsByType<Button>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            {
+                // Character selection owns its layout and styles in CustomizationUIController.
+                if (button.GetComponentInParent<CustomizationUIController>(true) != null) continue;
+
+                TMP_Text label = button.GetComponentInChildren<TMP_Text>(true);
+                string text = label != null ? label.text.Trim().ToUpperInvariant() : button.name.ToUpperInvariant();
+                bool pauseSettings = text == "SETTINGS" && IsInside(button.transform, "PauseMenuPanel");
+                bool primary = !pauseSettings && (text == "PLAY" || text == "APPLY" || text.Contains("RESUME") || text.Contains("NEXT LEVEL"));
+                var image = button.GetComponent<Image>();
+                if (image != null) image.color = Color.white; // prevents Button tint multiplying against a colored sprite
+
+                ColorBlock colors = button.colors;
+                colors.normalColor = primary ? PaletteButton.Green : PaletteButton.Navy;
+                colors.highlightedColor = primary ? PaletteButton.GreenHover : PaletteButton.SecondaryHover;
+                colors.pressedColor = primary ? PaletteButton.GreenPressed : new Color32(0x11, 0x1a, 0x2c, 0xff);
+                colors.selectedColor = colors.highlightedColor;
+                colors.disabledColor = new Color32(0x59, 0x64, 0x77, 0x80);
+                colors.colorMultiplier = 1f;
+                colors.fadeDuration = 0.1f;
+                button.colors = colors;
+                if (label != null)
+                {
+                    label.color = Color.white;
+                }
+            }
+        }
+
+        private static bool IsInside(Transform child, string ancestorName)
+        {
+            for (Transform current = child; current != null; current = current.parent)
+                if (current.name == ancestorName) return true;
+            return false;
         }
 
         private static void ScaleWebUI()

@@ -425,17 +425,6 @@ PrefabInstance:
       insertIndex: -1
       addedObject: {fileID: 181933192}
   m_SourcePrefab: {fileID: 100100000, guid: 24aef6fa93e21344d8df87843892b442, type: 3}
---- !u!114 &181933189 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 2748144785995807263, guid: 24aef6fa93e21344d8df87843892b442, type: 3}
-  m_PrefabInstance: {fileID: 181933188}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 181933190}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8150244dad48d7b4dabc039ad699542b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::MazeRunner.Customization.CharacterCustomizationManager
 --- !u!1 &181933190 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 6667576472691554198, guid: 24aef6fa93e21344d8df87843892b442, type: 3}
@@ -456,6 +445,7 @@ MonoBehaviour:
   maxHealth: 3
   invincibilityDuration: 0
   fallDeathY: -10
+  maxDeathAnimationTime: 1.5
 --- !u!114 &181933192
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -520,7 +510,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9211cb541bc35354a924491c54e85a47, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MazeRunner.UI.CustomizationUIController
-  customizationManager: {fileID: 181933189}
   categoryPrevButton: {fileID: 164362503}
   categoryNextButton: {fileID: 1071290425}
   categoryLabel: {fileID: 593446187}
@@ -530,6 +519,19 @@ MonoBehaviour:
   resetButton: {fileID: 583560250}
   applyButton: {fileID: 1199219620}
   backButton: {fileID: 655592735}
+  previewFrameSize: {x: 500, y: 560}
+  previewCrop:
+    serializedVersion: 2
+    x: 0.18444444
+    y: 0.13333334
+    width: 0.6111111
+    height: 0.7222222
+  backdropColor: {r: 0.14901961, g: 0.24705882, b: 0.3764706, a: 1}
+  textColor: {r: 1, g: 1, b: 1, a: 1}
+  mutedTextColor: {r: 0.6862745, g: 0.682353, b: 0.63529414, a: 1}
+  frameColor: {r: 0.105882354, g: 0.16862746, b: 0.2901961, a: 1}
+  buttonColor: {r: 0.105882354, g: 0.16862746, b: 0.2901961, a: 1}
+  accentColor: {r: 0.3019608, g: 0.65882355, b: 0.38039216, a: 1}
 --- !u!1 &231533501
 GameObject:
   m_ObjectHideFlags: 0
@@ -877,7 +879,7 @@ MonoBehaviour:
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 0
-  m_ActiveFontFeatures: 6e72656b
+  m_ActiveFontFeatures: 6e72656bu
   m_enableExtraPadding: 0
   checkPaddingRequired: 0
   m_isRichText: 1
@@ -1060,7 +1062,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &583560247
 RectTransform:
   m_ObjectHideFlags: 0
@@ -1076,9 +1078,9 @@ RectTransform:
   - {fileID: 428374373}
   m_Father: {fileID: 2128905812}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 80, y: -50}
   m_SizeDelta: {x: 160, y: 30}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &583560248
@@ -1265,7 +1267,7 @@ MonoBehaviour:
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 0
-  m_ActiveFontFeatures: 6e72656b
+  m_ActiveFontFeatures: 6e72656bu
   m_enableExtraPadding: 0
   checkPaddingRequired: 0
   m_isRichText: 1
@@ -1536,7 +1538,7 @@ MonoBehaviour:
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 0
-  m_ActiveFontFeatures: 6e72656b
+  m_ActiveFontFeatures: 6e72656bu
   m_enableExtraPadding: 0
   checkPaddingRequired: 0
   m_isRichText: 1
@@ -1673,7 +1675,7 @@ MonoBehaviour:
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 0
-  m_ActiveFontFeatures: 6e72656b
+  m_ActiveFontFeatures: 6e72656bu
   m_enableExtraPadding: 0
   checkPaddingRequired: 0
   m_isRichText: 1
@@ -2378,7 +2380,7 @@ MonoBehaviour:
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 0
-  m_ActiveFontFeatures: 6e72656b
+  m_ActiveFontFeatures: 6e72656bu
   m_enableExtraPadding: 0
   checkPaddingRequired: 0
   m_isRichText: 1
@@ -2457,7 +2459,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MazeRunner.UI.HealthDisplay
   playerHealth: {fileID: 181933191}
-  healthText: {fileID: 796104702}
+  heartContainer: {fileID: 0}
+  heartPrefab: {fileID: 0}
+  fullHeartSprite: {fileID: 0}
+  emptyHeartSprite: {fileID: 0}
 --- !u!1 &1639472728
 GameObject:
   m_ObjectHideFlags: 0
@@ -2702,7 +2707,7 @@ MonoBehaviour:
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 0
-  m_ActiveFontFeatures: 6e72656b
+  m_ActiveFontFeatures: 6e72656bu
   m_enableExtraPadding: 0
   checkPaddingRequired: 0
   m_isRichText: 1
@@ -2839,7 +2844,7 @@ MonoBehaviour:
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 0
-  m_ActiveFontFeatures: 6e72656b
+  m_ActiveFontFeatures: 6e72656bu
   m_enableExtraPadding: 0
   checkPaddingRequired: 0
   m_isRichText: 1
@@ -2949,7 +2954,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 0.392}
+  m_Color: {r: 0.105882354, g: 0.11764706, b: 0.2901961, a: 0.392}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -3081,7 +3086,7 @@ MonoBehaviour:
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 0
-  m_ActiveFontFeatures: 6e72656b
+  m_ActiveFontFeatures: 6e72656bu
   m_enableExtraPadding: 0
   checkPaddingRequired: 0
   m_isRichText: 1
@@ -3218,7 +3223,7 @@ MonoBehaviour:
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 0
-  m_ActiveFontFeatures: 6e72656b
+  m_ActiveFontFeatures: 6e72656bu
   m_enableExtraPadding: 0
   checkPaddingRequired: 0
   m_isRichText: 1
