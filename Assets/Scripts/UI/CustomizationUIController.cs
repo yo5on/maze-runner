@@ -43,12 +43,12 @@ namespace MazeRunner.UI
 
         [Header("Colours")]
         [Tooltip("This screen's backdrop: the game's steel blue, dark enough for white text.")]
-        [SerializeField] private Color backdropColor = new Color(0.05f, 0.08f, 0.16f, 0.45f);
+        [SerializeField] private Color backdropColor = new Color32(0x26, 0x3f, 0x60, 0xff);
         [SerializeField] private Color textColor = Color.white;
-        [SerializeField] private Color mutedTextColor = new Color(1f, 1f, 1f, 0.72f);
-        [SerializeField] private Color frameColor = new Color(0.09f, 0.12f, 0.22f, 0.55f);
-        [SerializeField] private Color buttonColor = new Color(0.11f, 0.15f, 0.26f, 0.92f);
-        [SerializeField] private Color accentColor = new Color(0.30f, 0.66f, 0.38f, 1f);
+        [SerializeField] private Color mutedTextColor = new Color32(0xaf, 0xae, 0xa2, 0xff);
+        [SerializeField] private Color frameColor = new Color32(0x1b, 0x2b, 0x4a, 0xff);
+        [SerializeField] private Color buttonColor = new Color32(0x1b, 0x2b, 0x4a, 0xff);
+        [SerializeField] private Color accentColor = new Color32(0x4d, 0xa8, 0x61, 0xff);
 
         private int currentIndex;
         private bool isSelectionScreen;
@@ -234,7 +234,7 @@ namespace MazeRunner.UI
             Place(optionLabel.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, 50f - previewFrameSize.y * 0.5f - 48f),
                 new Vector2(900f, 70f), centrePivot: true);
 
-            // Selected indicator: a green "SELECTED" pill, or a hint when this character is not the selected one.
+            // Selected indicator: a green "SELECTED" pill, or a hint when this character is not selected.
             statusPill = CreateImage("SelectedIndicator", root, accentColor, roundedSprite);
             Place(statusPill.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, 50f - previewFrameSize.y * 0.5f - 108f),
                 new Vector2(200f, 46f), centrePivot: true);
@@ -318,10 +318,11 @@ namespace MazeRunner.UI
 
             ColorBlock colors = button.colors;
             colors.normalColor = fill;
-            colors.highlightedColor = Color.Lerp(fill, Color.white, 0.18f);
+            bool primary = fill == accentColor;
+            colors.highlightedColor = primary ? new Color32(0x6d, 0xb8, 0x7d, 0xff) : new Color32(0x40, 0x49, 0x60, 0xff);
             colors.selectedColor = colors.highlightedColor;
-            colors.pressedColor = Color.Lerp(fill, Color.black, 0.25f);
-            colors.disabledColor = new Color(fill.r, fill.g, fill.b, 0.35f);
+            colors.pressedColor = primary ? new Color32(0x39, 0x7b, 0x4b, 0xff) : new Color32(0x11, 0x1a, 0x2c, 0xff);
+            colors.disabledColor = new Color32(0x59, 0x64, 0x77, 0x80);
             colors.colorMultiplier = 1f;
             colors.fadeDuration = 0.08f;
             button.colors = colors;

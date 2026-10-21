@@ -13,7 +13,7 @@ namespace MazeRunner.UI
     {
         public static Color Navy => PaletteButton.Navy;
         public static Color Stone => PaletteButton.Stone;
-        public static Color Crimson => PaletteButton.Crimson;
+        public static Color Green => PaletteButton.Green;
 
         public static RectTransform NewRect(string name, Transform parent)
         {

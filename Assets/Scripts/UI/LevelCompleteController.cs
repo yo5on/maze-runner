@@ -9,6 +9,7 @@ namespace MazeRunner.UI
     public class LevelCompleteController : MonoBehaviour
     {
         [SerializeField] private GameObject levelCompletePanel;
+        [SerializeField] private TMP_FontAsset titleFont;
 
         private TMP_Text title;
         private TMP_Text subtitle;
@@ -120,6 +121,7 @@ namespace MazeRunner.UI
             {
                 TMP_Text buttonText = levelCompletePanel.GetComponentInChildren<TMP_Text>(true);
                 title = CreateText(panel, "CompleteTitle", buttonText, 54f, FontStyles.Bold, Color.white);
+                if (titleFont != null) title.font = titleFont;
                 subtitle = CreateText(panel, "CompleteSubtitle", buttonText, 26f, FontStyles.Normal, new Color32(0xf3, 0xea, 0xd7, 0xff));
             }
 

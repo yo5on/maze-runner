@@ -14,8 +14,8 @@ namespace MazeRunner.UI
     /// control layout (A: joystick + Jump, B: Left/Right buttons + Jump).
     ///
     /// Styled after the yo5on portfolio and drawn only in its three colours: midnight navy
-    /// #1b1e4a (surfaces), warm stone #afaea2 (text, borders, inactive tracks) and crimson
-    /// #d21319 (active slider fill, chosen option, focus). The heading uses the portfolio's
+    /// #1b2b4a (surfaces), warm stone #afaea2 (text, borders, inactive tracks and selected controls).
+    /// The heading uses the portfolio's
     /// Instrument Serif Italic (Resources/Fonts, see UiFontSetup).
     ///
     /// It is built when a scene loads:
@@ -30,7 +30,7 @@ namespace MazeRunner.UI
     {
         private static Color Navy => PaletteButton.Navy;
         private static Color Stone => PaletteButton.Stone;
-        private static Color Crimson => PaletteButton.Crimson;
+        private static Color Green => PaletteButton.Green;
 
         private const float CardWidth = 760f;
         private const float CardHeight = 620f;
@@ -103,7 +103,7 @@ namespace MazeRunner.UI
 
             // Main menu: a clean navy screen. In a level: the paused game, dimmed with navy.
             Image backdrop = root.GetComponent<Image>();
-            backdrop.color = inGame ? new Color(Navy.r, Navy.g, Navy.b, 0.9f) : Navy;
+            backdrop.color = inGame ? new Color(Navy.r, Navy.g, Navy.b, 0.9f) : PaletteButton.SteelBlue;
 
             var menu = root.AddComponent<SettingsMenu>();
             menu.returnPanel = panel.gameObject;
@@ -122,6 +122,16 @@ namespace MazeRunner.UI
             button.onClick = new Button.ButtonClickedEvent();
             button.onClick.AddListener(menu.Open);
             foreach (TMP_Text text in button.GetComponentsInChildren<TMP_Text>(true)) text.text = "Settings";
+            var colors = button.colors;
+            colors.normalColor = PaletteButton.Navy;
+            colors.highlightedColor = PaletteButton.SecondaryHover;
+            colors.selectedColor = PaletteButton.SecondaryHover;
+            colors.pressedColor = new Color32(0x11, 0x1a, 0x2c, 0xff);
+            colors.disabledColor = new Color32(0x59, 0x64, 0x77, 0x80);
+            colors.colorMultiplier = 1f;
+            button.colors = colors;
+            Image buttonImage = button.GetComponent<Image>();
+            if (buttonImage != null) buttonImage.color = Color.white;
             // Resume, Restart, Settings, Main Menu (the panel's layout group stacks them).
             button.transform.SetSiblingIndex(Mathf.Max(0, pausePanel.childCount - 2));
         }
@@ -204,8 +214,8 @@ namespace MazeRunner.UI
             float left = -ContentWidth / 2f;
 
             Label(c, bodyFont, "MAZE RUNNER", 15f, Stone, left, -36f, ContentWidth, 22f, TextAlignmentOptions.Left, 14f, FontStyles.Bold);
-            Label(c, headingFont, "Settings", 72f, Stone, left, -52f, ContentWidth, 86f, TextAlignmentOptions.Left);
-            Bar(c, left, -140f, 48f, 3f, Crimson);
+            Label(c, headingFont, "Settings", 72f, Color.white, left, -52f, ContentWidth, 86f, TextAlignmentOptions.Left);
+            Bar(c, left, -140f, 48f, 3f, Green);
 
             Section(c, bodyFont, "AUDIO", -168f);
             musicSlider = SliderRow(c, bodyFont, "Music", -240f, out musicValue);
@@ -367,7 +377,7 @@ namespace MazeRunner.UI
             var fillArea = Inset("Fill Area", root, 4f);
             var fill = NewRect("Fill", fillArea);
             Stretch(fill);
-            fill.gameObject.AddComponent<Image>().color = Crimson;
+            fill.gameObject.AddComponent<Image>().color = Green;
 
             var handleArea = NewRect("Handle Slide Area", root);
             handleArea.anchorMin = Vector2.zero;
