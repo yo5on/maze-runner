@@ -37,6 +37,24 @@ namespace MazeRunner.Enemies
         [SerializeField] private float bossResumeChaseBuffer = 0.4f;
         [Tooltip("Horizontal distance under which the boss keeps its current facing (player directly above or below).")]
         [SerializeField] private float bossFacingDeadZone = 0.15f;
+        [Tooltip("Name shown on the boss health bar.")]
+        [SerializeField] private string bossTitle = "Goblin Warchief";
+        [Tooltip("The health bar shows while the player is this close (horizontally) to the boss.")]
+        [SerializeField] private float bossArenaRange = 14f;
+
+        [Header("Knockback & Edges")]
+        [Tooltip("Share of knockback ignored (0 = full knockback). Also sets the body's mass, so the player's body shoves it less.")]
+        [Range(0f, 0.95f)] [SerializeField] private float knockbackResistance = 0.5f;
+        [Tooltip("Used instead of knockbackResistance when this enemy is a boss.")]
+        [Range(0f, 0.95f)] [SerializeField] private float bossKnockbackResistance = 0.8f;
+        [Tooltip("How long a light knocked-back slide lasts before the enemy's own movement takes over again. Strong hits stagger up to 2.5x longer.")]
+        [SerializeField] private float knockbackStun = 0.2f;
+        [Tooltip("How fast the player's body can shove this enemy along the ground (units per second): it gives way a little, but is never carried.")]
+        [SerializeField] private float shoveGive = 0.6f;
+        [Tooltip("Used instead of shoveGive when this enemy is a boss.")]
+        [SerializeField] private float bossShoveGive = 0.25f;
+        [Tooltip("Off by default: knockback and shoving never carry an enemy over a ledge. Turn on only for an enemy deliberately meant to be knocked into pits.")]
+        [SerializeField] private bool canBeKnockedOffLedges = false;
 
         [Header("Combat")]
         [SerializeField] private float attackRange = 1.5f;
@@ -88,6 +106,18 @@ namespace MazeRunner.Enemies
         private bool bossAlerted;
         private bool bossHolding;
         private bool hasRunParameter;
+        private BossHealthBar bossBar;
+        private Player.PlayerHealth playerHealth;
+
+        private float knockbackTimer;
+        private float knockbackTime;    // length of the current slide
+        private float knockbackSpeed;   // its starting sideways speed; it eases to 0
+        private float lastHurtTime = -10f;
+        private Collider2D playerCollider;
+        // The motion this enemy chose for the coming physics step (see ResistShove).
+        private Vector2 ownedPosition;
+        private Vector2 ownedVelocity;
+        private bool hasOwnedMotion;
 
         private static readonly int IsWalkingHash = Animator.StringToHash("isWalking");
         private static readonly int IsRunningHash = Animator.StringToHash("isRunning");
@@ -119,6 +149,11 @@ namespace MazeRunner.Enemies
         public Collider2D Platform => platform;
         /// <summary>True while a basic slash (or a behaviour's attack lock) holds the enemy still.</summary>
         public bool IsAttackLocked => attackLockTimer > 0f;
+        /// <summary>True while a knockback is sliding the enemy (its own movement waits).</summary>
+        public bool IsKnockedBack => knockbackTimer > 0f;
+        public float LastHurtTime => lastHurtTime;
+        public string BossTitle => bossTitle;
+        private float Resistance => isBoss ? bossKnockbackResistance : knockbackResistance;
 
         /// <summary>The walkable span of the platform under the enemy (its real edges, minus a margin).</summary>
         public bool TryGetPlatformLimits(out float min, out float max)
@@ -138,20 +173,25 @@ namespace MazeRunner.Enemies
 
         /// <summary>
         /// Walks or runs in a direction, but never off a ledge or into a wall: returns false (and stands
-        /// still) when the next step is blocked or would leave the platform.
+        /// still) when the next step is blocked or would leave the platform. With
+        /// <paramref name="faceMovement"/> false it backs away while still facing the way it faces.
         /// </summary>
-        public bool MoveHorizontal(int moveDirection, float speed, bool running = false)
+        public bool MoveHorizontal(int moveDirection, float speed, bool running = false, bool faceMovement = true)
         {
-            Face(moveDirection);
+            if (moveDirection == 0) return false;
+            // A knockback in progress wins over the enemy's own steps, unless it is guarding.
+            if (knockbackTimer > 0f && !(behaviour != null && behaviour.enabled && behaviour.ResistsKnockback)) return false;
+            int dir = moveDirection > 0 ? 1 : -1;
+            if (faceMovement) Face(dir);
             float x = rb.position.x;
             bool outOfBounds = platform != null && TryGetPlatformLimits(out float min, out float max) &&
-                               ((direction > 0 && x >= max) || (direction < 0 && x <= min));
-            if (outOfBounds || IsBlockedAhead())
+                               ((dir > 0 && x >= max) || (dir < 0 && x <= min));
+            if (outOfBounds || IsBlockedAhead(dir))
             {
                 Halt();
                 return false;
             }
-            rb.linearVelocity = new Vector2(direction * speed, rb.linearVelocity.y);
+            rb.linearVelocity = new Vector2(dir * speed, rb.linearVelocity.y);
             SetLocomotion(!running, running);
             return true;
         }
@@ -213,6 +253,8 @@ namespace MazeRunner.Enemies
             patrolMaxX = startPosition.x + patrolDistance;
             hasRunParameter = HasAnimatorParameter(IsRunningHash);
             behaviour = GetComponent<EnemyBehaviour>();
+            // Heavier bodies are shoved less by the player's (mass 1) body: 0.5 -> 2, 0.8 -> 5.
+            rb.mass = 1f / (1f - Resistance);
         }
 
         /// <summary>
@@ -232,9 +274,46 @@ namespace MazeRunner.Enemies
         private void Start()
         {
             GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
-            if (playerObj != null) player = playerObj.transform;
+            if (playerObj != null)
+            {
+                player = playerObj.transform;
+                playerHealth = playerObj.GetComponent<Player.PlayerHealth>();
+                playerCollider = playerObj.GetComponent<Collider2D>();
+            }
 
             FindPlatform();
+
+            if (isBoss)
+            {
+                bossBar = BossHealthBar.Create(bossTitle, maxHealth);
+                if (playerHealth != null) playerHealth.OnPlayerDeath += ResetEncounter;
+            }
+        }
+
+        private void OnDestroy()
+        {
+            if (playerHealth != null) playerHealth.OnPlayerDeath -= ResetEncounter;
+            if (bossBar != null) Destroy(bossBar.gameObject);
+        }
+
+        /// <summary>
+        /// The player died: a boss goes back to where it stood, at full health and calm, so the fight
+        /// restarts cleanly when the player comes back from the checkpoint.
+        /// </summary>
+        private void ResetEncounter()
+        {
+            if (isDead) return;
+            if (behaviour != null) behaviour.OnEncounterReset();
+            currentHealth = maxHealth;
+            rb.position = startPosition;
+            transform.position = startPosition;
+            rb.linearVelocity = Vector2.zero;
+            bossAlerted = bossHolding = hasOwnedMotion = false;
+            knockbackTimer = attackLockTimer = 0f;
+            hitDealtThisAttack = true;
+            animator.speed = 1f;
+            SetLocomotion(false, false);
+            if (bossBar != null) bossBar.SetHealth(currentHealth);
         }
 
         private void OnEnable()
@@ -262,6 +341,14 @@ namespace MazeRunner.Enemies
             attackLockTimer -= Time.deltaTime;
             turnTimer -= Time.deltaTime;
 
+            if (bossBar != null)
+            {
+                // Shown while the player is in the boss's arena.
+                bool near = player != null && Mathf.Abs(player.position.x - transform.position.x) <= bossArenaRange &&
+                            Mathf.Abs(player.position.y - transform.position.y) <= 6f;
+                bossBar.SetVisible(near);
+            }
+
             // Clips without a DealDamage event still hit, once, at attackHitTime.
             if (!hitDealtThisAttack)
             {
@@ -280,6 +367,7 @@ namespace MazeRunner.Enemies
 
             if (behaviour != null && behaviour.enabled)
             {
+                behaviour.Perceive();
                 behaviour.Think();
                 if (behaviour.ControlsAttack) return;
             }
@@ -313,20 +401,116 @@ namespace MazeRunner.Enemies
         {
             if (isDead) return;
 
-            if (behaviour != null && behaviour.enabled && behaviour.ControlsMovement)
+            bool guarding = behaviour != null && behaviour.enabled && behaviour.ResistsKnockback;
+            if (knockbackTimer > 0f && !guarding)
             {
-                behaviour.Act();
-                return;
-            }
-
-            if (isBoss)
-            {
-                BossChase();
+                // Staggered: the hit slides the enemy and eases to a stop; its own movement waits.
+                knockbackTimer -= Time.fixedDeltaTime;
+                float ease = knockbackTime > 0f ? Mathf.Clamp01(knockbackTimer / knockbackTime) : 0f;
+                rb.linearVelocity = new Vector2(knockbackSpeed * ease, rb.linearVelocity.y);
             }
             else
             {
-                Patrol();
+                if (knockbackTimer > 0f) knockbackTimer -= Time.fixedDeltaTime; // a committed move shrugs it off
+                if (behaviour != null && behaviour.enabled && behaviour.ControlsMovement) behaviour.Act();
+                else if (isBoss) BossChase();
+                else Patrol();
             }
+            GuardEdge();
+
+            // What it chose for this step; ResistShove compares the step's result against it.
+            ownedPosition = rb.position;
+            ownedVelocity = rb.linearVelocity;
+            hasOwnedMotion = true;
+        }
+
+        // ---------------------------------------------------------------- knockback and shoving
+
+        /// <summary>
+        /// A hit's push: a stagger that slides the enemy along the ground and eases to a stop. Resistance
+        /// (stronger on bosses, and while a behaviour guards) shrinks it; stronger hits slide faster and
+        /// stagger longer (up to 2.5x). The slide is planned to end before the platform edge and never
+        /// lifts the enemy, so a hit can stagger an enemy but not throw it off its platform - unless
+        /// <see cref="canBeKnockedOffLedges"/> marks it as deliberately vulnerable to falls.
+        /// </summary>
+        public void ApplyKnockback(Vector2 velocity)
+        {
+            if (isDead) return;
+            float scale = 1f - Resistance;
+            if (behaviour != null && behaviour.enabled && behaviour.ResistsKnockback) scale *= 0.25f;
+            float vx = velocity.x * scale;
+            if (Mathf.Abs(vx) < 0.1f) return;
+            knockbackTime = knockbackStun * Mathf.Clamp(Mathf.Abs(vx) / 3f, 1f, 2.5f);
+            float vy = rb.linearVelocity.y;
+            if (canBeKnockedOffLedges) vy = Mathf.Max(vy, velocity.y * scale);
+            else if (TryGetPlatformLimits(out float min, out float max))
+            {
+                // An eased stop covers speed x time / 2: cap the speed so the slide ends inside the platform.
+                float room = Mathf.Max(0f, vx > 0f ? max - rb.position.x : rb.position.x - min);
+                vx = Mathf.Sign(vx) * Mathf.Min(Mathf.Abs(vx), 2f * room / knockbackTime);
+            }
+            knockbackSpeed = vx;
+            knockbackTimer = knockbackTime;
+            rb.linearVelocity = new Vector2(vx, vy);
+        }
+
+        private void OnCollisionEnter2D(Collision2D collision) => ResistShove(collision);
+        private void OnCollisionStay2D(Collision2D collision) => ResistShove(collision);
+
+        /// <summary>
+        /// Runs right after the physics step, for contacts with the player's body: the player may nudge the
+        /// enemy along at <see cref="shoveGive"/> units/s, but the rest of the push is taken back and the
+        /// contact's extra speed (sideways and upward) removed, so walking into, standing on or jumping into
+        /// an enemy never carries or lifts it. Only pushes away from the player are undone, and its own
+        /// steps into the player are not replayed (the bodies are touching: it holds its ground instead),
+        /// so the two bodies never fight each other step after step.
+        /// </summary>
+        private void ResistShove(Collision2D collision)
+        {
+            if (isDead || !hasOwnedMotion || playerCollider == null || collision.collider != playerCollider) return;
+            float away = Mathf.Sign(rb.position.x - playerCollider.bounds.center.x);
+            float ownVx = ownedVelocity.x * away < 0f ? 0f : ownedVelocity.x;
+            float expected = ownedPosition.x + ownVx * Time.fixedDeltaTime;
+            float push = (rb.position.x - expected) * away;
+            float give = (isBoss ? bossShoveGive : shoveGive) * Time.fixedDeltaTime;
+            if (push > give) rb.position = new Vector2(expected + away * give, rb.position.y);
+            Vector2 v = rb.linearVelocity;
+            float vx = v.x * away > 0f ? Mathf.Min(v.x * away, ownVx * away) * away : v.x;
+            rb.linearVelocity = new Vector2(vx, Mathf.Min(v.y, Mathf.Max(ownedVelocity.y, 0f)));
+        }
+
+        /// <summary>
+        /// Keeps the enemy on its platform. Applies whenever its feet are at or above the platform top and
+        /// over it - standing, hopping, leaping or lifted - and works on the velocity before the physics
+        /// step: the step's speed is capped so it arrives at the limit instead of crossing it, so there is
+        /// nothing to snap back and nothing to jitter. The limit sits outside the span its own movement
+        /// uses (<see cref="TryGetPlatformLimits"/>), so the guard never fights the enemy's own steps. No
+        /// physics queries, only the platform bounds found at Start.
+        /// </summary>
+        private void GuardEdge()
+        {
+            if (platform == null || bodyCollider == null) return;
+            if (canBeKnockedOffLedges && knockbackTimer > 0f) return; // the deliberate exception
+            Bounds feet = bodyCollider.bounds;
+            Bounds ground = platform.bounds;
+            if (feet.min.y < ground.max.y - 0.3f || feet.max.x < ground.min.x || feet.min.x > ground.max.x) return;
+
+            float halfWidth = feet.extents.x;
+            float min = ground.min.x + halfWidth * 0.5f, max = ground.max.x - halfWidth * 0.5f;
+            if (min > max) return;
+            float dt = Time.fixedDeltaTime;
+            float center = feet.center.x;
+            Vector2 v = rb.linearVelocity;
+            // Only something outside its control (a test teleport, a crushing contact) can leave it past the limit.
+            float correction = center < min ? min - center : center > max ? max - center : 0f;
+            if (correction != 0f)
+            {
+                rb.position += new Vector2(correction, 0f);
+                center += correction;
+            }
+            if (v.x > 0f) v.x = Mathf.Min(v.x, (max - center) / dt);
+            else if (v.x < 0f) v.x = Mathf.Max(v.x, (min - center) / dt);
+            rb.linearVelocity = v;
         }
 
         // ---------------------------------------------------------------- platform
@@ -374,19 +558,21 @@ namespace MazeRunner.Enemies
             GoblinPlatformGroup.Unregister(platform, this);
         }
 
-        /// <summary>True when the next step in the current direction would walk off a ledge or into a wall.</summary>
-        private bool IsBlockedAhead()
+        private bool IsBlockedAhead() => IsBlockedAhead(direction);
+
+        /// <summary>True when the next step in a direction would walk off a ledge or into a wall.</summary>
+        private bool IsBlockedAhead(int dir)
         {
             if (bodyCollider == null) return false;
 
             Bounds b = bodyCollider.bounds;
-            float frontX = direction > 0 ? b.max.x : b.min.x;
+            float frontX = dir > 0 ? b.max.x : b.min.x;
 
-            Vector2 footProbe = new Vector2(frontX + direction * lookAheadDistance, b.min.y + 0.1f);
+            Vector2 footProbe = new Vector2(frontX + dir * lookAheadDistance, b.min.y + 0.1f);
             bool groundAhead = Physics2D.Raycast(footProbe, Vector2.down, 0.6f, groundLayer).collider != null;
 
             Vector2 wallOrigin = new Vector2(frontX, b.center.y);
-            RaycastHit2D wall = Physics2D.Raycast(wallOrigin, new Vector2(direction, 0f), lookAheadDistance, groundLayer);
+            RaycastHit2D wall = Physics2D.Raycast(wallOrigin, new Vector2(dir, 0f), lookAheadDistance, groundLayer);
             bool wallAhead = wall.collider != null && wall.collider != platform;
 
             return !groundAhead || wallAhead;
@@ -583,6 +769,8 @@ namespace MazeRunner.Enemies
             if (behaviour != null && behaviour.enabled && behaviour.TryBlock(damage)) return;
 
             currentHealth -= damage;
+            lastHurtTime = Time.time;
+            if (bossBar != null) bossBar.SetHealth(currentHealth);
 
             if (currentHealth <= 0)
             {
@@ -594,6 +782,14 @@ namespace MazeRunner.Enemies
             if (behaviour != null && behaviour.enabled) behaviour.OnHurt();
         }
 
+        /// <summary>Damage with a push (see <see cref="ApplyKnockback"/>); a blocked hit does not push.</summary>
+        public void TakeDamage(int damage, Vector2 knockback)
+        {
+            int before = currentHealth;
+            TakeDamage(damage);
+            if (currentHealth < before) ApplyKnockback(knockback);
+        }
+
         public int CurrentHealth => currentHealth;
         public int MaxHealth => maxHealth;
 
@@ -603,6 +799,7 @@ namespace MazeRunner.Enemies
 
             isDead = true;
             hitDealtThisAttack = true;
+            if (bossBar != null) bossBar.SetHealth(0);
             rb.linearVelocity = Vector2.zero;
             SetLocomotion(false, false);
             // Clear anything queued before the killing blow so nothing interrupts the death clip.

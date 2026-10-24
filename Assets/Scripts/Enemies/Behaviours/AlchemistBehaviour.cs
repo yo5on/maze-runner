@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using UnityEngine;
 
 namespace MazeRunner.Enemies
@@ -22,13 +22,18 @@ namespace MazeRunner.Enemies
     /// </summary>
     public class AlchemistBehaviour : EnemyBehaviour
     {
-        [SerializeField] private float noticeRange = 9f;
+        [SerializeField] protected float noticeRange = 9f;
         [SerializeField] private float tooClose = 3.5f;
         [SerializeField] private float tooFar = 6.5f;
         [SerializeField] private float retreatSpeed = 2f;
         [SerializeField] private float approachSpeed = 1.4f;
         [SerializeField] private float throwWindUp = 0.5f;
-        [SerializeField] private float throwCooldown = 2.8f;
+        [SerializeField] protected float throwCooldown = 2.8f;
+        [Tooltip("Potions per throw. Extra potions land spread around the player's spot, so the ground fills with pools to step between.")]
+        [SerializeField] private int volley = 1;
+        [SerializeField] private float volleySpread = 1.8f;
+        [SerializeField] private int maxFlasksInAir = 2;
+        [SerializeField] private int maxPools = 1;
         [SerializeField] private float flightTime = 0.85f;
         [SerializeField] private float poolLifetime = 2.5f;
         [SerializeField] private float stabReach = 1.6f;
@@ -51,11 +56,15 @@ namespace MazeRunner.Enemies
         private const float TumbleSpeed = 300f;   // degrees per second, end over end in the throw direction (about one turn per flight)
         private const float BottleLean = 25f;     // the bottle in hand leans back on the wind-up, forward on the whip
 
-        private bool engaged;
-        private float nextThrow;
+        protected bool engaged;
+        protected float nextThrow;
         private float nextStab;
         private int flasksInAir;
-        private GameObject pool;
+        private readonly System.Collections.Generic.List<GameObject> pools = new System.Collections.Generic.List<GameObject>();
+
+        /// <summary>Potions per throw right now (a boss adds more in its second phase).</summary>
+        protected virtual int Volley => volley;
+        protected virtual float ThrowCooldown => throwCooldown;
 
         private Transform throwHand;
         private GameObject heldPotion;
@@ -127,7 +136,7 @@ namespace MazeRunner.Enemies
             {
                 RunSpecial(Stab());
             }
-            else if (engaged && Time.time >= nextThrow && flasksInAir < 2 && Mathf.Abs(DX) >= 1.5f)
+            else if (engaged && Time.time >= nextThrow && flasksInAir + Volley <= Mathf.Max(maxFlasksInAir, Volley) && Mathf.Abs(DX) >= 1.5f)
             {
                 RunSpecial(Throw());
             }
@@ -158,7 +167,7 @@ namespace MazeRunner.Enemies
 
         private IEnumerator Throw()
         {
-            nextThrow = Time.time + throwCooldown;
+            nextThrow = Time.time + ThrowCooldown;
             Enemy.Halt();
             Enemy.Face(DirToPlayer);
             Enemy.ReturnToLocomotion();
@@ -210,6 +219,16 @@ namespace MazeRunner.Enemies
                 AlchemistFlask.Launch(this, from, velocity, potion, Square, angle, -Enemy.Direction * TumbleSpeed);
                 Trace("throw");
                 flasksInAir++;
+                // A volley: the rest of the potions go short and long of the player, alternating.
+                for (int i = 1; i < Volley; i++)
+                {
+                    float offset = ((i + 1) / 2) * volleySpread * (i % 2 == 1 ? -1f : 1f);
+                    float x = target.x + offset;
+                    var spread = new Vector2((x - from.x) / flightTime, velocity.y);
+                    AlchemistFlask.Launch(this, from, spread, potion, Square, angle, -Enemy.Direction * TumbleSpeed);
+                    flasksInAir++;
+                }
+                if (Volley > 1) Trace("volley " + Volley);
             }
 
             // Follow-through and recovery.
@@ -359,8 +378,9 @@ namespace MazeRunner.Enemies
         {
             flasksInAir = Mathf.Max(0, flasksInAir - 1);
             if (!groundHit.HasValue || Enemy.IsDead || ground == null) return;
-            if (pool != null) Destroy(pool);
-            pool = AlchemistFlask.MakePool(groundHit.Value.x, ground, poolLifetime, potion);
+            pools.RemoveAll(p => p == null);
+            while (pools.Count >= Mathf.Max(1, maxPools)) { Destroy(pools[0]); pools.RemoveAt(0); }
+            pools.Add(AlchemistFlask.MakePool(groundHit.Value.x, ground, poolLifetime, potion));
             Trace("potion pool at " + groundHit.Value.x.ToString("0.0"));
         }
 
@@ -374,7 +394,20 @@ namespace MazeRunner.Enemies
                 if (knifePose != null) knifePose.Angle = 0f;
                 throwArm.Apply(); stabArm.Apply(); torso.Apply(); knifePose?.Apply();
             }
-            if (pool != null) Destroy(pool);
+            ClearPools();
+        }
+
+        public override void OnEncounterReset()
+        {
+            base.OnEncounterReset();
+            engaged = false;
+            ClearPools();
+        }
+
+        private void ClearPools()
+        {
+            foreach (GameObject p in pools) if (p != null) Destroy(p);
+            pools.Clear();
         }
 
         /// <summary>

@@ -18,30 +18,34 @@ namespace MazeRunner.UI
         
         private void RefreshLevelButtons()
         {
-            if (LevelProgressionManager.Instance == null || levelButtons == null) return;
-            
+            var progress = LevelProgressionManager.Instance;
+            if (progress == null || levelButtons == null) return;
+
+            // The furthest unlocked level is the one to play next: it gets the green primary style.
+            int next = 0;
+            for (int i = 0; i < levelButtons.Length; i++)
+                if (progress.IsLevelUnlocked(i)) next = i;
+
             for (int i = 0; i < levelButtons.Length; i++)
             {
                 if (levelButtons[i] == null) continue;
                 
                 // Levels that are on hold are not offered at all.
-                bool isEnabled = LevelProgressionManager.Instance.IsLevelEnabled(i);
+                bool isEnabled = progress.IsLevelEnabled(i);
                 levelButtons[i].gameObject.SetActive(isEnabled);
                 if (!isEnabled) continue;
                 
-                bool unlocked = LevelProgressionManager.Instance.IsLevelUnlocked(i);
+                bool unlocked = progress.IsLevelUnlocked(i);
+                // Clearing a level unlocks the one after it (the last level's clear is not recorded).
+                bool cleared = unlocked && progress.IsLevelUnlocked(i + 1);
+                bool primary = unlocked && i == next;
                 levelButtons[i].interactable = unlocked;
                 
                 var colors = levelButtons[i].colors;
-                bool firstLevel = i == 0 && unlocked;
-                colors.normalColor = unlocked ? (firstLevel ? new Color32(0x4d, 0xa8, 0x61, 0xff) : unlockedColor) : lockedColor;
-                colors.highlightedColor = firstLevel
-                    ? new Color32(0x6d, 0xb8, 0x7d, 0xff)
-                    : new Color32(0x40, 0x49, 0x60, 0xff);
+                colors.normalColor = !unlocked ? lockedColor : primary ? PaletteButton.Green : unlockedColor;
+                colors.highlightedColor = primary ? PaletteButton.GreenHover : PaletteButton.SecondaryHover;
                 colors.selectedColor = colors.highlightedColor;
-                colors.pressedColor = firstLevel
-                    ? new Color32(0x39, 0x7b, 0x4b, 0xff)
-                    : new Color32(0x11, 0x1a, 0x2c, 0xff);
+                colors.pressedColor = primary ? PaletteButton.GreenPressed : new Color32(0x11, 0x1a, 0x2c, 0xff);
                 colors.disabledColor = lockedColor;
                 colors.colorMultiplier = 1f;
                 levelButtons[i].colors = colors;
@@ -52,8 +56,10 @@ namespace MazeRunner.UI
                 TMP_Text buttonText = levelButtons[i].GetComponentInChildren<TMP_Text>();
                 if (buttonText != null)
                 {
-                    buttonText.text = unlocked ? $"Level {i + 1}" : $"Level {i + 1}\n(Locked)";
-                    buttonText.color = Color.white;
+                    // One line: the 50 px button has no room for a second.
+                    string state = !unlocked ? "Locked" : cleared ? "Cleared" : null;
+                    buttonText.text = state == null ? $"Level {i + 1}" : $"Level {i + 1}  <size=75%><color=#B4C2D6>{state}</color></size>";
+                    buttonText.color = unlocked ? Color.white : new Color(1f, 1f, 1f, 0.6f);
                 }
             }
         }

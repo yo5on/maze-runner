@@ -12,6 +12,7 @@ namespace MazeRunner.UI
     /// - Web builds render at a fixed 1920x1080, which makes the Constant Pixel Size
     ///   UI very small; it is enlarged by one uniform factor so menus keep the same
     ///   proportions on desktop and mobile and stay easy to tap.
+    /// - The main menu, level select and pause menus get a title in the game's display face.
     /// - Levels 2 and 3 have no game-over UI (a game over froze the screen). They get
     ///   a panel built to match Level 1's original GameOverPanel, using the same
     ///   PlayerHealth.RestartLevel / Main Menu actions as GameOverController.
@@ -60,18 +61,21 @@ namespace MazeRunner.UI
                 {
                     var panelImage = rect.GetComponent<Image>();
                     if (panelImage != null) panelImage.color = PaletteButton.SteelBlue;
+                    AddTitle(rect, rect.name == "MainMenuPanel" ? "Maze Runner" : "Select Level", rect.name == "MainMenuPanel" ? 104f : 64f);
                 }
                 else if (rect.name == "PauseMenuPanel" || rect.name == "LevelCompletePanel" || rect.name == "GameOverPanel")
                 {
                     var panelImage = rect.GetComponent<Image>();
                     if (panelImage != null) panelImage.color = new Color(PaletteButton.SteelBlue.r, PaletteButton.SteelBlue.g, PaletteButton.SteelBlue.b, 0.94f);
+                    if (rect.name == "PauseMenuPanel") AddTitle(rect, "Paused", 64f);
                 }
             }
 
             foreach (Button button in Object.FindObjectsByType<Button>(FindObjectsInactive.Include, FindObjectsSortMode.None))
             {
                 // Character selection owns its layout and styles in CustomizationUIController.
-                if (button.GetComponentInParent<CustomizationUIController>(true) != null) continue;
+                // (The controller sits on its own object, so the panel is found by name.)
+                if (IsInside(button.transform, "CustomizationPanel")) continue;
 
                 TMP_Text label = button.GetComponentInChildren<TMP_Text>(true);
                 string text = label != null ? label.text.Trim().ToUpperInvariant() : button.name.ToUpperInvariant();
@@ -94,6 +98,26 @@ namespace MazeRunner.UI
                     label.color = Color.white;
                 }
             }
+        }
+
+        /// <summary>
+        /// A moon-cream title as the first entry of a menu panel's vertical layout, so it sits centred
+        /// above the buttons. Skipped if the panel already has one.
+        /// </summary>
+        private static void AddTitle(RectTransform panel, string value, float size)
+        {
+            if (panel.GetComponent<VerticalLayoutGroup>() == null || panel.Find("ScreenTitle") != null) return;
+            var rect = PaletteUI.NewRect("ScreenTitle", panel);
+            rect.SetAsFirstSibling();
+            rect.sizeDelta = new Vector2(1000f, size * 1.5f);
+            var title = rect.gameObject.AddComponent<TextMeshProUGUI>();
+            if (PaletteUI.DisplayFont != null) title.font = PaletteUI.DisplayFont;
+            title.text = value;
+            title.fontSize = size;
+            title.color = PaletteButton.Cream;
+            title.alignment = TextAlignmentOptions.Center;
+            title.textWrappingMode = TextWrappingModes.NoWrap;
+            title.raycastTarget = false;
         }
 
         private static bool IsInside(Transform child, string ancestorName)
@@ -152,6 +176,7 @@ namespace MazeRunner.UI
             titleRect.anchoredPosition = new Vector2(0f, 100f);
             titleRect.sizeDelta = new Vector2(300f, 60f);
             var title = titleGo.AddComponent<TextMeshProUGUI>();
+            if (PaletteUI.DisplayFont != null) title.font = PaletteUI.DisplayFont; // as Level 1's GameOverText
             title.text = "GAME OVER";
             title.fontSize = 48f;
             title.color = Color.white;

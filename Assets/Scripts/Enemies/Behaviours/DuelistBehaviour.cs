@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using UnityEngine;
 
 namespace MazeRunner.Enemies
@@ -9,9 +9,13 @@ namespace MazeRunner.Enemies
     /// Signature: Two-Hit Combo. A short warning (0.25 s), a first slash, a step forward and a second
     /// slash (each hit 1 damage, each checked once). Afterwards it is winded for 1.2 s: it stands still
     /// and cannot attack, which is the window to stomp it. Cooldown 2.2 s from the start of the combo.
+    /// Footwork: when it sees a stomp coming down on it (0.3 s to react) it sometimes steps back out of
+    /// the way - about a third of the time, at most every 4 s.
     /// </summary>
     public class DuelistBehaviour : EnemyBehaviour
     {
+        public override Intelligence Tier => Enemy.IsBoss ? Intelligence.Boss : Intelligence.Elite;
+
         [SerializeField] private float noticeRange = 6f;
         [SerializeField] private float advanceSpeed = 2.6f;
         [SerializeField] private float comboRange = 1.5f;
@@ -19,6 +23,9 @@ namespace MazeRunner.Enemies
         [SerializeField] private float betweenHits = 0.45f;
         [SerializeField] private float recovery = 1.2f;
         [SerializeField] private float cooldown = 2.2f;
+        [SerializeField] private float stepReaction = 0.3f;
+        [Range(0f, 1f)] [SerializeField] private float stepChance = 0.35f;
+        [SerializeField] private float stepCooldown = 4f;
 
         private bool engaged;
         private float nextCombo;
@@ -28,6 +35,14 @@ namespace MazeRunner.Enemies
             if (Busy) return;
             if (!engaged && Notices(noticeRange)) engaged = true;
             else if (engaged && (!HasPlayer || Mathf.Abs(DX) > noticeRange + 3f || Mathf.Abs(DY) > 3f)) engaged = false;
+
+            // Not gated on engagement: it drops while the player is high overhead, mid-stomp.
+            if (HasPlayer && Mathf.Abs(DX) < noticeRange && Anticipates(StompIncoming(0.5f, out _), stepReaction, stepChance, stepCooldown))
+            {
+                int away = AwayFromLanding;
+                if (RoomAhead(away) < 1.2f) away = -away;
+                if (RoomAhead(away) >= 1.2f) { RunSpecial(StepBack(away)); return; }
+            }
 
             if (engaged && Time.time >= nextCombo && Mathf.Abs(DX) <= comboRange && SameLevel())
             {
@@ -42,6 +57,15 @@ namespace MazeRunner.Enemies
             if (!engaged) { Enemy.PatrolStep(); return; }
             if (Mathf.Abs(DX) > comboRange * 0.8f) Enemy.MoveHorizontal(DirToPlayer, advanceSpeed, true);
             else { Enemy.Face(DirToPlayer); Enemy.Halt(); }
+        }
+
+        private IEnumerator StepBack(int dir)
+        {
+            Trace("step back");
+            yield return Travel(dir, 5f, 1.3f);
+            Enemy.Halt();
+            if (HasPlayer) Enemy.Face(DirToPlayer);
+            yield return new WaitForSeconds(0.2f);
         }
 
         private IEnumerator Combo()

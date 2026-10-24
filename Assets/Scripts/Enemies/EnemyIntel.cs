@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Globalization;
 using UnityEngine;
 
@@ -220,7 +220,7 @@ namespace MazeRunner.Enemies
                 Behaviour = typeof(GoblinSkirmisherBehaviour),
                 Name = "Regular Goblin", Role = "CUNNING SKIRMISHER", Health = 2,
                 Ability = "Flanking Dash", Style = AttackStyle.Dash,
-                Description = "Dashes in and slashes for 1 damage when you move away from it. When you drop on it, it slides about 2 units clear.",
+                Description = "Dashes in and slashes for 1 damage when you move away from it. When you drop on it, it may slide about 2 units clear.",
                 Stats = new[]
                 {
                     new IntelStat("WIND-UP", 0.2f, 0.2f, "s", null),
@@ -232,19 +232,51 @@ namespace MazeRunner.Enemies
             },
             new EnemyIntelEntry
             {
-                Id = "goblin_boss", Prefab = "Assets/Enemies/Goblin/Goblin_Boss.prefab",
-                Behaviour = typeof(BossHunterBehaviour),
-                Name = "Boss Goblin", Role = "BOSS  /  PERSISTENT HUNTER", Health = 7,
-                Ability = "Hunter's Combo", Style = AttackStyle.Combo,
-                Description = "Chases you down and strikes twice for 1 damage each. Every third combo ends in a Heavy Cleave: 2 damage and a big knock-back.",
+                Id = "ogre_warlord", Prefab = "Assets/Enemies/Ogre/Ogre_Warlord.prefab",
+                Behaviour = typeof(OgreWarlordBehaviour),
+                Name = "Ogre Warlord", Role = "BOSS  /  LEVEL 1", Health = 6,
+                Ability = "Bull Charge", Style = AttackStyle.Charge,
+                Description = "Marks its lane on the ground, then charges to where you stood for 1 damage. Up close it uses the Ogre's Ground Slam.",
                 Stats = new[]
                 {
-                    IntelStat.Seconds("CLEAVE WIND-UP", 0.7f, "heavyWindUp"),
-                    IntelStat.DamageText("1 + 1 / 2", true),
-                    IntelStat.Seconds("COOLDOWN", 1.6f, "comboCooldown"),
-                    IntelStat.Distance("RANGE", 2.5f, "GoblinEnemy.attackRange"),
+                    IntelStat.Seconds("WIND-UP", 0.9f, "chargeWindUp"),
+                    IntelStat.DamageText("1 / 2", true),
+                    IntelStat.Seconds("COOLDOWN", 5f, "chargeCooldown"),
+                    IntelStat.DistanceRange("RANGE", 3.5f, 9f, "chargeMin", "chargeMax"),
                 },
-                Counter = "It is winded for 1 s after each combo. Below half health it recovers faster.",
+                Counter = "Jump over the charge; it stands dazed for 1.5 s. It may sidestep a stomp, never while dazed.",
+            },
+            new EnemyIntelEntry
+            {
+                Id = "plague_alchemist", Prefab = "Assets/Enemies/Bloody_Alchemist/Plague_Alchemist.prefab",
+                Behaviour = typeof(AlchemistBossBehaviour),
+                Name = "Plague Alchemist", Role = "BOSS  /  LEVEL 2", Health = 7,
+                Ability = "Potion Volley", Style = AttackStyle.Ranged,
+                Description = "Keeps its distance and lobs three potions at once - four below half health - leaving pools on and around you. Gets close and it stabs.",
+                Stats = new[]
+                {
+                    IntelStat.Seconds("WIND-UP", 0.5f, "throwWindUp"),
+                    IntelStat.Damage(1),
+                    IntelStat.Seconds("COOLDOWN", 3f, "throwCooldown"),
+                    IntelStat.DistanceRange("RANGE", 4f, 8f, "tooClose", "tooFar"),
+                },
+                Counter = "Step between the pools and close in. It slides from a stomp at most every 3 s.",
+            },
+            new EnemyIntelEntry
+            {
+                Id = "goblin_boss", Prefab = "Assets/Enemies/Goblin/Goblin_Boss.prefab",
+                Behaviour = typeof(BossHunterBehaviour),
+                Name = "Goblin Warchief", Role = "BOSS  /  LEVEL 3", Health = 9,
+                Ability = "Skirmish", Style = AttackStyle.Combo,
+                Description = "Circles you, feints, vaults over you and dashes in for a two-hit combo; every third ends in a 2-damage cleave. Below half health it pounces on your spot.",
+                Stats = new[]
+                {
+                    IntelStat.Seconds("DASH WIND-UP", 0.3f, "dashWindUp"),
+                    IntelStat.DamageText("1 + 1 / 2", true),
+                    IntelStat.Seconds("CLEAVE WIND-UP", 0.7f, "heavyWindUp"),
+                    IntelStat.Distance("RANGE", 5.5f, "dashReach"),
+                },
+                Counter = "Stomp it while winded after a combo. It reads repeated jumps, but never dodges twice within 2.4 s.",
             },
         };
 

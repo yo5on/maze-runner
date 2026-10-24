@@ -15,6 +15,8 @@ namespace MazeRunner.Enemies
     /// </summary>
     public class CrusaderBehaviour : EnemyBehaviour
     {
+        public override Intelligence Tier => Enemy.IsBoss ? Intelligence.Boss : Intelligence.Elite;
+
         [SerializeField] private float walkSpeed = 1f;
         [SerializeField] private float watchRange = 7f;
         [SerializeField] private float chargeMin = 2.2f;

@@ -14,6 +14,8 @@ namespace MazeRunner.Enemies
     /// </summary>
     public class WraithPhaseBehaviour : EnemyBehaviour
     {
+        public override Intelligence Tier => Enemy.IsBoss ? Intelligence.Boss : Intelligence.Elite;
+
         [SerializeField] private float noticeRange = 7f;
         [SerializeField] private float driftSpeed = 1.3f;
         [SerializeField] private float preferredDistance = 2f;

@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using UnityEngine;
 
 namespace MazeRunner.Enemies
@@ -6,8 +6,9 @@ namespace MazeRunner.Enemies
     /// <summary>
     /// Regular Goblin: a cunning, mobile patroller. It keeps the original goblin patrol (paired platforms,
     /// turning at ledges) and the original slash, and adds two tricks:
-    /// - Evasive Slide: when the player is right above it and falling (a stomp coming), it slides about
-    ///   two units out of the way (Sliding). Cooldown 3 s, so a second, well-timed stomp lands.
+    /// - Evasive Slide: when the player's jump is about to come down on its head (a stomp coming) it may
+    ///   slide about two units out of the way (Sliding): it needs 0.15 s to react, does it about half the
+    ///   time, and then not again for 3 s, so a second, well-timed stomp lands.
     /// - Flanking Dash: when the player is 2-4.5 units away on its floor and moving away from it (an
     ///   exposed back), it dashes in and slashes. Cooldown 3.5 s.
     /// Both moves stop at ledges.
@@ -17,6 +18,8 @@ namespace MazeRunner.Enemies
         [SerializeField] private float slideSpeed = 7f;
         [SerializeField] private float slideDistance = 2.2f;
         [SerializeField] private float slideCooldown = 3f;
+        [SerializeField] private float slideReaction = 0.15f;
+        [Range(0f, 1f)] [SerializeField] private float slideChance = 0.5f;
         [SerializeField] private float dashSpeed = 6f;
         [SerializeField] private float dashMin = 2f;
         [SerializeField] private float dashMax = 4.5f;
@@ -36,13 +39,12 @@ namespace MazeRunner.Enemies
         {
             if (Busy || !HasPlayer || Enemy.IsAttackLocked) return;
 
-            Rigidbody2D playerBody = PlayerController != null ? PlayerController.GetComponent<Rigidbody2D>() : null;
-            float playerVx = playerBody != null ? playerBody.linearVelocity.x : 0f;
-            float playerVy = playerBody != null ? playerBody.linearVelocity.y : 0f;
+            float playerVx = PlayerController != null ? PlayerController.Velocity.x : 0f;
 
-            if (Time.time >= nextSlide && Mathf.Abs(DX) < 1.2f && DY > 0.8f && DY < 4f && playerVy < -1f)
+            bool stompComing = Time.time >= nextSlide && StompIncoming(0.6f, out _);
+            if (Anticipates(stompComing, slideReaction, slideChance, slideCooldown))
             {
-                int away = DX >= 0f ? -1 : 1;
+                int away = AwayFromLanding;
                 if (RoomAhead(away) < 1f) away = -away;
                 if (RoomAhead(away) >= 1f) RunSpecial(Slide(away));
                 return;
@@ -85,17 +87,6 @@ namespace MazeRunner.Enemies
                 Enemy.BasicAttack();
             }
             yield return new WaitForSeconds(0.3f);
-        }
-
-        private IEnumerator Travel(int dir, float speed, float distance)
-        {
-            float travelled = 0f;
-            while (travelled < distance && !Enemy.IsDead)
-            {
-                if (!Enemy.MoveHorizontal(dir, speed, true)) yield break;
-                travelled += speed * Time.fixedDeltaTime;
-                yield return new WaitForFixedUpdate();
-            }
         }
     }
 }

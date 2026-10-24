@@ -16,6 +16,8 @@ namespace MazeRunner.Enemies
     /// </summary>
     public class ShieldWarriorBehaviour : EnemyBehaviour
     {
+        public override Intelligence Tier => Enemy.IsBoss ? Intelligence.Boss : Intelligence.Elite;
+
         [SerializeField] private float engageRange = 5f;
         [SerializeField] private float disengageRange = 7.5f;
         [SerializeField] private float guardMin = 1.8f;

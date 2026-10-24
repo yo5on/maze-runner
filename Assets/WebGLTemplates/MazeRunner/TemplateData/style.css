@@ -1,26 +1,33 @@
-/* Maze Runner web player - styled after the yo5on portfolio:
-   midnight navy, warm stone grey, crimson accents, Instrument Sans/Serif,
-   hairline borders, square corners. The game itself is the page. */
-:root {
-  --navy: #1b1e4a;
-  --navy-deep: #15173c;
-  --stone: #afaea2;
-  --stone-soft: rgba(175, 174, 162, 0.86);
-  --stone-faint: rgba(175, 174, 162, 0.48);
-  --hair: rgba(175, 174, 162, 0.2);
-  --crimson: #d21319;
-  --crimson-soft: rgba(210, 19, 25, 0.35);
+/* Maze Runner web player - in the game's own palette: the night sky's navy and steel blue,
+   pale-sky mist for text and lines, grass green accents, moon cream and the game's display face
+   (yoster, TemplateData/yoster.ttf). The game itself is the page. */
+@font-face {
+  font-family: "Yoster";
+  src: url("yoster.ttf") format("truetype");
+  font-display: swap;
+}
 
-  --ui: "Instrument Sans", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
-  --display: "Instrument Serif", "Times New Roman", serif;
-  --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+:root {
+  --navy: #1b2b4a;
+  --navy-deep: #111a2c;
+  --mist: #b4c2d6;
+  --mist-soft: rgba(180, 194, 214, 0.86);
+  --mist-faint: rgba(180, 194, 214, 0.48);
+  --hair: rgba(180, 194, 214, 0.2);
+  --accent: #4da861;
+  --accent-soft: rgba(77, 168, 97, 0.35);
+  --cream: var(--cream);
+
+  --ui: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  --display: "Yoster", system-ui, sans-serif;
+  --mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
   --fs-label: 11px;
   --ls-label: 0.08em;
 
   /* Translucent control surfaces. */
-  --ctl-base: rgba(27, 30, 74, 0.5);
-  --ctl-base-strong: rgba(21, 23, 60, 0.78);
-  --ctl-line: rgba(175, 174, 162, 0.55);
+  --ctl-base: rgba(27, 43, 74, 0.5);
+  --ctl-base-strong: rgba(17, 26, 44, 0.78);
+  --ctl-line: rgba(180, 194, 214, 0.55);
 
   --safe-t: env(safe-area-inset-top, 0px);
   --safe-r: env(safe-area-inset-right, 0px);
@@ -44,7 +51,7 @@ html, body {
   height: 100%;
   overflow: hidden;
   background: var(--navy);
-  color: var(--stone);
+  color: var(--mist);
   font-family: var(--ui);
   -webkit-font-smoothing: antialiased;
   /* No page scrolling, pinch zoom, selection, callouts or tap flashes. */
@@ -120,7 +127,7 @@ body.ready #loading {
   line-height: 1;
   letter-spacing: 0.02em;
   text-transform: uppercase;
-  color: var(--crimson);
+  color: var(--cream);
 }
 
 #loading-track {
@@ -133,7 +140,7 @@ body.ready #loading {
 #loading-fill {
   width: 0;
   height: 100%;
-  background: var(--crimson);
+  background: var(--accent);
   transition: width 0.2s ease-out;
 }
 
@@ -143,7 +150,7 @@ body.ready #loading {
   letter-spacing: var(--ls-label);
   text-transform: uppercase;
   font-variant-numeric: tabular-nums;
-  color: var(--stone-faint);
+  color: var(--mist-faint);
 }
 
 #error {
@@ -153,9 +160,9 @@ body.ready #loading {
   transform: translateX(-50%);
   max-width: calc(100% - 32px);
   padding: 10px 14px;
-  border: 1px solid var(--crimson);
+  border: 1px solid var(--accent);
   background: var(--navy-deep);
-  color: var(--stone);
+  color: var(--mist);
   font-size: 13px;
   z-index: 40;
 }
@@ -184,7 +191,7 @@ body.ready #loading {
   border: 1px solid rgba(50, 50, 50, 0.32);
   border-radius: 4px;
   background: var(--face);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.18), 0 4px 12px rgba(10, 12, 30, 0.12);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.18), 0 4px 12px rgba(6, 10, 20, 0.12);
   cursor: pointer;
   transition: background-color 0.1s ease, border-color 0.1s ease, box-shadow 0.1s ease;
 }
@@ -304,7 +311,7 @@ body.touch .chip {
   border-radius: 50%;
   border: 1px solid var(--ctl-line);
   background: var(--ctl-base);
-  box-shadow: inset 0 0 0 6px rgba(21, 23, 60, 0.35), 0 4px 14px rgba(8, 9, 28, 0.35);
+  box-shadow: inset 0 0 0 6px rgba(17, 26, 44, 0.35), 0 4px 14px rgba(6, 10, 20, 0.35);
   transition: border-color 0.15s ease;
 }
 
@@ -331,25 +338,25 @@ body.touch .chip {
 
 .joy-arrow-left {
   left: 8%;
-  border-right: 8px solid var(--stone);
+  border-right: 8px solid var(--mist);
   border-left-width: 0;
 }
 
 .joy-arrow-right {
   right: 8%;
-  border-left: 8px solid var(--stone);
+  border-left: 8px solid var(--mist);
   border-right-width: 0;
 }
 
 #joystick[data-dir="left"] .joy-arrow-left {
   opacity: 1;
-  border-right-color: #f3ead7;
+  border-right-color: var(--cream);
   transform: translateX(-2px);
 }
 
 #joystick[data-dir="right"] .joy-arrow-right {
   opacity: 1;
-  border-left-color: #f3ead7;
+  border-left-color: var(--cream);
   transform: translateX(2px);
 }
 
@@ -361,22 +368,22 @@ body.touch .chip {
   height: 44%;
   margin: -22% 0 0 -22%;
   border-radius: 50%;
-  border: 1px solid rgba(175, 174, 162, 0.9);
-  background: rgba(175, 174, 162, 0.32);
-  box-shadow: 0 3px 10px rgba(8, 9, 28, 0.4);
+  border: 1px solid rgba(180, 194, 214, 0.9);
+  background: rgba(180, 194, 214, 0.32);
+  box-shadow: 0 3px 10px rgba(6, 10, 20, 0.4);
   transition: transform 0.18s cubic-bezier(0.2, 0.8, 0.2, 1.2), background-color 0.15s ease, border-color 0.15s ease;
   will-change: transform;
 }
 
 #joystick.active .joy-base {
-  border-color: var(--stone);
+  border-color: var(--mist);
 }
 
 #joystick.active .joy-thumb {
   /* Follow the finger directly while dragging; spring back on release. */
   transition: background-color 0.15s ease, border-color 0.15s ease;
-  background: rgba(175, 174, 162, 0.5);
-  border-color: #f3ead7;
+  background: rgba(180, 194, 214, 0.5);
+  border-color: var(--cream);
 }
 
 #btn-jump {
@@ -394,7 +401,7 @@ body.touch .chip {
   border-radius: 50%;
   border: 1px solid var(--ctl-line);
   background: var(--ctl-base);
-  box-shadow: inset 0 0 0 4px rgba(21, 23, 60, 0.35), 0 4px 14px rgba(8, 9, 28, 0.35);
+  box-shadow: inset 0 0 0 4px rgba(17, 26, 44, 0.35), 0 4px 14px rgba(6, 10, 20, 0.35);
   z-index: 15;
   touch-action: none;
   transition: transform 0.08s ease, background-color 0.12s ease, border-color 0.12s ease;
@@ -404,7 +411,7 @@ body.touch .chip {
   width: 32%;
   height: 32%;
   fill: none;
-  stroke: var(--stone);
+  stroke: var(--mist);
   stroke-width: 2;
   stroke-linecap: square;
   stroke-linejoin: miter;
@@ -415,17 +422,17 @@ body.touch .chip {
   font-size: clamp(9px, 2.3vmin, 11px);
   font-weight: 500;
   letter-spacing: var(--ls-label);
-  color: var(--stone-soft);
+  color: var(--mist-soft);
 }
 
 #btn-jump.down {
   transform: scale(0.94);
-  border-color: var(--stone);
+  border-color: var(--mist);
   background: var(--ctl-base-strong);
 }
 
 #btn-jump.down svg {
-  stroke: #f3ead7;
+  stroke: var(--cream);
 }
 
 /* Layout B (Settings > Mobile Controls): Left / Right buttons instead of the joystick.
@@ -458,7 +465,7 @@ body[data-controls="buttons"] #joystick {
   border-radius: 16px;
   border: 1px solid var(--ctl-line);
   background: var(--ctl-base);
-  box-shadow: inset 0 0 0 4px rgba(21, 23, 60, 0.35), 0 4px 14px rgba(8, 9, 28, 0.35);
+  box-shadow: inset 0 0 0 4px rgba(17, 26, 44, 0.35), 0 4px 14px rgba(6, 10, 20, 0.35);
   touch-action: none;
   -webkit-user-select: none;
   user-select: none;
@@ -469,7 +476,7 @@ body[data-controls="buttons"] #joystick {
   width: 42%;
   height: 42%;
   fill: none;
-  stroke: var(--stone);
+  stroke: var(--mist);
   stroke-width: 2.4;
   stroke-linecap: square;
   stroke-linejoin: miter;
@@ -478,12 +485,12 @@ body[data-controls="buttons"] #joystick {
 
 .move-btn.down {
   transform: scale(0.94);
-  border-color: var(--crimson);
+  border-color: var(--accent);
   background: var(--ctl-base-strong);
 }
 
 .move-btn.down svg {
-  stroke: #f3ead7;
+  stroke: var(--cream);
 }
 
 /* Portrait: controls sit in the space below the game, a little larger. */
@@ -517,7 +524,7 @@ body.touch.portrait #btn-jump {
   font-size: var(--fs-label);
   letter-spacing: var(--ls-label);
   text-transform: uppercase;
-  color: var(--stone-soft);
+  color: var(--mist-soft);
   z-index: 20;
 }
 
@@ -529,7 +536,7 @@ body.touch.portrait #btn-jump {
   width: 16px;
   height: 16px;
   fill: none;
-  stroke: var(--crimson);
+  stroke: var(--accent);
   stroke-width: 1.6;
   stroke-linecap: round;
 }
@@ -541,7 +548,7 @@ body.touch.portrait #btn-jump {
   background: transparent;
   font-size: 16px;
   line-height: 1;
-  color: var(--stone-faint);
+  color: var(--mist-faint);
   cursor: pointer;
 }
 
@@ -553,7 +560,7 @@ body.touch.portrait #btn-jump {
   align-items: center;
   justify-content: center;
   padding: calc(var(--safe-t) + 16px) calc(var(--safe-r) + 16px) calc(var(--safe-b) + 16px) calc(var(--safe-l) + 16px);
-  background: rgba(14, 15, 40, 0.72);
+  background: rgba(12, 18, 32, 0.72);
   z-index: 50;
   touch-action: auto;
 }
@@ -569,7 +576,7 @@ body.touch.portrait #btn-jump {
   padding: 20px 22px 18px;
   border: 1px solid var(--hair);
   background: var(--navy-deep);
-  box-shadow: 0 18px 40px rgba(8, 9, 28, 0.5);
+  box-shadow: 0 18px 40px rgba(6, 10, 20, 0.5);
   font-size: 14px;
   line-height: 1.5;
   -webkit-user-select: text;
@@ -581,19 +588,19 @@ body.touch.portrait #btn-jump {
   font-size: 26px;
   line-height: 1.1;
   text-transform: uppercase;
-  color: var(--crimson);
+  color: var(--cream);
   margin-bottom: 8px;
 }
 
 .sheet-body p {
   margin: 6px 0;
-  color: var(--stone-soft);
+  color: var(--mist-soft);
 }
 
 .sheet-body ol {
   margin: 8px 0;
   padding-left: 20px;
-  color: var(--stone);
+  color: var(--mist);
 }
 
 .sheet-body li {
@@ -601,7 +608,7 @@ body.touch.portrait #btn-jump {
 }
 
 .sheet-body b {
-  color: #f3ead7;
+  color: var(--cream);
   font-weight: 600;
 }
 
@@ -616,7 +623,7 @@ body.touch.portrait #btn-jump {
   height: 15px;
   vertical-align: -2px;
   fill: none;
-  stroke: var(--crimson);
+  stroke: var(--accent);
   stroke-width: 2;
   stroke-linecap: round;
   stroke-linejoin: round;
@@ -627,19 +634,19 @@ body.touch.portrait #btn-jump {
   width: 100%;
   margin-top: 14px;
   height: 40px;
-  border: 1px solid var(--crimson);
+  border: 1px solid var(--accent);
   border-radius: 0;
   background: transparent;
   font-family: var(--mono);
   font-size: var(--fs-label);
   letter-spacing: var(--ls-label);
   text-transform: uppercase;
-  color: var(--stone);
+  color: var(--mist);
   cursor: pointer;
   transition: background-color 0.15s ease;
 }
 
 #sheet-close:hover,
 #sheet-close:active {
-  background: var(--crimson-soft);
+  background: var(--accent-soft);
 }

@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: abadf8938b1962e42b6c264f307a3bce
+guid: 5a5d8e1461a329a4887c6426bf347fb4
 TrueTypeFontImporter:
   externalObjects: {}
   serializedVersion: 4
@@ -9,7 +9,7 @@ TrueTypeFontImporter:
   characterPadding: 1
   includeFontData: 1
   fontNames:
-  - Instrument Serif
+  - Yoster Island
   fallbackFontReferences: []
   customCharacters: 
   fontRenderingMode: 0

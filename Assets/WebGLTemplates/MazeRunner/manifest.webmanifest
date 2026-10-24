@@ -6,8 +6,8 @@
   "scope": "./",
   "display": "fullscreen",
   "orientation": "landscape",
-  "background_color": "#1b1e4a",
-  "theme_color": "#1b1e4a",
+  "background_color": "#1b2b4a",
+  "theme_color": "#1b2b4a",
   "icons": [
     { "src": "TemplateData/icon-192.png", "sizes": "192x192", "type": "image/png" },
     { "src": "TemplateData/icon-512.png", "sizes": "512x512", "type": "image/png" },

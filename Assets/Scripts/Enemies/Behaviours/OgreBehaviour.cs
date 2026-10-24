@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using UnityEngine;
 
 namespace MazeRunner.Enemies
@@ -13,19 +13,25 @@ namespace MazeRunner.Enemies
     /// </summary>
     public class OgreBehaviour : EnemyBehaviour
     {
-        [SerializeField] private float walkSpeed = 1f;
-        [SerializeField] private float noticeRange = 7f;
-        [SerializeField] private float slamRange = 2.8f;
-        [SerializeField] private float slamReach = 3f;
-        [SerializeField] private float windUp = 0.9f;
-        [SerializeField] private float recovery = 1.3f;
-        [SerializeField] private float cooldown = 3.5f;
-        [SerializeField] private int slamDamage = 2;
+        [SerializeField] protected float walkSpeed = 1f;
+        [SerializeField] protected float noticeRange = 7f;
+        [SerializeField] protected float slamRange = 2.8f;
+        [SerializeField] protected float slamReach = 3f;
+        [SerializeField] protected float windUp = 0.9f;
+        [SerializeField] protected float recovery = 1.3f;
+        [SerializeField] protected float cooldown = 3.5f;
+        [SerializeField] protected int slamDamage = 2;
 
-        private bool engaged;
-        private float nextSlam;
+        protected bool engaged;
+        protected float nextSlam;
 
         protected override bool HasSuperArmor => true;
+
+        public override void OnEncounterReset()
+        {
+            base.OnEncounterReset();
+            engaged = false;
+        }
 
         public override void Think()
         {
@@ -48,9 +54,11 @@ namespace MazeRunner.Enemies
             else { Enemy.Halt(); Enemy.Face(DirToPlayer); }
         }
 
-        private IEnumerator Slam()
+        protected virtual float SlamCooldown => cooldown;
+
+        protected IEnumerator Slam()
         {
-            nextSlam = Time.time + cooldown;
+            nextSlam = Time.time + SlamCooldown;
             int dir = DirToPlayer;
             Enemy.Halt();
             Enemy.Face(dir);

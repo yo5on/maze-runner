@@ -19,7 +19,7 @@ namespace MazeRunner.UI
     /// that type are in the level. Everything shown comes from <see cref="EnemyIntel"/>.
     ///
     /// Drawn like the Settings menu, in the portfolio's three colours only: midnight navy surfaces,
-    /// warm stone text and hairlines for selected details and emphasis,
+    /// warm mist text and hairlines for selected details and emphasis,
     /// the chosen portrait and the counter-play label. The card is laid out for the game's 1080 px
     /// high canvas and shrinks to fit smaller screens. Portraits are captured from the enemy prefabs
     /// into Resources/EnemyPortraits by Maze Runner > Capture Enemy Portraits.
@@ -37,7 +37,6 @@ namespace MazeRunner.UI
         private const float PortraitHeight = 506f;
         private const float ColumnX = Margin + PortraitWidth + 56f;
         private const float ColumnWidth = CardWidth - Margin - ColumnX;
-        private const string HeadingFont = "Fonts/InstrumentSerif-Italic SDF";
         private const string PortraitFolder = "EnemyPortraits/";
 
         public static EnemyIntelPanel Current { get; private set; }
@@ -229,15 +228,15 @@ namespace MazeRunner.UI
         private void Build(TMP_FontAsset font)
         {
             bodyFont = font;
-            headingFont = Resources.Load<TMP_FontAsset>(HeadingFont);
+            headingFont = PaletteUI.DisplayFont;
             if (headingFont == null) headingFont = font;
-            Color stone = PaletteUI.Stone, green = PaletteUI.Green;
+            Color mist = PaletteUI.Mist, green = PaletteUI.Green;
 
-            // Card: a thin stone frame around a navy surface (as in Settings).
+            // Card: a thin mist frame around a navy surface (as in Settings).
             card = PaletteUI.NewRect("Card", transform);
             card.anchorMin = card.anchorMax = new Vector2(0.5f, 0.5f);
             card.sizeDelta = new Vector2(CardWidth, CardHeight);
-            PaletteUI.Fill(card, stone);
+            PaletteUI.Fill(card, mist);
             var surface = PaletteUI.NewRect("Surface", card);
             PaletteUI.Stretch(surface, 1.5f);
             PaletteUI.Fill(surface, PaletteUI.Navy, raycast: true);
@@ -245,10 +244,10 @@ namespace MazeRunner.UI
             float contentWidth = CardWidth - 2f * Margin;
 
             // Header.
-            PaletteUI.Eyebrow(c, font, "MAZE RUNNER", Margin, 40f, 400f, stone);
-            PaletteUI.Text(c, headingFont, "Enemy Intel", 76f, Color.white, Margin, 56f, 900f, 92f, TextAlignmentOptions.Left);
+            PaletteUI.Eyebrow(c, font, "MAZE RUNNER", Margin, 40f, 400f, mist);
+            PaletteUI.Text(c, headingFont, "Enemy Intel", 64f, PaletteUI.Cream, Margin, 56f, 900f, 92f, TextAlignmentOptions.Left);
             PaletteUI.Box(c, "Accent", Margin, 150f, 48f, 3f, green);
-            summaryText = PaletteUI.Eyebrow(c, font, "", CardWidth - Margin - 700f, 118f, 700f, stone);
+            summaryText = PaletteUI.Eyebrow(c, font, "", CardWidth - Margin - 700f, 118f, 700f, mist);
             summaryText.alignment = TextAlignmentOptions.TopRight;
 
             // Roster.
@@ -265,7 +264,7 @@ namespace MazeRunner.UI
             float footerY = CardHeight - 44f - 56f;
             PaletteUI.Button(c, font, "Previous", PaletteButton.Style.Quiet, Margin, footerY, 200f, 56f, () => Step(-1));
             PaletteUI.Button(c, font, "Next", PaletteButton.Style.Quiet, Margin + 216f, footerY, 200f, 56f, () => Step(1));
-            pageText = PaletteUI.Text(c, font, "", 22f, stone, CardWidth / 2f - 150f, footerY, 300f, 56f,
+            pageText = PaletteUI.Text(c, font, "", 22f, mist, CardWidth / 2f - 150f, footerY, 300f, 56f,
                 TextAlignmentOptions.Center, FontStyles.Bold, 6f);
             PaletteUI.Button(c, font, "Back", PaletteButton.Style.Strong, CardWidth - Margin - 240f, footerY, 240f, 56f, Close);
         }
@@ -274,7 +273,7 @@ namespace MazeRunner.UI
         {
             EnemyIntelEntry entry = EnemyIntel.All[index];
             RectTransform rect = PaletteUI.Place(parent, "Tile_" + entry.Id, x, y, width, TileHeight);
-            Image frame = PaletteUI.Fill(rect, PaletteUI.Stone, raycast: true);
+            Image frame = PaletteUI.Fill(rect, PaletteUI.Mist, raycast: true);
             var surface = PaletteUI.NewRect("Surface", rect);
             PaletteUI.Stretch(surface, 1.5f);
             PaletteUI.Fill(surface, PaletteUI.Navy);
@@ -285,7 +284,7 @@ namespace MazeRunner.UI
             art.offsetMax = new Vector2(-8f, -26f);
             SetPortrait(art.gameObject.AddComponent<Image>(), entry);
 
-            TMP_Text number = PaletteUI.Text(surface, bodyFont, (index + 1).ToString("00"), 17f, PaletteUI.Stone,
+            TMP_Text number = PaletteUI.Text(surface, bodyFont, (index + 1).ToString("00"), 17f, PaletteUI.Mist,
                 10f, 6f, 60f, 20f, TextAlignmentOptions.TopLeft, FontStyles.Bold, 4f);
 
             Image underline = PaletteUI.Box(parent, "Underline", x, y + TileHeight + 8f, width, 4f, PaletteUI.Green);
@@ -299,11 +298,11 @@ namespace MazeRunner.UI
 
         private void BuildDetail(Transform c)
         {
-            Color stone = PaletteUI.Stone, green = PaletteUI.Green;
+            Color mist = PaletteUI.Mist, green = PaletteUI.Green;
             float y = DetailY;
 
             // Portrait and health.
-            RectTransform frame = PaletteUI.Framed(c, "PortraitFrame", Margin, y, PortraitWidth, PortraitHeight, stone, 1.5f, out _);
+            RectTransform frame = PaletteUI.Framed(c, "PortraitFrame", Margin, y, PortraitWidth, PortraitHeight, mist, 1.5f, out _);
             var art = PaletteUI.NewRect("Portrait", frame);
             PaletteUI.Stretch(art);
             art.offsetMin = new Vector2(32f, 92f);
@@ -311,26 +310,26 @@ namespace MazeRunner.UI
             portrait = art.gameObject.AddComponent<Image>();
             portrait.preserveAspect = true;
             portrait.raycastTarget = false;
-            PaletteUI.Box(frame, "Rule", 32f, PortraitHeight - 76f, PortraitWidth - 64f, 1.5f, stone);
-            PaletteUI.Eyebrow(frame, bodyFont, "HEALTH", 32f, PortraitHeight - 52f, 140f, stone);
+            PaletteUI.Box(frame, "Rule", 32f, PortraitHeight - 76f, PortraitWidth - 64f, 1.5f, mist);
+            PaletteUI.Eyebrow(frame, bodyFont, "HEALTH", 32f, PortraitHeight - 52f, 140f, mist);
             healthPips = PaletteUI.Place(frame, "Health", 150f, PortraitHeight - 52f, PortraitWidth - 182f, 22f);
 
             // Identity.
             float x = ColumnX, w = ColumnWidth;
-            nameText = PaletteUI.Text(c, headingFont, "", 66f, Color.white, x, y - 6f, w, 80f, TextAlignmentOptions.Left);
-            roleText = PaletteUI.Eyebrow(c, bodyFont, "", x, y + 82f, w * 0.6f, stone, 18f);
-            presenceText = PaletteUI.Eyebrow(c, bodyFont, "", x + w * 0.4f, y + 82f, w * 0.6f, stone, 18f);
+            nameText = PaletteUI.Text(c, headingFont, "", 52f, PaletteUI.Cream, x, y - 6f, w, 80f, TextAlignmentOptions.Left);
+            roleText = PaletteUI.Eyebrow(c, bodyFont, "", x, y + 82f, w * 0.6f, mist, 18f);
+            presenceText = PaletteUI.Eyebrow(c, bodyFont, "", x + w * 0.4f, y + 82f, w * 0.6f, mist, 18f);
             presenceText.alignment = TextAlignmentOptions.TopRight;
             presenceText.richText = true;
-            PaletteUI.Box(c, "Rule", x, y + 116f, w, 1.5f, stone);
+            PaletteUI.Box(c, "Rule", x, y + 116f, w, 1.5f, mist);
 
             // Signature ability.
-            PaletteUI.Eyebrow(c, bodyFont, "SIGNATURE ABILITY", x, y + 136f, w, stone);
+            PaletteUI.Eyebrow(c, bodyFont, "SIGNATURE ABILITY", x, y + 136f, w, mist);
             RectTransform iconBox = PaletteUI.Framed(c, "StyleIcon", x, y + 168f, 60f, 60f, green, 1.5f, out _);
             var iconRect = PaletteUI.NewRect("Icon", iconBox);
             PaletteUI.Stretch(iconRect, 8f);
             styleIcon = PaletteUI.Fill(iconRect, green);
-            abilityText = PaletteUI.Text(c, bodyFont, "", 40f, stone, x + 84f, y + 168f, w - 300f, 60f,
+            abilityText = PaletteUI.Text(c, bodyFont, "", 40f, mist, x + 84f, y + 168f, w - 300f, 60f,
                 TextAlignmentOptions.Left, FontStyles.Bold);
             styleTag = PaletteUI.Place(c, "StyleTag", x + 84f, y + 182f, 120f, 32f);
             PaletteUI.Fill(styleTag, green);
@@ -341,11 +340,11 @@ namespace MazeRunner.UI
             styleTagText.fontSize = 15f;
             styleTagText.fontStyle = FontStyles.Bold;
             styleTagText.characterSpacing = 12f;
-            styleTagText.color = stone;
+            styleTagText.color = mist;
             styleTagText.alignment = TextAlignmentOptions.Center;
             styleTagText.raycastTarget = false;
 
-            descriptionText = PaletteUI.Text(c, bodyFont, "", 26f, stone, x, y + 246f, w, 104f,
+            descriptionText = PaletteUI.Text(c, bodyFont, "", 26f, mist, x, y + 246f, w, 104f,
                 TextAlignmentOptions.TopLeft, FontStyles.Normal, 0f, wrap: true);
             descriptionText.lineSpacing = 8f;
 
@@ -355,16 +354,16 @@ namespace MazeRunner.UI
             for (int i = 0; i < columns; i++)
             {
                 float cx = x + i * columnWidth + (i == 0 ? 0f : 28f);
-                if (i > 0) PaletteUI.Box(c, "Divider", x + i * columnWidth, y + 352f, 1.5f, 70f, stone);
-                statValues.Add(PaletteUI.Text(c, bodyFont, "", 34f, stone, cx, y + 350f, columnWidth - 32f, 44f,
+                if (i > 0) PaletteUI.Box(c, "Divider", x + i * columnWidth, y + 352f, 1.5f, 70f, mist);
+                statValues.Add(PaletteUI.Text(c, bodyFont, "", 34f, mist, cx, y + 350f, columnWidth - 32f, 44f,
                     TextAlignmentOptions.TopLeft, FontStyles.Bold));
-                statLabels.Add(PaletteUI.Eyebrow(c, bodyFont, "", cx, y + 398f, columnWidth - 32f, stone, 16f));
+                statLabels.Add(PaletteUI.Eyebrow(c, bodyFont, "", cx, y + 398f, columnWidth - 32f, mist, 16f));
             }
 
             // Counter-play.
-            PaletteUI.Box(c, "Rule", x, y + 440f, w, 1.5f, stone);
+            PaletteUI.Box(c, "Rule", x, y + 440f, w, 1.5f, mist);
             PaletteUI.Eyebrow(c, bodyFont, "COUNTER", x, y + 464f, 160f, green);
-            counterText = PaletteUI.Text(c, bodyFont, "", 24f, stone, x + 160f, y + 458f, w - 160f, 64f,
+            counterText = PaletteUI.Text(c, bodyFont, "", 24f, mist, x + 160f, y + 458f, w - 160f, 64f,
                 TextAlignmentOptions.TopLeft, FontStyles.Normal, 0f, wrap: true);
         }
 
@@ -382,7 +381,7 @@ namespace MazeRunner.UI
             roleText.text = e.Role;
             inLevel.TryGetValue(e, out int present);
             string presence = present > 0 ? present + " IN THIS LEVEL" : "NOT IN THIS LEVEL";
-            presenceText.text = e == nearest ? "<color=#AFAEA2>NEAREST</color>   " + presence : presence;
+            presenceText.text = e == nearest ? "<color=#B4C2D6>NEAREST</color>   " + presence : presence;
 
             // The ability's own artwork (potion, shield) when there is some, else the attack-style line icon.
             Sprite art = EnemyIntelArt.IconFor(e.Id);
@@ -402,7 +401,7 @@ namespace MazeRunner.UI
             {
                 bool has = i < e.Stats.Length;
                 statValues[i].text = has ? e.Stats[i].Value : "";
-                statValues[i].color = has && e.Stats[i].Severe ? PaletteUI.Green : PaletteUI.Stone;
+                statValues[i].color = has && e.Stats[i].Severe ? PaletteUI.Green : PaletteUI.Mist;
                 statLabels[i].text = has ? e.Stats[i].Label : "";
             }
             counterText.text = e.Counter;
@@ -421,22 +420,22 @@ namespace MazeRunner.UI
             }
             else
             {
-                // No captured portrait: the attack-style icon in stone keeps the layout intact.
+                // No captured portrait: the attack-style icon in mist keeps the layout intact.
                 image.sprite = IntelIcons.For(entry.Style);
-                image.color = PaletteUI.Stone;
+                image.color = PaletteUI.Mist;
             }
         }
 
-        /// <summary>One stone square per point of health (the player's stomp deals 1).</summary>
+        /// <summary>One mist square per point of health (the player's stomp deals 1).</summary>
         private void SetHealth(int health)
         {
             for (int i = healthPips.childCount - 1; i >= 0; i--) Destroy(healthPips.GetChild(i).gameObject);
             const float pip = 18f, gap = 8f;
             for (int i = 0; i < health; i++)
             {
-                PaletteUI.Box(healthPips, "Pip", i * (pip + gap), 2f, pip, pip, PaletteUI.Stone);
+                PaletteUI.Box(healthPips, "Pip", i * (pip + gap), 2f, pip, pip, PaletteUI.Mist);
             }
-            PaletteUI.Text(healthPips, bodyFont, health.ToString(), 18f, PaletteUI.Stone, health * (pip + gap) + 6f, 0f, 40f, 22f,
+            PaletteUI.Text(healthPips, bodyFont, health.ToString(), 18f, PaletteUI.Mist, health * (pip + gap) + 6f, 0f, 40f, 22f,
                 TextAlignmentOptions.TopLeft, FontStyles.Bold);
         }
     }
