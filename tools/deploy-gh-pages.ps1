@@ -39,7 +39,8 @@ try {
     if ($remoteHasBranch) {
         git worktree add -B $Branch $worktree "$Remote/$Branch"
         # Clear the previous build from the worktree (tracked files only; the worktree is fresh).
-        Get-ChildItem -Force $worktree | Where-Object { $_.Name -ne ".git" } | Remove-Item -Recurse -Force
+        # mobile-test/ is a separately deployed test build; keep it.
+        Get-ChildItem -Force $worktree | Where-Object { $_.Name -notin @(".git", "mobile-test") } | Remove-Item -Recurse -Force
     } else {
         git worktree add --orphan -b $Branch $worktree
     }
