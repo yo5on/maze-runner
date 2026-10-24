@@ -4,7 +4,10 @@ using UnityEngine.UI;
 
 namespace MazeRunner.UI
 {
-    /// <summary>Applies the shared steel-blue, navy and green UI theme to generated buttons.</summary>
+    /// <summary>
+    /// Applies the game's own UI theme to generated buttons. Every colour comes from the game's art:
+    /// steel-blue / navy night sky, grass-green platforms, the moon's cream and the hearts' red.
+    /// </summary>
     public class PaletteButton : Button
     {
         public enum Style { Quiet, Strong, Option }
@@ -15,7 +18,9 @@ namespace MazeRunner.UI
         public static readonly Color GreenHover = new Color32(0x6d, 0xb8, 0x7d, 0xff);
         public static readonly Color GreenPressed = new Color32(0x39, 0x7b, 0x4b, 0xff);
         public static readonly Color SecondaryHover = new Color32(0x40, 0x49, 0x60, 0xff);
-        public static readonly Color Stone = new Color32(0xaf, 0xae, 0xa2, 0xff);
+        public static readonly Color Mist = new Color32(0xb4, 0xc2, 0xd6, 0xff);     // pale sky: secondary text, borders, tracks
+        public static readonly Color Cream = new Color32(0xf3, 0xea, 0xd7, 0xff);    // the moon: titles
+        public static readonly Color HeartRed = new Color32(0xac, 0x32, 0x32, 0xff); // the HUD hearts: danger
         public static readonly Color Disabled = new Color32(0x59, 0x64, 0x77, 0xff);
 
         [SerializeField] private Style style = Style.Quiet;
@@ -68,7 +73,7 @@ namespace MazeRunner.UI
                 default:
                     bool on = style == Style.Option && isOn;
                     fillColor = pressed ? (on ? GreenPressed : new Color32(0x11, 0x1a, 0x2c, 0xff)) : on ? Green : hot ? SecondaryHover : Navy;
-                    borderColor = on ? Green : Stone;
+                    borderColor = on ? Green : Mist;
                     textColor = Color.white;
                     break;
             }

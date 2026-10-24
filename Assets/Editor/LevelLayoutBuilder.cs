@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -32,6 +32,10 @@ namespace MazeRunner.EditorTools
     /// own; Level 2 pairs abilities that cover each other (shield guard + alchemist, duelist + ogre,
     /// crusader charge + zombie lunge, wraith + alchemist); Level 3 puts lungers and snipers on narrow
     /// landings and ends with a crusader and a duelist before the Boss Goblin.
+    ///
+    /// Each level ends in a boss arena (a wide platform behind a checkpoint, the goal behind the boss;
+    /// the goal only opens once every enemy, the boss included, is defeated): Level 1 the Ogre Warlord,
+    /// Level 2 the Plague Alchemist, Level 3 the Goblin Warchief (see <see cref="BossEncounterSetup"/>).
     ///
     /// All three levels use Level 1's player settings (7 hearts, jumpForce 9) and Level 1's camera.
     ///
@@ -99,7 +103,9 @@ namespace MazeRunner.EditorTools
                 .P(161f, 174f, 0.75f).CP(162.5f, 0.75f).E("Ogre", 168f, 0.75f, -1, 1.2f)
                 .P(178.5f, 183f, 2.25f).E("Skeleton_Crusader_1", 181f, 2.25f, -1, 0.6f)
                 .P(188f, 202f, 0.75f).E("Bloody_Alchemist_1", 196f, 0.75f, -1, 1f)
-                .Goal(200.5f, 0.75f);
+                // Boss arena: the Ogre Warlord.
+                .P(206.5f, 228f, 0.75f).CP(208f, 0.75f).E("OgreWarlord", 221f, 0.75f, -1, 0f)
+                .Goal(226.5f, 0.75f);
 
             var l2 = new Level { Scene = "Assets/Scenes/Levels/Level2.unity", StartX = -7f, StartTop = -1.25f }
                 .P(-10f, 5f, -1.25f)
@@ -120,7 +126,9 @@ namespace MazeRunner.EditorTools
                 .P(173f, 190f, 1.25f).E("Skeleton_Crusader_1", 177f, 1.25f, -1, 1.2f).Trap(180f, 183f, 1.25f, 1.0f, 1.3f, 0.5f)
                     .E("Villager_Zombie_3", 187f, 1.25f, -1, 0.8f)
                 .P(196f, 210f, 1.25f).E("Wraith_3", 200f, 1.25f, -1, 1.2f).E("Bloody_Alchemist_1", 206f, 1.25f, -1, 0.8f)
-                .Goal(208.5f, 1.25f);
+                // Boss arena: the Plague Alchemist.
+                .P(215.5f, 240f, 1.25f).CP(217f, 1.25f).E("PlagueAlchemist", 232f, 1.25f, -1, 0f)
+                .Goal(238.5f, 1.25f);
 
             var l3 = new Level { Scene = "Assets/Scenes/Levels/Level3.unity", StartX = -7f, StartTop = -1.25f }
                 .P(-10f, 4f, -1.25f)
@@ -141,9 +149,11 @@ namespace MazeRunner.EditorTools
                 .P(175f, 177.5f, 5f).E("Skeleton_Crusader_1", 176.25f, 5f, -1, 0.5f)
                 .P(185f, 187.5f, 2.5f)
                 .P(195f, 197.5f, 4f).E("Bloody_Alchemist_1", 196.25f, 4f, -1, 0.5f)
-                // Boss arena: a shield guard and a duelist, then the boss in front of the goal.
-                .P(205f, 233f, 1.25f).E("Skeleton_Crusader_1", 210f, 1.25f, -1, 1f).E("Skeleton_Warrior_3", 215f, 1.25f, -1, 1.5f).E("Boss", 224f, 1.25f, -1, 0f)
-                .Goal(231.5f, 1.25f);
+                // The guards: a shield crusader and a duelist hold the way to the arena.
+                .P(205f, 217f, 1.25f).E("Skeleton_Crusader_1", 209f, 1.25f, -1, 1f).E("Skeleton_Warrior_3", 213.5f, 1.25f, -1, 1.2f)
+                // Boss arena: the Goblin Warchief, room to circle and vault.
+                .P(222f, 248f, 1.25f).CP(223.5f, 1.25f).E("Boss", 237f, 1.25f, -1, 0f)
+                .Goal(246.5f, 1.25f);
 
             return new[] { l1, l2, l3 };
         }
@@ -170,11 +180,14 @@ namespace MazeRunner.EditorTools
             Level[] levels = Levels();
             Sprite spike = EnsureSpikeSprite();
             EnsureGoblinPrefabs(levels[0].Scene);
+            BossEncounterSetup.Run();
 
             var enemyPrefabs = new Dictionary<string, GameObject>
             {
                 { "Goblin", AssetDatabase.LoadAssetAtPath<GameObject>(GoblinPrefabPath) },
                 { "Boss", AssetDatabase.LoadAssetAtPath<GameObject>(BossPrefabPath) },
+                { "OgreWarlord", Load(BossEncounterSetup.OgreWarlordPath) },
+                { "PlagueAlchemist", Load(BossEncounterSetup.PlagueAlchemistPath) },
                 { "Villager_Zombie_1", Load("Assets/Enemies/Zombie_Villager/Villager_Zombie_1.prefab") },
                 { "Villager_Zombie_3", Load("Assets/Enemies/Zombie_Villager/Villager_Zombie_3.prefab") },
                 { "Skeleton_Warrior_2", Load("Assets/Enemies/Skeleton_Warrior/Skeleton_Warrior_2.prefab") },
@@ -295,7 +308,8 @@ namespace MazeRunner.EditorTools
                 GameObject prefab = enemies[e.kind];
                 var go = (GameObject)PrefabUtility.InstantiatePrefab(prefab, scene);
                 count[e.kind] = count.TryGetValue(e.kind, out int c) ? c + 1 : 1;
-                go.name = e.kind == "Boss" ? "BossGoblin" : $"{e.kind}_{count[e.kind]:00}";
+                go.name = e.kind == "Boss" ? "BossGoblin" :
+                          e.kind == "OgreWarlord" || e.kind == "PlagueAlchemist" ? "Boss" + e.kind : $"{e.kind}_{count[e.kind]:00}";
                 go.transform.SetParent(foes, true);
                 go.transform.position = new Vector3(e.x, e.top + 0.1f, 0f);
                 var goblin = go.GetComponent<GoblinEnemy>();

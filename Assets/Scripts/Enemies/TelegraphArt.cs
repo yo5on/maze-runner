@@ -4,14 +4,14 @@ namespace MazeRunner.Enemies
 {
     /// <summary>
     /// Sprites for the in-world combat cues (<see cref="EnemyBehaviour"/> telegraphs), painted once in
-    /// code in the portfolio palette: crimson #d21319 for danger, midnight navy #1b1e4a for contrast
-    /// and warm stone #afaea2 for neutral parts.
+    /// code in the game's palette: the HUD hearts' red #ac3232 for danger, night navy #1b2b4a for contrast
+    /// and pale-sky mist #b4c2d6 for neutral parts.
     /// </summary>
     public static class TelegraphArt
     {
-        public static readonly Color32 Crimson = new Color32(0xd2, 0x13, 0x19, 0xff);
-        public static readonly Color32 Navy = new Color32(0x1b, 0x1e, 0x4a, 0xff);
-        public static readonly Color32 Stone = new Color32(0xaf, 0xae, 0xa2, 0xff);
+        public static readonly Color32 Crimson = new Color32(0xac, 0x32, 0x32, 0xff);
+        public static readonly Color32 Navy = new Color32(0x1b, 0x2b, 0x4a, 0xff);
+        public static readonly Color32 Stone = new Color32(0xb4, 0xc2, 0xd6, 0xff);
 
         private static Sprite badge, stripes, capsule, pixel;
 

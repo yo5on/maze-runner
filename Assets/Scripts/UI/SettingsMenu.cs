@@ -13,10 +13,9 @@ namespace MazeRunner.UI
     /// The Settings menu: Music and Sound Effects volume sliders (0-100%) and the touch
     /// control layout (A: joystick + Jump, B: Left/Right buttons + Jump).
     ///
-    /// Styled after the yo5on portfolio and drawn only in its three colours: midnight navy
-    /// #1b2b4a (surfaces), warm stone #afaea2 (text, borders, inactive tracks and selected controls).
-    /// The heading uses the portfolio's
-    /// Instrument Serif Italic (Resources/Fonts, see UiFontSetup).
+    /// Drawn in the game's palette (<see cref="PaletteButton"/>): night navy surfaces, pale-sky mist for
+    /// text, borders and tracks, grass green for active controls; the heading is in the game's display
+    /// face (<see cref="PaletteUI.DisplayFont"/>) in moon cream.
     ///
     /// It is built when a scene loads:
     /// - Main menu: opened by the existing Settings button (MainMenuController.OpenSettings),
@@ -29,14 +28,13 @@ namespace MazeRunner.UI
     public class SettingsMenu : MonoBehaviour
     {
         private static Color Navy => PaletteButton.Navy;
-        private static Color Stone => PaletteButton.Stone;
+        private static Color Mist => PaletteButton.Mist;
         private static Color Green => PaletteButton.Green;
 
         private const float CardWidth = 760f;
         private const float CardHeight = 620f;
         private const float Margin = 56f;            // inner left/right margin of the card
         private const float ContentWidth = CardWidth - 2f * Margin;
-        private const string HeadingFont = "Fonts/InstrumentSerif-Italic SDF";
 
         public static SettingsMenu Current { get; private set; }
         public static bool IsOpen => Current != null && Current.gameObject.activeSelf;
@@ -198,14 +196,14 @@ namespace MazeRunner.UI
 
         private void BuildContent(TMP_FontAsset bodyFont)
         {
-            var headingFont = Resources.Load<TMP_FontAsset>(HeadingFont);
+            var headingFont = PaletteUI.DisplayFont;
             if (headingFont == null) headingFont = bodyFont;
 
-            // Card: a thin stone frame around a navy surface.
+            // Card: a thin mist frame around a navy surface.
             card = NewRect("Card", transform);
             card.anchorMin = card.anchorMax = new Vector2(0.5f, 0.5f);
             card.sizeDelta = new Vector2(CardWidth, CardHeight);
-            card.gameObject.AddComponent<Image>().color = Stone;
+            card.gameObject.AddComponent<Image>().color = Mist;
             var surface = NewRect("Surface", card);
             Stretch(surface, 1.5f);
             surface.gameObject.AddComponent<Image>().color = Navy;
@@ -213,8 +211,8 @@ namespace MazeRunner.UI
 
             float left = -ContentWidth / 2f;
 
-            Label(c, bodyFont, "MAZE RUNNER", 15f, Stone, left, -36f, ContentWidth, 22f, TextAlignmentOptions.Left, 14f, FontStyles.Bold);
-            Label(c, headingFont, "Settings", 72f, Color.white, left, -52f, ContentWidth, 86f, TextAlignmentOptions.Left);
+            Label(c, bodyFont, "MAZE RUNNER", 15f, Mist, left, -36f, ContentWidth, 22f, TextAlignmentOptions.Left, 14f, FontStyles.Bold);
+            Label(c, headingFont, "Settings", 64f, PaletteButton.Cream, left, -52f, ContentWidth, 86f, TextAlignmentOptions.Left);
             Bar(c, left, -140f, 48f, 3f, Green);
 
             Section(c, bodyFont, "AUDIO", -168f);
@@ -230,7 +228,7 @@ namespace MazeRunner.UI
                 new Vector2(-left - optionWidth / 2f, -424f), new Vector2(optionWidth, 64f),
                 () => GameSettings.SetControlMode(TouchControlMode.Buttons));
 
-            hint = Label(c, bodyFont, "", 18f, Stone, left, -468f, ContentWidth, 56f, TextAlignmentOptions.TopLeft);
+            hint = Label(c, bodyFont, "", 18f, Mist, left, -468f, ContentWidth, 56f, TextAlignmentOptions.TopLeft);
             hint.textWrappingMode = TextWrappingModes.Normal;
 
             float buttonsY = -CardHeight + 60f;
@@ -342,8 +340,8 @@ namespace MazeRunner.UI
         private static void Section(Transform parent, TMP_FontAsset font, string title, float y)
         {
             float left = -ContentWidth / 2f;
-            Label(parent, font, title, 15f, Stone, left, y, ContentWidth, 22f, TextAlignmentOptions.Left, 14f, FontStyles.Bold);
-            Bar(parent, left, y - 30f, ContentWidth, 1.5f, Stone);
+            Label(parent, font, title, 15f, Mist, left, y, ContentWidth, 22f, TextAlignmentOptions.Left, 14f, FontStyles.Bold);
+            Bar(parent, left, y - 30f, ContentWidth, 1.5f, Mist);
         }
 
         /// <summary>"Label  [====o-----]  80%" centred on y (relative to the card's top).</summary>
@@ -354,8 +352,8 @@ namespace MazeRunner.UI
             const float handleWidth = 16f;
             float left = -ContentWidth / 2f;
 
-            Label(parent, font, label, 24f, Stone, left, y + 17f, labelWidth, 34f, TextAlignmentOptions.Left);
-            value = Label(parent, font, "", 24f, Stone, -left - valueWidth, y + 17f, valueWidth, 34f, TextAlignmentOptions.Right, 0f, FontStyles.Bold);
+            Label(parent, font, label, 24f, Mist, left, y + 17f, labelWidth, 34f, TextAlignmentOptions.Left);
+            value = Label(parent, font, "", 24f, Mist, -left - valueWidth, y + 17f, valueWidth, 34f, TextAlignmentOptions.Right, 0f, FontStyles.Bold);
 
             float sliderWidth = ContentWidth - labelWidth - valueWidth - 24f;
             var root = TopLeft(parent, label.Replace(" ", "") + "Slider", left + labelWidth, y + 24f, sliderWidth, 48f);
@@ -372,7 +370,7 @@ namespace MazeRunner.UI
             }
 
             var track = Inset("Track", root, 4f);
-            track.gameObject.AddComponent<Image>().color = Stone;
+            track.gameObject.AddComponent<Image>().color = Mist;
 
             var fillArea = Inset("Fill Area", root, 4f);
             var fill = NewRect("Fill", fillArea);
@@ -386,7 +384,7 @@ namespace MazeRunner.UI
             var handle = NewRect("Handle", handleArea);
             handle.sizeDelta = new Vector2(handleWidth, -18f);
             var handleImage = handle.gameObject.AddComponent<Image>();
-            handleImage.color = Stone;
+            handleImage.color = Mist;
 
             var slider = root.gameObject.AddComponent<Slider>();
             slider.fillRect = fill;

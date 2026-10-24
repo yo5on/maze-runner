@@ -242,5 +242,7 @@ namespace MazeRunner.Player
         public bool IsJumping => isJumping;
         public bool IsFalling => isFalling;
         public Vector2 Velocity => rb.linearVelocity;
+        /// <summary>Gravity scale while falling (the jump visibly drops faster than it rises).</summary>
+        public float FallGravityScale => fallGravityMultiplier;
     }
 }

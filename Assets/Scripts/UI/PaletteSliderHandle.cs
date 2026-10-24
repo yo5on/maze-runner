@@ -4,7 +4,7 @@ using UnityEngine.UI;
 
 namespace MazeRunner.UI
 {
-    /// <summary>Slider handle in the shared theme: white at rest and stone grey while active.</summary>
+    /// <summary>Slider handle in the shared theme: white at rest and light green while active.</summary>
     public class PaletteSliderHandle : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler,
         IPointerDownHandler, IPointerUpHandler, ISelectHandler, IDeselectHandler
     {

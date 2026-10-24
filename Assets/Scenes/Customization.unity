@@ -528,7 +528,7 @@ MonoBehaviour:
     height: 0.7222222
   backdropColor: {r: 0.14901961, g: 0.24705882, b: 0.3764706, a: 1}
   textColor: {r: 1, g: 1, b: 1, a: 1}
-  mutedTextColor: {r: 0.6862745, g: 0.682353, b: 0.63529414, a: 1}
+  mutedTextColor: {r: 0.7058824, g: 0.7607843, b: 0.8392157, a: 1}
   frameColor: {r: 0.105882354, g: 0.16862746, b: 0.2901961, a: 1}
   buttonColor: {r: 0.105882354, g: 0.16862746, b: 0.2901961, a: 1}
   accentColor: {r: 0.3019608, g: 0.65882355, b: 0.38039216, a: 1}

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
@@ -27,6 +27,8 @@ namespace MazeRunner.EditorTools
             ("Assets/Enemies/Ogre/Ogre_Enemy.prefab", typeof(OgreBehaviour)),
             ("Assets/Enemies/Goblin/Goblin_Enemy.prefab", typeof(GoblinSkirmisherBehaviour)),
             ("Assets/Enemies/Goblin/Goblin_Boss.prefab", typeof(BossHunterBehaviour)),
+            (BossEncounterSetup.OgreWarlordPath, typeof(OgreWarlordBehaviour)),
+            (BossEncounterSetup.PlagueAlchemistPath, typeof(AlchemistBossBehaviour)),
         };
 
         [MenuItem("Maze Runner/Set Up Enemy Personalities")]

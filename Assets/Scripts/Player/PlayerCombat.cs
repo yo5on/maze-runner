@@ -8,6 +8,8 @@ namespace MazeRunner.Player
     public class PlayerCombat : MonoBehaviour
     {
         [SerializeField] private float bounceForce = 10f;
+        [Tooltip("Sideways push a stomp gives the enemy (before its knockback resistance). Small on purpose: a stomp never shoves an enemy off its platform.")]
+        [SerializeField] private float stompKnockback = 3f;
         [SerializeField] private LayerMask enemyLayer;
         
         private const float StompInterval = 0.2f;
@@ -67,7 +69,8 @@ namespace MazeRunner.Player
                 }
                 else if (goblinEnemy != null)
                 {
-                    goblinEnemy.TakeDamage(1);
+                    float side = Mathf.Sign(goblinEnemy.transform.position.x - transform.position.x);
+                    goblinEnemy.TakeDamage(1, new Vector2(side * stompKnockback, 0f));
                 }
                 
                 rb.linearVelocity = new Vector2(rb.linearVelocity.x, bounceForce);

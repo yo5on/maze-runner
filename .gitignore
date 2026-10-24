@@ -108,3 +108,11 @@ InitTestScene*.unity*
 
 # Local Claude Code session config (dev-server launch settings)
 .claude/
+
+# Downloaded art-pack zips
+/enemy/
+/sprite/
+/weapons/
+
+# Graphify knowledge-graph output (regenerate with /graphify .)
+/graphify-out/

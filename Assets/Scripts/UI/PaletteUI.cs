@@ -5,14 +5,18 @@ using UnityEngine.UI;
 namespace MazeRunner.UI
 {
     /// <summary>
-    /// Building blocks for menus drawn in code in the portfolio palette (<see cref="PaletteButton"/>
+    /// Building blocks for menus drawn in code in the game palette (<see cref="PaletteButton"/>
     /// colours). Positions are in a card's own space: x from the card's left edge, y down from its top,
     /// so a layout reads like the design it came from.
     /// </summary>
     public static class PaletteUI
     {
         public static Color Navy => PaletteButton.Navy;
-        public static Color Stone => PaletteButton.Stone;
+        public static Color Mist => PaletteButton.Mist;
+        public static Color Cream => PaletteButton.Cream;
+        /// <summary>The game's display face (yoster), also used by the Game Over and Level Complete titles.</summary>
+        public static TMP_FontAsset DisplayFont => displayFont != null ? displayFont : displayFont = Resources.Load<TMP_FontAsset>("Fonts/yoster SDF");
+        private static TMP_FontAsset displayFont;
         public static Color Green => PaletteButton.Green;
 
         public static RectTransform NewRect(string name, Transform parent)

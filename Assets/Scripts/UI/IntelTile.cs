@@ -6,7 +6,7 @@ namespace MazeRunner.UI
 {
     /// <summary>
     /// One portrait in the enemy intel roster. Drawn only in the palette, like <see cref="PaletteButton"/>:
-    /// - idle: stone hairline frame on navy, stone number;
+    /// - idle: mist hairline frame on navy, mist number;
     /// - hover / keyboard focus: green hairline;
     /// - chosen (<see cref="IsOn"/>): a thick green frame, green number and a green bar under the tile.
     /// </summary>
@@ -45,12 +45,12 @@ namespace MazeRunner.UI
         {
             if (frame == null) return;
             bool hot = state == SelectionState.Highlighted || state == SelectionState.Selected || state == SelectionState.Pressed;
-            frame.color = isOn || hot ? PaletteButton.Green : PaletteButton.Stone;
+            frame.color = isOn || hot ? PaletteButton.Green : PaletteButton.Mist;
             float inset = isOn ? 4f : 1.5f;
             surface.offsetMin = new Vector2(inset, inset);
             surface.offsetMax = new Vector2(-inset, -inset);
             underline.enabled = isOn;
-            number.color = isOn ? PaletteButton.Green : PaletteButton.Stone;
+            number.color = isOn ? PaletteButton.Green : PaletteButton.Mist;
         }
     }
 }

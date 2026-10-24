@@ -752,7 +752,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MazeRunner.Enemies.GoblinEnemy
   moveSpeed: 2
-  patrolDistance: 0.7
+  patrolDistance: 0
   startDirection: 1
   groundLayer:
     serializedVersion: 2
@@ -768,6 +768,12 @@ MonoBehaviour:
   bossRunSpeedMultiplier: 1.75
   bossResumeChaseBuffer: 0.4
   bossFacingDeadZone: 0.15
+  bossTitle: Goblin Warchief
+  bossArenaRange: 14
+  knockbackResistance: 0.5
+  bossKnockbackResistance: 0.8
+  edgeSafeKnockback: 6
+  knockbackStun: 0.2
   attackRange: 2.5
   attackCooldown: 1.3
   attackDamage: 1
@@ -786,7 +792,7 @@ MonoBehaviour:
   noticeSpeedMultiplier: 1.8
   noticeSpeedDuration: 1.8
   rearDetectionRange: 4
-  maxHealth: 7
+  maxHealth: 9
   fallDeathY: -10
 --- !u!114 &1345592516937193437
 MonoBehaviour:
@@ -800,11 +806,37 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 987fcac3a2872e4429d19d3653ffe481, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MazeRunner.Enemies.BossHunterBehaviour
-  comboCooldown: 1.6
-  recovery: 1
-  enragedCooldown: 1.1
-  enragedRecovery: 0.6
+  noticeRange: 12
+  stalkMin: 2.6
+  stalkMax: 4.2
+  stalkSpeed: 2.4
+  runSpeed: 3.6
+  decisionMin: 0.5
+  decisionMax: 1
+  stalkPatience: 2.5
+  dashReach: 5.5
+  dashSpeed: 8
+  dashWindUp: 0.3
+  comboRecovery: 0.7
+  heavyEvery: 3
   heavyWindUp: 0.7
+  heavyRecovery: 1.1
+  retreatDistance: 2.2
+  retreatSpeed: 4
+  vaultCooldown: 4
+  dodgeReaction: 0.15
+  dodgeChance: 0.5
+  dodgeCooldown: 2.4
+  dodgeSpeed: 9
+  dodgeDistance: 2.4
+  counterWindUp: 0.4
+  enrageAt: 0.5
+  roarTime: 0.9
+  enragedTiming: 0.75
+  enragedDodgeChance: 0.65
+  pounceWindUp: 0.6
+  pounceRadius: 1.6
+  pounceCooldown: 5
 --- !u!1 &5660852178447532750
 GameObject:
   m_ObjectHideFlags: 0
