@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Maze Runner — Play in your browser</title>
   <meta name="description" content="Maze Runner, a 2D side-scrolling platformer made with Unity. Play it in your browser on desktop or mobile.">
-  <meta name="theme-color" content="#1b2b4a">
+  <meta name="theme-color" content="#1b1e4a">
   <meta name="color-scheme" content="dark">
   <link rel="canonical" href="https://yo5on.github.io/maze-runner/preview/">
   <meta property="og:type" content="website">
@@ -19,23 +19,28 @@
   <meta name="twitter:card" content="summary_large_image">
   <link rel="icon" type="image/png" href="../TemplateData/icon-192.png">
   <link rel="apple-touch-icon" href="../TemplateData/icon-180.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Instrument+Sans:wght@400..700&family=Instrument+Serif&display=swap">
   <style>
-    /* In the game's own palette: night navy, pale-sky mist, grass green, moon cream, and the
-       game's display face (yoster). Small letter-spaced labels; hairlines; corner-marked plates.
+    /* In the portfolio's palette (yo5on.runs-at.dev, default theme): deep navy, stone text,
+       crimson accent, moth ivory; Instrument Serif headings, Instrument Sans UI, IBM Plex Mono.
+       Small letter-spaced labels; hairlines; square corners; corner-marked plates.
        Desktop (>= 900px): a landscape card - screenshot on the left, details and
        Play Now on the right. Narrower screens: one compact column. */
-    @font-face { font-family: "Yoster"; src: url("../TemplateData/yoster.ttf") format("truetype"); font-display: swap; }
     :root {
-      --navy: #1b2b4a;
-      --mist: #b4c2d6;
-      --accent: #4da861;
+      --navy: #1b1e4a;
+      --surface: #14163a;
+      --mist: #afaea2;
+      --accent: #d21319;
+      --accent-text: #da1e24;
       --cream: #f3ead7;
-      --mist-soft: rgba(180, 194, 214, 0.9);
-      --mist-faint: rgba(180, 194, 214, 0.75);
-      --hair: rgba(180, 194, 214, 0.2);
-      --ui: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
-      --display: "Yoster", system-ui, sans-serif;
-      --mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+      --mist-soft: rgba(175, 174, 162, 0.86);
+      --mist-faint: rgba(175, 174, 162, 0.72); /* portfolio's .48 is too faint for 11px labels */
+      --hair: rgba(175, 174, 162, 0.2);
+      --ui: "Instrument Sans", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+      --display: "Instrument Serif", "Times New Roman", serif;
+      --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
       --fs-label: 11px;
       --ls-label: 0.08em;
       --ease: cubic-bezier(0.22, 1, 0.36, 1);
@@ -72,8 +77,8 @@
     .frame {
       width: min(100%, 560px);
       border: 1px solid var(--hair);
-      border-radius: 12px;
-      background: var(--navy);
+      border-radius: 0;
+      background: var(--surface);
       overflow: hidden;
     }
 
@@ -113,19 +118,19 @@
       line-height: 1;
       text-transform: uppercase;
       white-space: nowrap;
-      color: var(--cream);
+      color: var(--accent-text);
     }
 
     .kicker {
       font-size: var(--fs-label);
-      font-weight: 500;
+      font-weight: 600;
       letter-spacing: var(--ls-label);
       text-transform: uppercase;
       color: var(--mist-faint);
       white-space: nowrap;
     }
 
-    .kicker b { color: var(--accent); font-weight: 500; }
+    .kicker b { color: var(--cream); font-weight: 600; }
 
     .tags {
       margin-left: auto;
@@ -152,8 +157,8 @@
       margin: 0;
       padding: 8px;
       border: 1px solid var(--hair);
-      border-radius: 6px;
-      background: rgba(180, 194, 214, 0.05);
+      border-radius: 0;
+      background: rgba(175, 174, 162, 0.05);
     }
 
     .plate::before,
@@ -166,8 +171,8 @@
       pointer-events: none;
     }
 
-    .plate::before { top: -1px; left: -1px; border-width: 1px 0 0 1px; border-top-left-radius: 6px; }
-    .plate::after { bottom: -1px; right: -1px; border-width: 0 1px 1px 0; border-bottom-right-radius: 6px; }
+    .plate::before { top: -1px; left: -1px; border-width: 1px 0 0 1px; }
+    .plate::after { bottom: -1px; right: -1px; border-width: 0 1px 1px 0; }
 
     .plate img {
       display: block;
@@ -176,7 +181,7 @@
       aspect-ratio: 16 / 9;
       object-fit: cover;
       object-position: 50% 80%;
-      border-radius: 3px;
+      border-radius: 0;
       background: var(--navy);
     }
 
@@ -186,7 +191,7 @@
       gap: 12px;
       padding: 8px 2px 0;
       font-size: var(--fs-label);
-      font-weight: 500;
+      font-weight: 600;
       letter-spacing: var(--ls-label);
       text-transform: uppercase;
       color: var(--mist-faint);
@@ -218,7 +223,7 @@
 
     .facts dt {
       font-size: var(--fs-label);
-      font-weight: 500;
+      font-weight: 600;
       letter-spacing: var(--ls-label);
       text-transform: uppercase;
       color: var(--mist-faint);
@@ -235,10 +240,10 @@
       gap: 12px;
       min-height: 56px;
       padding: 14px 24px;
-      border: 2px solid var(--accent);
-      border-radius: 6px;
-      background: rgba(77, 168, 97, 0.16);
-      color: var(--mist);
+      border: 1px solid var(--accent);
+      border-radius: 0;
+      background: rgba(210, 19, 25, 0.16);
+      color: var(--cream);
       font-family: var(--ui);
       font-size: 16px;
       font-weight: 700;
@@ -250,26 +255,26 @@
       -webkit-tap-highlight-color: transparent;
     }
 
-    .play:hover { background: rgba(77, 168, 97, 0.3); }
+    .play:hover { background: rgba(210, 19, 25, 0.3); }
 
-    .play:active { transform: translateY(1px); background: rgba(77, 168, 97, 0.4); }
-    .play:focus-visible { outline: 2px solid var(--mist); outline-offset: 3px; }
+    .play:active { transform: translateY(1px); background: rgba(210, 19, 25, 0.4); }
+    .play:focus-visible { outline: 1px solid var(--accent-text); outline-offset: 5px; }
     .play:disabled, .play[aria-disabled="true"] { border-color: var(--hair); background: transparent; color: var(--mist-faint); }
 
-    .play svg { width: 15px; height: 15px; fill: var(--accent); transition: transform 0.3s var(--ease); }
+    .play svg { width: 15px; height: 15px; fill: var(--accent-text); transition: transform 0.3s var(--ease); }
     .play:hover svg, .play:focus-visible svg { transform: translateX(2px); }
 
     .play .spinner {
       display: none;
       width: 16px;
       height: 16px;
-      border: 2px solid rgba(180, 194, 214, 0.35);
+      border: 2px solid rgba(175, 174, 162, 0.35);
       border-top-color: var(--mist);
       border-radius: 50%;
       animation: spin 0.8s linear infinite;
     }
 
-    .play[aria-busy="true"] { cursor: progress; background: rgba(77, 168, 97, 0.3); }
+    .play[aria-busy="true"] { cursor: progress; background: rgba(210, 19, 25, 0.3); }
     .play[aria-busy="true"] svg { display: none; }
     .play[aria-busy="true"] .spinner { display: block; }
 
@@ -280,11 +285,11 @@
       padding: 10px 12px;
       border: 1px solid var(--accent);
       border-left-width: 3px;
-      border-radius: 6px;
+      border-radius: 0;
       font-size: 14px;
       line-height: 1.45;
       color: var(--mist);
-      background: rgba(77, 168, 97, 0.08);
+      background: rgba(210, 19, 25, 0.08);
     }
 
     .error[hidden] { display: none; }
@@ -309,7 +314,7 @@
       padding: 1px 5px;
       border: 1px solid var(--hair);
       border-bottom-width: 2px;
-      border-radius: 4px;
+      border-radius: 0;
       font-family: var(--mono);
       font-size: 10px;
       line-height: 1.5;
@@ -321,7 +326,7 @@
 
     .links a {
       font-size: var(--fs-label);
-      font-weight: 500;
+      font-weight: 600;
       letter-spacing: var(--ls-label);
       text-transform: uppercase;
       color: var(--mist-soft);
@@ -332,7 +337,7 @@
     }
 
     .links a:hover { color: var(--mist); border-bottom-width: 2px; }
-    .links a:focus-visible { outline: 2px solid var(--mist); outline-offset: 3px; }
+    .links a:focus-visible { outline: 1px solid var(--accent-text); outline-offset: 5px; }
 
     .links svg {
       width: 0.95em;
@@ -340,7 +345,7 @@
       margin-left: 0.3em;
       vertical-align: -1px;
       fill: none;
-      stroke: var(--accent);
+      stroke: var(--accent-text);
       stroke-width: 2;
     }
 
@@ -379,7 +384,7 @@
     /* Short landscape screens (phones turned sideways): tighter chrome. */
     @media (orientation: landscape) and (max-height: 540px) and (min-width: 560px) {
       body { padding-top: max(8px, env(safe-area-inset-top)); padding-bottom: max(8px, env(safe-area-inset-bottom)); }
-      .frame { --floor: 0px; --chrome: 92px; --share: 0.6; border-radius: 10px; }
+      .frame { --floor: 0px; --chrome: 92px; --share: 0.6; }
       .head { padding: 9px 16px; gap: 10px; }
       .head svg { width: 20px; height: 20px; }
       h1 { font-size: 22px; }
