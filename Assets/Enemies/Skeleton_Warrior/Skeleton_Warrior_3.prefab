@@ -370,7 +370,7 @@ MonoBehaviour:
   noticeRange: 6
   advanceSpeed: 2.6
   comboRange: 1.5
-  comboWarning: 0.25
+  comboWarning: 0.35
   betweenHits: 0.45
   recovery: 1.2
   cooldown: 2.2

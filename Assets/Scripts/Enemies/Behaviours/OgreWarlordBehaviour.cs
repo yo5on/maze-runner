@@ -62,6 +62,19 @@ namespace MazeRunner.Enemies
             }
         }
 
+        /// <summary>Stuck: it answers with its marked slam up close or its charge from range; otherwise it walks to open ground.</summary>
+        protected override void RecoverFromStuck(StuckKind kind)
+        {
+            if (kind != StuckKind.Perched && HasPlayer && SameLevel(2f))
+            {
+                engaged = true;
+                float d = Mathf.Abs(DX);
+                if (d <= slamRange) { RunSpecial(Slam()); return; }
+                if (d >= chargeMin && d <= chargeMax && RoomAhead(DirToPlayer) > 1.5f) { RunSpecial(Charge()); return; }
+            }
+            base.RecoverFromStuck(kind);
+        }
+
         public override void Act()
         {
             // Waiting for the player: turned toward the side it keeps coming from.

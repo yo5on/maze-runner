@@ -23,7 +23,7 @@ namespace MazeRunner.Enemies
     public class AlchemistBehaviour : EnemyBehaviour
     {
         [SerializeField] protected float noticeRange = 9f;
-        [SerializeField] private float tooClose = 3.5f;
+        [SerializeField] protected float tooClose = 3.5f;
         [SerializeField] private float tooFar = 6.5f;
         [SerializeField] private float retreatSpeed = 2f;
         [SerializeField] private float approachSpeed = 1.4f;
@@ -129,8 +129,8 @@ namespace MazeRunner.Enemies
         public override void Think()
         {
             if (Busy) return;
-            if (!engaged && Notices(noticeRange, 3f)) engaged = true;
-            else if (engaged && (!HasPlayer || Mathf.Abs(DX) > noticeRange + 3f || Mathf.Abs(DY) > 4f)) engaged = false;
+            if (!engaged && (Notices(noticeRange, 3f) || PlayerInArena)) engaged = true;
+            else if (engaged && !PlayerInArena && (!HasPlayer || Mathf.Abs(DX) > noticeRange + 3f || Mathf.Abs(DY) > 4f)) engaged = false;
 
             if (HasPlayer && Time.time >= nextStab && Mathf.Abs(DX) <= stabReach && SameLevel())
             {

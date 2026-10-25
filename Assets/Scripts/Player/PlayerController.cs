@@ -77,8 +77,8 @@ namespace MazeRunner.Player
 
         private void Update()
         {
-            // Read input
-            moveInput = moveAction.ReadValue<Vector2>();
+            // Read input (none while a menu has the keyboard: its arrows and Space belong to the menu)
+            moveInput = UI.MenuNavigator.BlocksGameplayInput ? Vector2.zero : moveAction.ReadValue<Vector2>();
             
             // Update timers
             UpdateTimers();
@@ -179,6 +179,7 @@ namespace MazeRunner.Player
 
         private void OnJumpPerformed(InputAction.CallbackContext context)
         {
+            if (UI.MenuNavigator.BlocksGameplayInput) return; // Space pressed a menu button, not a jump
             lastJumpPressedTime = jumpBufferTime;
         }
 

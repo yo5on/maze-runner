@@ -9,7 +9,8 @@ namespace MazeRunner.Enemies
     /// Signature: Lunge. From 2.2-4.5 units away it freezes in a crouch for 0.45 s (warning shown),
     /// then launches forward fast (up to 3.5 units, never past a ledge). Hit: 1 damage and a knock-back.
     /// It then needs 0.9 s to recover, which is the moment to stomp it. Cooldown 3 s. Up close it uses
-    /// its normal slash.
+    /// its normal slash. It relies on mobility, not toughness: it sometimes reads a stomp's arc (slowly -
+    /// 0.3 s to react, 30 %, at most every 4 s) and springs back out from under it.
     /// </summary>
     public class ZombieRusherBehaviour : EnemyBehaviour
     {
@@ -23,6 +24,9 @@ namespace MazeRunner.Enemies
         [SerializeField] private float lungeDistance = 3.5f;
         [SerializeField] private float lungeRecovery = 0.9f;
         [SerializeField] private float lungeCooldown = 3f;
+        [SerializeField] private float springReaction = 0.3f;
+        [Range(0f, 1f)] [SerializeField] private float springChance = 0.3f;
+        [SerializeField] private float springCooldown = 4f;
 
         private bool rushing;
         private float burstTimer;
@@ -33,6 +37,12 @@ namespace MazeRunner.Enemies
         public override void Think()
         {
             if (Busy) return;
+            if (HasPlayer && Mathf.Abs(DX) < noticeRange && Anticipates(StompIncoming(0.6f, out _), springReaction, springChance, springCooldown))
+            {
+                int away = AwayFromLanding;
+                if (RoomAhead(away) < 1f) away = -away;
+                if (RoomAhead(away) >= 1f) { RunSpecial(SpringBack(away)); return; }
+            }
             if (!rushing && Notices(noticeRange)) rushing = true;
             else if (rushing && (!HasPlayer || Mathf.Abs(DX) > noticeRange + 3f || Mathf.Abs(DY) > 3f)) rushing = false;
             if (!rushing) return;
@@ -72,6 +82,15 @@ namespace MazeRunner.Enemies
             {
                 prowlDirection = -prowlDirection; // prowls its platform edge to edge
             }
+        }
+
+        private IEnumerator SpringBack(int dir)
+        {
+            Trace("spring back");
+            yield return Travel(dir, 6f, 1.6f);
+            Enemy.Halt();
+            if (HasPlayer) Enemy.Face(DirToPlayer);
+            yield return new WaitForSeconds(0.3f);
         }
 
         private IEnumerator Lunge()

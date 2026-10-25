@@ -19,7 +19,7 @@ namespace MazeRunner.Enemies
         [SerializeField] private float slideDistance = 2.2f;
         [SerializeField] private float slideCooldown = 3f;
         [SerializeField] private float slideReaction = 0.15f;
-        [Range(0f, 1f)] [SerializeField] private float slideChance = 0.5f;
+        [Range(0f, 1f)] [SerializeField] private float slideChance = 0.4f;
         [SerializeField] private float dashSpeed = 6f;
         [SerializeField] private float dashMin = 2f;
         [SerializeField] private float dashMax = 4.5f;

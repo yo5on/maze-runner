@@ -79,6 +79,8 @@ namespace MazeRunner.Enemies
         {
             CancelSpecial();
             ForgetPlayer();
+            MarkProgress();
+            perchedSince = -1f;
         }
 
         /// <summary>
@@ -157,6 +159,21 @@ namespace MazeRunner.Enemies
         /// <summary>Within <paramref name="range"/> horizontally and on the same floor.</summary>
         protected bool Notices(float range, float heightTolerance = 1.6f) =>
             HasPlayer && Mathf.Abs(DX) <= range && Mathf.Abs(DY) <= heightTolerance;
+
+        /// <summary>
+        /// A boss's whole arena counts as in range: the player is over its platform (standing or jumping).
+        /// Without this a boss posted at one end ignored a player waiting at the other end of the arena.
+        /// </summary>
+        protected bool PlayerInArena
+        {
+            get
+            {
+                if (!Enemy.IsBoss || !HasPlayer || Enemy.Platform == null) return false;
+                Bounds arena = Enemy.Platform.bounds;
+                float x = PlayerTransform.position.x;
+                return x >= arena.min.x && x <= arena.max.x && Mathf.Abs(DY) <= 4f;
+            }
+        }
 
         protected bool PlayerGrounded => PlayerController != null && PlayerController.IsGrounded;
 
@@ -372,6 +389,24 @@ namespace MazeRunner.Enemies
             HasPlayer && PlayerGrounded && Time.time - playerLandedAt <= window && Mathf.Abs(DX) <= range &&
             Enemy.LastHurtTime < playerLandedAt - 0.3f;
 
+        private Collider2D[] playerSolids;
+        private bool passingThrough;
+
+        /// <summary>
+        /// Lets the body pass through the player's (a slide under or past them); off again by
+        /// <see cref="EndPassThrough"/>, which runs on its own once no move is running.
+        /// </summary>
+        protected void PassThroughPlayer(bool on)
+        {
+            if (Enemy.BodyCollider == null || (!on && !passingThrough)) return;
+            if (playerSolids == null && PlayerTransform != null) playerSolids = PlayerTransform.root.GetComponentsInChildren<Collider2D>(true);
+            if (playerSolids == null) return;
+            foreach (Collider2D c in playerSolids) if (c != null && !c.isTrigger) Physics2D.IgnoreCollision(Enemy.BodyCollider, c, on);
+            passingThrough = on;
+        }
+
+        private void EndPassThrough() => PassThroughPlayer(false);
+
         /// <summary>Distance the enemy can still move in a direction before its platform edge.</summary>
         protected float RoomAhead(int dir)
         {
@@ -386,6 +421,7 @@ namespace MazeRunner.Enemies
         protected void RunSpecial(IEnumerator routine)
         {
             CancelSpecial();
+            specialSince = Time.time;
             special = StartCoroutine(Wrap(routine));
         }
 
@@ -394,6 +430,7 @@ namespace MazeRunner.Enemies
             yield return routine;
             special = null;
             ClearTelegraphs();
+            EndPassThrough();
         }
 
         protected void CancelSpecial()
@@ -401,6 +438,7 @@ namespace MazeRunner.Enemies
             if (special != null) StopCoroutine(special);
             special = null;
             ClearTelegraphs();
+            EndPassThrough();
             if (Enemy != null && Enemy.Anim != null) Enemy.Anim.speed = 1f;
         }
 
@@ -578,6 +616,121 @@ namespace MazeRunner.Enemies
                 travelled += speed * Time.fixedDeltaTime;
                 yield return new WaitForFixedUpdate();
             }
+        }
+
+        /// <summary>
+        /// A ballistic jump onto <paramref name="targetX"/> on its own platform, high enough to clear the
+        /// player's head (plus <paramref name="extraHeight"/>). If it comes down on the player instead of the
+        /// platform, it steps off to the roomier side rather than standing there.
+        /// </summary>
+        protected IEnumerator Leap(float targetX, float extraHeight)
+        {
+            Rigidbody2D body = Enemy.Body;
+            if (Enemy.TryGetPlatformLimits(out float min, out float max)) targetX = Mathf.Clamp(targetX, min, max);
+            float g = Mathf.Max(0.01f, -Physics2D.gravity.y * body.gravityScale);
+            float feet = Enemy.BodyCollider.bounds.min.y;
+            float clear = HasPlayer ? PlayerTransform.position.y + 1.4f - feet : 2.5f;
+            float height = Mathf.Clamp(clear + extraHeight, 1.8f, 4f);
+            float vy = Mathf.Sqrt(2f * g * height);
+            float flight = 2f * vy / g;
+            float dx = targetX - body.position.x;
+            Enemy.Face(dx >= 0f ? 1 : -1);
+            Enemy.PlayState("Jump Start");
+            body.linearVelocity = new Vector2(dx / flight, vy);
+            yield return new WaitForSeconds(0.1f);
+            Enemy.PlayState("Jump Loop");
+            float t = 0.1f;
+            while (t < flight + 0.6f && !Enemy.IsDead)
+            {
+                if (t >= flight * 0.6f && body.linearVelocity.y > -0.05f) break; // landed
+                // Keep the planned sideways speed (contacts may slow it), but stop once over the target.
+                if (Mathf.Abs(targetX - body.position.x) > 0.1f) body.linearVelocity = new Vector2(dx / flight, body.linearVelocity.y);
+                else body.linearVelocity = new Vector2(0f, body.linearVelocity.y);
+                t += Time.fixedDeltaTime;
+                yield return new WaitForFixedUpdate();
+            }
+            Enemy.Halt();
+            Enemy.ReturnToLocomotion();
+            if (!Enemy.StandsOnPlatform && !Enemy.IsDead)
+            {
+                Trace("landed on something, stepping off");
+                yield return Travel(RoomAhead(1) >= RoomAhead(-1) ? 1 : -1, 4f, 1.2f);
+                Enemy.Halt();
+            }
+        }
+
+        // ---------------------------------------------------------------- stuck recovery
+        // A safety net for bosses (the fights the player cannot walk past): a move that never finishes,
+        // a body resting on something that is not its platform, or a fight in which it neither moves nor
+        // starts a move for a while all end in a recovery picked by the boss itself. Recovery only uses
+        // the normal moves (walking, a leap, an attack), so it never teleports or leaves the platform.
+
+        public enum StuckKind { State, Perched, Cornered, Blocked, Idle }
+
+        [Header("Stuck recovery (bosses)")]
+        [Tooltip("In a fight, a boss that neither moves 0.5 units nor starts a move for this long is stuck and recovers.")]
+        [SerializeField] private float stuckAfter = 3f;
+        [Tooltip("Longest a special move may run before it is cut short.")]
+        [SerializeField] private float specialTimeout = 8f;
+        [Tooltip("Longest it may rest on something other than its platform (the player's head, a ledge corner).")]
+        [SerializeField] private float perchTimeout = 0.6f;
+
+        private float specialSince;
+        private float progressSince;
+        private float progressX;
+        private float perchedSince = -1f;
+
+        /// <summary>Bosses watch themselves; regular enemies may stand guard as long as they like.</summary>
+        protected virtual bool WatchForStuck => Enemy.IsBoss;
+
+        /// <summary>Per frame, after <see cref="Think"/> (called by GoblinEnemy).</summary>
+        public void Watchdog()
+        {
+            if (!WatchForStuck || Enemy.IsDead) return;
+            float now = Time.time;
+            if (Busy && now - specialSince > specialTimeout) { Recover(StuckKind.State); return; }
+
+            bool perched = !Enemy.StandsOnPlatform && Mathf.Abs(Enemy.Body.linearVelocity.y) < 0.05f;
+            if (!perched) perchedSince = -1f;
+            else if (perchedSince < 0f) perchedSince = now;
+            else if (now - perchedSince > perchTimeout) { Recover(StuckKind.Perched); return; }
+
+            bool fighting = HasPlayer && Mathf.Abs(DX) <= 12f && Mathf.Abs(DY) <= 4f;
+            if (Busy || !fighting || Mathf.Abs(transform.position.x - progressX) > 0.5f) { MarkProgress(); return; }
+            if (now - progressSince < stuckAfter) return;
+            StuckKind kind = Mathf.Abs(DX) < 4f && RoomAhead(-DirToPlayer) < 1.5f ? StuckKind.Cornered
+                : now - Enemy.LastRefusedMoveTime < 0.5f ? StuckKind.Blocked : StuckKind.Idle;
+            Recover(kind);
+        }
+
+        private void MarkProgress()
+        {
+            progressX = transform.position.x;
+            progressSince = Time.time;
+        }
+
+        private void Recover(StuckKind kind)
+        {
+            Trace("stuck " + kind);
+            perchedSince = -1f;
+            CancelSpecial();
+            Enemy.Halt();
+            Enemy.ReturnToLocomotion();
+            MarkProgress();
+            RecoverFromStuck(kind);
+        }
+
+        /// <summary>The boss's own way out (an attack, a leap, a reposition). By default: walk toward open ground.</summary>
+        protected virtual void RecoverFromStuck(StuckKind kind) => RunSpecial(Reposition());
+
+        /// <summary>Walks (or steps off a perch) toward the roomier side of its platform, then faces the player.</summary>
+        protected IEnumerator Reposition()
+        {
+            int dir = RoomAhead(1) >= RoomAhead(-1) ? 1 : -1;
+            yield return Travel(dir, Mathf.Max(2.5f, Enemy.MoveSpeed * 1.5f), 1.5f);
+            Enemy.Halt();
+            if (HasPlayer) Enemy.Face(DirToPlayer);
+            yield return new WaitForSeconds(0.2f);
         }
 
         protected virtual void OnDisable()

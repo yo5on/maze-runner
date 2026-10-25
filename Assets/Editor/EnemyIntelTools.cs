@@ -218,6 +218,9 @@ namespace MazeRunner.EditorTools
 
         // ------------------------------------------------------------------ CLI
 
+        /// <summary>CLI: verify only (no portrait capture). Exit code 1 if a figure does not match its prefab.</summary>
+        public static void VerifyFromCommandLine() => EditorApplication.Exit(Verify() ? 0 : 1);
+
         public static void RunFromCommandLine()
         {
             bool ok = true;

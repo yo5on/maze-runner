@@ -6,12 +6,17 @@ namespace MazeRunner.Levels
 {
     /// <summary>
     /// Tracks level unlocks and loads the configured level sequence (Level1 -> Level2 -> Level3).
-    /// Unlocks are saved in PlayerPrefs.
+    /// The single source of truth for progression, saved in PlayerPrefs:
+    /// - Unlocks: which levels may be played (Level Select). Completing a level unlocks the next.
+    /// - Current level: the level Play continues - the level last entered, or the next one once a level
+    ///   is completed. Quitting to the menu mid-level keeps it, so Play restarts that level from its start
+    ///   (checkpoints are per run of a level and are not saved). A new player starts Level 1.
     /// </summary>
     [DefaultExecutionOrder(-100)]
     public sealed class LevelProgressionManager : MonoBehaviour
     {
         private const string UnlockKeyPrefix = "MazeRunner.LevelUnlocked.";
+        public const string CurrentLevelKey = "MazeRunner.CurrentLevel";
 
         /// <summary>
         /// How many levels of the sequence can be played: all three. Completing a level unlocks the
@@ -95,6 +100,7 @@ namespace MazeRunner.Levels
 
             currentLevelIndex = sceneIndex;
             isTransitioning = false;
+            SaveCurrentLevel(sceneIndex);
             LevelStarted?.Invoke(currentLevelIndex);
         }
 
@@ -146,7 +152,34 @@ namespace MazeRunner.Levels
             else
             {
                 SetLevelUnlocked(nextLevelIndex, true);
+                SaveCurrentLevel(nextLevelIndex); // Play now continues with the level just unlocked
             }
+        }
+
+        /// <summary>
+        /// The level Play continues: the saved current level when it is still unlocked, otherwise the
+        /// furthest unlocked level; Level 1 (index 0) for a new player.
+        /// </summary>
+        public int ResumeLevelIndex
+        {
+            get
+            {
+                int saved = PlayerPrefs.GetInt(CurrentLevelKey, -1);
+                if (IsLevelUnlocked(saved)) return saved;
+                int furthest = 0;
+                for (int i = 0; i < LevelCount; i++) if (IsLevelUnlocked(i)) furthest = i;
+                return furthest;
+            }
+        }
+
+        /// <summary>Play: loads <see cref="ResumeLevelIndex"/>, never resetting anything.</summary>
+        public bool ContinueGame() => StartLevel(ResumeLevelIndex);
+
+        private void SaveCurrentLevel(int levelIndex)
+        {
+            if (!IsLevelEnabled(levelIndex) || PlayerPrefs.GetInt(CurrentLevelKey, -1) == levelIndex) return;
+            PlayerPrefs.SetInt(CurrentLevelKey, levelIndex);
+            PlayerPrefs.Save();
         }
 
         public void ResetProgress()
@@ -155,6 +188,7 @@ namespace MazeRunner.Levels
             {
                 PlayerPrefs.DeleteKey(GetUnlockKey(i));
             }
+            PlayerPrefs.DeleteKey(CurrentLevelKey);
 
             if (unlockFirstLevelOnStart && LevelCount > 0)
             {

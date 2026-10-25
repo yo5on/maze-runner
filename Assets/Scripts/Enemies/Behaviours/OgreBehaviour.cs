@@ -36,8 +36,8 @@ namespace MazeRunner.Enemies
         public override void Think()
         {
             if (Busy) return;
-            if (!engaged && Notices(noticeRange)) engaged = true;
-            else if (engaged && (!HasPlayer || Mathf.Abs(DX) > noticeRange + 3f || Mathf.Abs(DY) > 3f)) engaged = false;
+            if (!engaged && (Notices(noticeRange) || PlayerInArena)) engaged = true;
+            else if (engaged && !PlayerInArena && (!HasPlayer || Mathf.Abs(DX) > noticeRange + 3f || Mathf.Abs(DY) > 3f)) engaged = false;
 
             if (engaged && Time.time >= nextSlam && Mathf.Abs(DX) <= slamRange && SameLevel(2f))
             {

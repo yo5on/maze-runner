@@ -143,7 +143,7 @@ namespace MazeRunner.Enemies
                 Description = "Advances at a run and strikes twice, stepping forward between the slashes. Each slash deals 1 damage.",
                 Stats = new[]
                 {
-                    IntelStat.Seconds("WIND-UP", 0.25f, "comboWarning"),
+                    IntelStat.Seconds("WIND-UP", 0.35f, "comboWarning"),
                     IntelStat.DamageText("1 + 1", false),
                     IntelStat.Seconds("COOLDOWN", 2.2f, "cooldown"),
                     IntelStat.Distance("RANGE", 1.5f, "comboRange"),
@@ -268,7 +268,7 @@ namespace MazeRunner.Enemies
                 Behaviour = typeof(BossHunterBehaviour),
                 Name = "Goblin Warchief", Role = "BOSS  /  LEVEL 3", Health = 9,
                 Ability = "Skirmish", Style = AttackStyle.Combo,
-                Description = "Circles you, feints, vaults over you and dashes in for a two-hit combo; every third ends in a 2-damage cleave. Below half health it pounces on your spot.",
+                Description = "Circles you, feints, vaults over you and dashes in for a two-hit combo; every third ends in a 2-damage cleave. It also slides in low along the ground (jump it) and slides past you when cornered. Below half health it pounces on your spot.",
                 Stats = new[]
                 {
                     IntelStat.Seconds("DASH WIND-UP", 0.3f, "dashWindUp"),

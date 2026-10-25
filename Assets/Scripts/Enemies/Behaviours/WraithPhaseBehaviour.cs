@@ -5,7 +5,8 @@ namespace MazeRunner.Enemies
 {
     /// <summary>
     /// Wraith 3: elusive and supernatural. It drifts toward the player with an uneven, surging speed,
-    /// hangs back at about two units, and darts away when the player is right above it (about to stomp).
+    /// hangs back at about two units. It reads a stomp's arc and, after a 0.25 s reaction, sometimes (40 %,
+    /// more against repeated stomps, at most every 3 s) darts out from under the predicted landing.
     /// Signature: Phase Dash. When the player is 1.5-4 units away on its floor: a 0.4 s wind-up (warning;
     /// the Wraith fades), then it phases straight through the player for up to 3.5 units (never past a
     /// ledge), dealing 1 damage on the way through. While phased it cannot be hurt and does not collide
@@ -20,6 +21,9 @@ namespace MazeRunner.Enemies
         [SerializeField] private float driftSpeed = 1.3f;
         [SerializeField] private float preferredDistance = 2f;
         [SerializeField] private float evadeSpeed = 3.2f;
+        [SerializeField] private float evadeReaction = 0.25f;
+        [Range(0f, 1f)] [SerializeField] private float evadeChance = 0.4f;
+        [SerializeField] private float evadeCooldown = 3f;
         [SerializeField] private float dashMin = 1.5f;
         [SerializeField] private float dashMax = 4f;
         [SerializeField] private float dashWindUp = 0.4f;
@@ -33,6 +37,7 @@ namespace MazeRunner.Enemies
         private bool phased;
         private float nextDash;
         private float evadeTimer;
+        private int evadeDirection = 1;
         private Collider2D[] playerColliders;
         private SpriteRenderer[] renderers;
 
@@ -55,10 +60,16 @@ namespace MazeRunner.Enemies
             if (Busy) return;
             if (!engaged && Notices(noticeRange)) engaged = true;
             else if (engaged && (!HasPlayer || Mathf.Abs(DX) > noticeRange + 3f || Mathf.Abs(DY) > 3f)) engaged = false;
-            if (!engaged) return;
 
-            // Threatened: the player is right above and coming down.
-            if (evadeTimer <= 0f && Mathf.Abs(DX) < 1.6f && DY > 0.8f) evadeTimer = 0.5f;
+            // A stomp read coming down on it: it darts out from under the predicted landing. Not gated on
+            // engagement (that drops while the player is high overhead, mid-stomp).
+            if (evadeTimer <= 0f && HasPlayer && Mathf.Abs(DX) < noticeRange && Anticipates(StompIncoming(0.6f, out _), evadeReaction, evadeChance, evadeCooldown))
+            {
+                evadeDirection = RoomAhead(AwayFromLanding) >= 1f ? AwayFromLanding : -AwayFromLanding;
+                evadeTimer = 0.5f;
+                Trace("evade");
+            }
+            if (!engaged) return;
 
             float distance = Mathf.Abs(DX);
             if (Time.time >= nextDash && distance >= dashMin && distance <= dashMax && SameLevel() && RoomAhead(DirToPlayer) > distance)
@@ -76,15 +87,13 @@ namespace MazeRunner.Enemies
         {
             if (Busy) return;
             if (Enemy.IsAttackLocked) { Enemy.Halt(); return; }
-            if (!engaged) { Enemy.PatrolStep(); return; }
-
             if (evadeTimer > 0f)
             {
                 evadeTimer -= Time.fixedDeltaTime;
-                int away = -DirToPlayer;
-                if (!Enemy.MoveHorizontal(away, evadeSpeed, true)) Enemy.MoveHorizontal(-away, evadeSpeed, true);
+                if (!Enemy.MoveHorizontal(evadeDirection, evadeSpeed, true)) evadeDirection = -evadeDirection;
                 return;
             }
+            if (!engaged) { Enemy.PatrolStep(); return; }
 
             // Surging drift: speed rises and falls so its approach is hard to time.
             float surge = 0.5f + 0.5f * Mathf.Sin(Time.time * 3.1f + surgeOffset);

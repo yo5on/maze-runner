@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.UI;
 using TMPro;
 using MazeRunner.Levels;
@@ -14,6 +15,12 @@ namespace MazeRunner.UI
         private void Start()
         {
             RefreshLevelButtons();
+        }
+
+        private void Update()
+        {
+            // Escape goes back to the main menu.
+            if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame) ReturnToMainMenu();
         }
         
         private void RefreshLevelButtons()
@@ -39,6 +46,8 @@ namespace MazeRunner.UI
                 // Clearing a level unlocks the one after it (the last level's clear is not recorded).
                 bool cleared = unlocked && progress.IsLevelUnlocked(i + 1);
                 bool primary = unlocked && i == next;
+                // The keyboard starts on the level to play next.
+                if (primary) MenuNavigator.PreferFocus(FindPanel(levelButtons[i].transform), levelButtons[i]);
                 levelButtons[i].interactable = unlocked;
                 
                 var colors = levelButtons[i].colors;
@@ -64,6 +73,12 @@ namespace MazeRunner.UI
             }
         }
         
+        private static GameObject FindPanel(Transform t)
+        {
+            for (Transform p = t; p != null; p = p.parent) if (p.name == "LevelSelectPanel") return p.gameObject;
+            return null;
+        }
+
         public void SelectLevel(int levelIndex)
         {
             if (LevelProgressionManager.Instance != null)

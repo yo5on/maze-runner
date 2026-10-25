@@ -12,7 +12,9 @@ namespace MazeRunner.Enemies
     ///   stomp on its back - the rear of the body - gets past the shield.
     /// - Opening (1.2 s, shield lowered): it can be stomped, and slashes if the player stands in reach.
     /// The player's only attack is the stomp, so "frontal attacks" are stomps landing on the guard;
-    /// waiting for the opening, or getting behind it, is the counter-play.
+    /// waiting for the opening, or getting behind it, is the counter-play. As an elite it sometimes reads
+    /// a stomp coming at its front during the opening and snaps the shield up early (0.3 s to react, 30 %,
+    /// at most every 5 s) - a stomp begun close enough still beats it.
     /// </summary>
     public class ShieldWarriorBehaviour : EnemyBehaviour
     {
@@ -27,6 +29,9 @@ namespace MazeRunner.Enemies
         [SerializeField] private float counterReach = 1.3f;
         [Tooltip("While guarding, how long the player must stay behind it before it turns around.")]
         [SerializeField] private float guardTurnDelay = 0.5f;
+        [SerializeField] private float snapGuardReaction = 0.3f;
+        [Range(0f, 1f)] [SerializeField] private float snapGuardChance = 0.3f;
+        [SerializeField] private float snapGuardCooldown = 5f;
         [Tooltip("Shield art held up while guarding (Assets/Sprites/Weapons/Shields).")]
         [SerializeField] private Sprite shieldSprite;
 
@@ -70,6 +75,13 @@ namespace MazeRunner.Enemies
             if (stance == Stance.Patrol || stanceTimer <= 0f)
             {
                 SetStance(stance == Stance.Guard ? Stance.Opening : Stance.Guard);
+            }
+
+            bool frontStomp = stance == Stance.Opening && PlayerInFront() && StompIncoming(0.5f, out _);
+            if (Anticipates(frontStomp, snapGuardReaction, snapGuardChance, snapGuardCooldown))
+            {
+                Trace("snap guard");
+                SetStance(Stance.Guard);
             }
 
             if (stance == Stance.Opening && SameLevel() && Enemy.CanBasicAttack)

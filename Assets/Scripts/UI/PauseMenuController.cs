@@ -51,6 +51,8 @@ namespace MazeRunner.UI
         {
             // While Settings or Enemy Intel is open (from the pause menu), Escape is its Back key.
             if (SettingsMenu.IsOpen || EnemyIntelPanel.IsOpen) return;
+            // The game-over and level-complete screens are not paused gameplay: Escape must not resume under them.
+            if (MenuNavigator.IsOpen("GameOverPanel") || MenuNavigator.IsOpen("LevelCompletePanel")) return;
 
             if (isPaused)
             {

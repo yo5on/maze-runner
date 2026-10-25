@@ -1,5 +1,6 @@
 using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 namespace MazeRunner.UI
@@ -17,6 +18,15 @@ namespace MazeRunner.UI
         private Image underline;
         private TMP_Text number;
         private bool isOn;
+
+        /// <summary>Keyboard focus reached this tile (arrow keys / WASD): the panel shows its enemy.</summary>
+        public System.Action Focused;
+
+        public override void OnSelect(BaseEventData eventData)
+        {
+            base.OnSelect(eventData);
+            Focused?.Invoke();
+        }
 
         public bool IsOn
         {

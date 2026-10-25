@@ -154,6 +154,22 @@ namespace MazeRunner.Enemies
         public float LastHurtTime => lastHurtTime;
         public string BossTitle => bossTitle;
         private float Resistance => isBoss ? bossKnockbackResistance : knockbackResistance;
+        private float lastRefusedMoveTime = -10f;
+
+        /// <summary>When <see cref="MoveHorizontal"/> last refused a step (a ledge, a wall or the platform's end).</summary>
+        public float LastRefusedMoveTime => lastRefusedMoveTime;
+
+        /// <summary>Feet resting on its own platform (not mid-jump, and not perched on the player or a ledge corner).</summary>
+        public bool StandsOnPlatform
+        {
+            get
+            {
+                if (platform == null || bodyCollider == null) return true;
+                Bounds feet = bodyCollider.bounds;
+                return Mathf.Abs(feet.min.y - platform.bounds.max.y) <= 0.2f &&
+                       feet.max.x >= platform.bounds.min.x && feet.min.x <= platform.bounds.max.x;
+            }
+        }
 
         /// <summary>The walkable span of the platform under the enemy (its real edges, minus a margin).</summary>
         public bool TryGetPlatformLimits(out float min, out float max)
@@ -189,6 +205,7 @@ namespace MazeRunner.Enemies
             if (outOfBounds || IsBlockedAhead(dir))
             {
                 Halt();
+                lastRefusedMoveTime = Time.time;
                 return false;
             }
             rb.linearVelocity = new Vector2(dir * speed, rb.linearVelocity.y);
@@ -369,6 +386,7 @@ namespace MazeRunner.Enemies
             {
                 behaviour.Perceive();
                 behaviour.Think();
+                behaviour.Watchdog();
                 if (behaviour.ControlsAttack) return;
             }
 
@@ -570,6 +588,14 @@ namespace MazeRunner.Enemies
 
             Vector2 footProbe = new Vector2(frontX + dir * lookAheadDistance, b.min.y + 0.1f);
             bool groundAhead = Physics2D.Raycast(footProbe, Vector2.down, 0.6f, groundLayer).collider != null;
+            // Perched above its own platform (landed on the player's head after a leap): the step ahead only
+            // drops it back onto that platform, so it is safe. Without this the probe saw no ground within
+            // reach and refused every step - the boss froze on top of the player.
+            if (!groundAhead && platform != null)
+            {
+                Bounds ground = platform.bounds;
+                groundAhead = footProbe.x >= ground.min.x && footProbe.x <= ground.max.x && b.min.y >= ground.max.y - 0.05f;
+            }
 
             Vector2 wallOrigin = new Vector2(frontX, b.center.y);
             RaycastHit2D wall = Physics2D.Raycast(wallOrigin, new Vector2(dir, 0f), lookAheadDistance, groundLayer);

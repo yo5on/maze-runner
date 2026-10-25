@@ -173,9 +173,8 @@ namespace MazeRunner.UI
             Keyboard keyboard = Keyboard.current;
             if (keyboard == null) return;
             // Escape goes back (PauseMenuController leaves Escape to this panel while it is open).
-            if (keyboard.escapeKey.wasPressedThisFrame) { Close(); return; }
-            if (keyboard.leftArrowKey.wasPressedThisFrame || keyboard.aKey.wasPressedThisFrame) Step(-1);
-            else if (keyboard.rightArrowKey.wasPressedThisFrame || keyboard.dKey.wasPressedThisFrame) Step(1);
+            // Arrow keys / WASD move the focus through the roster (the focused tile is shown) and the footer.
+            if (keyboard.escapeKey.wasPressedThisFrame) Close();
         }
 
         private void OnRectTransformDimensionsChange() => FitCard();
@@ -293,6 +292,7 @@ namespace MazeRunner.UI
             tile.Init(frame, surface, underline, number);
             int captured = index;
             tile.onClick.AddListener(() => Select(captured));
+            tile.Focused = () => { if (selected != captured) Select(captured); };
             return tile;
         }
 

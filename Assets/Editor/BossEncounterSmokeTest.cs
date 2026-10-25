@@ -124,6 +124,8 @@ namespace MazeRunner.EditorTools
             {
                 for (int i = 0; i < 4; i++)
                     SessionState.SetInt("BossSmoke.Unlock" + i, PlayerPrefs.HasKey(Prefix + i) ? PlayerPrefs.GetInt(Prefix + i) : -1);
+                string current = LevelProgressionManager.CurrentLevelKey;
+                SessionState.SetInt("BossSmoke.Current", PlayerPrefs.HasKey(current) ? PlayerPrefs.GetInt(current) : -1);
             }
             public static void Restore()
             {
@@ -132,6 +134,8 @@ namespace MazeRunner.EditorTools
                     int v = SessionState.GetInt("BossSmoke.Unlock" + i, -1);
                     if (v < 0) PlayerPrefs.DeleteKey(Prefix + i); else PlayerPrefs.SetInt(Prefix + i, v);
                 }
+                int c = SessionState.GetInt("BossSmoke.Current", -1);
+                if (c < 0) PlayerPrefs.DeleteKey(LevelProgressionManager.CurrentLevelKey); else PlayerPrefs.SetInt(LevelProgressionManager.CurrentLevelKey, c);
                 PlayerPrefs.Save();
             }
         }
@@ -364,6 +368,19 @@ namespace MazeRunner.EditorTools
                 Check(!completed, "goal blocked while the boss lives");
                 yield return SetupKeyboard();
 
+                // 1b. A player waiting at the far end of the arena (just past its entrance) still draws the boss out.
+                float farX = boss.transform.position.x > arena.center.x ? arena.min.x + 1.5f : arena.max.x - 1.5f;
+                Place(new Vector2(farX, floor + 1f), Vector2.zero);
+                float startGap = Mathf.Abs(boss.transform.position.x - farX);
+                for (float t = 0f; t < 10f && Mathf.Abs(boss.transform.position.x - farX) > startGap - 4f; t += Time.deltaTime) { KeepAlive(); yield return null; }
+                float endGap = Mathf.Abs(boss.transform.position.x - farX);
+                Check(endGap <= startGap - 4f, "boss comes for a player waiting at the far end of its arena",
+                    startGap.ToString("0.0") + " -> " + endGap.ToString("0.0") + " units apart");
+                // Back to its post, so the fight below starts where it always has.
+                boss.Body.position = bossStart;
+                boss.transform.position = bossStart;
+                boss.Body.linearVelocity = Vector2.zero;
+
                 // 2. A fight: the player hangs around the boss and drops onto its head every 2.6 s.
                 int startHp = boss.CurrentHealth;
                 int drops = 0, landed = 0;
@@ -445,6 +462,12 @@ namespace MazeRunner.EditorTools
                 foreach (int side in new[] { 1, -1 }) yield return EdgeTrial(boss, side, "boss");
                 Check(BossOnArena(), "boss still in its arena after the edge trials");
 
+                // 3b. Getting unstuck (cornered at both edges, perched on the player, a move that never ends).
+                yield return StuckTrials();
+                // 3c. The Goblin Warchief's slide.
+                if (Level == 2) yield return SlideTrials();
+                RestoreHealth(boss);
+
                 // 4. Pause freezes it.
                 Vector3 pausedAt = boss.transform.position;
                 Time.timeScale = 0f;
@@ -498,13 +521,212 @@ namespace MazeRunner.EditorTools
                 Check(completed, "goal completes the level once the boss is down");
             }
 
+            // ---------------------------------------------------------------- stuck recovery
+
+            private const BindingFlags Hidden = BindingFlags.Instance | BindingFlags.NonPublic;
+            private static readonly MethodInfo CancelSpecial = typeof(EnemyBehaviour).GetMethod("CancelSpecial", Hidden);
+            private static readonly MethodInfo RunSpecial = typeof(EnemyBehaviour).GetMethod("RunSpecial", Hidden);
+
+            private static IEnumerator Forever() { while (true) yield return null; }
+
+            /// <summary>Puts the boss's body centre at <paramref name="x"/> on the arena floor, standing still and calm.</summary>
+            private void PlaceBoss(float x)
+            {
+                CancelSpecial.Invoke(boss.GetComponent<EnemyBehaviour>(), null);
+                float offset = boss.BodyCollider.bounds.center.x - boss.Body.position.x;
+                boss.Body.position = new Vector2(x - offset, boss.Body.position.y);
+                boss.Body.linearVelocity = Vector2.zero;
+            }
+
+            private IEnumerator StuckTrials()
+            {
+                var brain = boss.GetComponent<EnemyBehaviour>();
+                float floor = arena.max.y;
+                float half = boss.BodyCollider.bounds.extents.x;
+
+                // Cornered: backed against an arena edge with the player planted right in front of it.
+                foreach (int side in new[] { 1, -1 })
+                {
+                    RestoreHealth(boss);
+                    float edgeX = (side > 0 ? arena.max.x : arena.min.x) - side * (half + 0.3f);
+                    PlaceBoss(edgeX);
+                    float playerX = edgeX - side * (half + 1.3f);
+                    Place(new Vector2(playerX, floor + 0.9f), Vector2.zero);
+                    int mark = events.Count;
+                    bool left = false;
+                    float startX = boss.transform.position.x, furthest = 0f;
+                    for (float t = 0f; t < 6f; t += Time.deltaTime)
+                    {
+                        KeepAlive();
+                        if (Mathf.Abs(player.transform.position.x - playerX) > 2.5f || player.transform.position.y < floor - 0.5f)
+                            Place(new Vector2(playerX, floor + 0.9f), Vector2.zero);
+                        left |= !BossOnArena();
+                        furthest = Mathf.Max(furthest, Mathf.Abs(boss.transform.position.x - startX));
+                        yield return null;
+                    }
+                    var acts = events.Skip(mark).Where(ev => ev.who == brain).Select(ev => ev.what).ToList();
+                    bool answered = acts.Any(a => a.StartsWith("windup") || a.StartsWith("slide") || a.StartsWith("vault") || a.StartsWith("hop") ||
+                                                  a.StartsWith("sidestep") || a.StartsWith("evade") || a.StartsWith("dodge") || a.StartsWith("stuck"));
+                    string edge = side > 0 ? "right" : "left";
+                    Check(answered || furthest > 1f, "boss cornered at the " + edge + " edge fights or repositions out",
+                        "moved " + furthest.ToString("0.0") + "; " + string.Join(", ", acts.Take(10)));
+                    Check(!left, "boss cornered at the " + edge + " edge stays on its arena");
+                }
+
+                // Perched: put on top of a player who stands still, it must get back down to its floor.
+                RestoreHealth(boss);
+                float px = Mathf.Clamp(arena.center.x, arena.min.x + 4f, arena.max.x - 4f);
+                PlaceBoss(arena.min.x + 2f);
+                Place(new Vector2(px, floor + 0.9f), Vector2.zero);
+                yield return new WaitForSeconds(0.4f);
+                Bounds pb = player.GetComponent<Collider2D>().bounds;
+                CancelSpecial.Invoke(brain, null);
+                float lift = boss.Body.position.y - boss.BodyCollider.bounds.min.y;
+                float offset = boss.BodyCollider.bounds.center.x - boss.Body.position.x;
+                boss.Body.position = new Vector2(pb.center.x - offset, pb.max.y + lift + 0.05f);
+                boss.Body.linearVelocity = Vector2.zero;
+                float down = -1f;
+                for (float t = 0f; t < 4f; t += Time.deltaTime)
+                {
+                    KeepAlive();
+                    playerBody.position = new Vector2(pb.center.x, playerBody.position.y); // the player holds still
+                    playerBody.linearVelocity = new Vector2(0f, playerBody.linearVelocity.y);
+                    if (t > 0.3f && boss.StandsOnPlatform) { down = t; break; }
+                    yield return null;
+                }
+                Check(down > 0f, "boss perched on the player's head gets back down to its arena floor", down > 0f ? down.ToString("0.0") + " s" : "still up after 4 s");
+                Check(BossOnArena(), "...and stays on its arena");
+
+                // A move that never ends: the watchdog cuts it short and the boss fights on.
+                FieldInfo timeout = typeof(EnemyBehaviour).GetField("specialTimeout", Hidden);
+                float saved = (float)timeout.GetValue(brain);
+                timeout.SetValue(brain, 2f);
+                PlaceBoss(arena.center.x);
+                Place(new Vector2(Mathf.Clamp(arena.center.x - 4f, arena.min.x + 1f, arena.max.x - 1f), floor + 0.9f), Vector2.zero);
+                int before = events.Count;
+                RunSpecial.Invoke(brain, new object[] { Forever() });
+                float cut = -1f;
+                for (float t = 0f; t < 4f; t += Time.deltaTime)
+                {
+                    KeepAlive();
+                    if (cut < 0f && events.Skip(before).Any(ev => ev.who == brain && ev.what == "stuck State")) cut = t;
+                    yield return null;
+                }
+                timeout.SetValue(brain, saved);
+                Check(cut > 0f, "a boss move that never ends is cut short by the state timeout", cut > 0f ? cut.ToString("0.0") + " s" : "not cut");
+                Check(events.Skip(before).Count(ev => ev.who == brain) > 1, "after the timeout the boss acts again",
+                    string.Join(", ", events.Skip(before).Where(ev => ev.who == brain).Select(ev => ev.what).Take(6)));
+            }
+
+            // ---------------------------------------------------------------- the warchief's slide
+
+            private IEnumerator SlideTrials()
+            {
+                var brain = boss.GetComponent<BossHunterBehaviour>();
+                System.Type type = typeof(BossHunterBehaviour);
+                MethodInfo slide = type.GetMethod("Slide", Hidden);
+                MethodInfo engageTarget = type.GetMethod("EngageTarget", Hidden);
+                MethodInfo passTarget = type.GetMethod("PassTarget", Hidden);
+                FieldInfo nextSlide = type.GetField("nextSlide", Hidden);
+                System.Type use = type.GetNestedType("SlideUse", BindingFlags.NonPublic);
+                object engage = System.Enum.Parse(use, "Engage"), pass = System.Enum.Parse(use, "Pass");
+                Collider2D playerCollider = player.GetComponent<Collider2D>();
+                float floor = arena.max.y;
+                float half = boss.BodyCollider.bounds.extents.x;
+
+                IEnumerator RunSlide(float x, object how, System.Action<float, bool> done)
+                {
+                    RunSpecial.Invoke(brain, new object[] { slide.Invoke(brain, new object[] { x, how }) });
+                    float fastest = 0f;
+                    bool left = false;
+                    for (float t = 0f; t < 4f && brain.IsBusy; t += Time.deltaTime)
+                    {
+                        KeepAlive();
+                        fastest = Mathf.Max(fastest, Mathf.Abs(boss.Body.linearVelocity.x));
+                        left |= !BossOnArena();
+                        yield return null;
+                    }
+                    done(fastest, left);
+                }
+
+                // Far (6 units): telegraphed, then a fast slide in that hits a standing player.
+                RestoreHealth(boss);
+                float cx = Mathf.Clamp(arena.center.x, arena.min.x + 6f, arena.max.x - 6f);
+                PlaceBoss(cx - 3f);
+                Place(new Vector2(cx + 3f, floor + 0.9f), Vector2.zero);
+                yield return new WaitForSeconds(0.3f);
+                PlaceBoss(cx - 3f);
+                object[] args = { 0f };
+                bool ok = (bool)engageTarget.Invoke(brain, args);
+                Check(ok, "slide: a player 6 units away on its floor is in slide range");
+                int mark = events.Count;
+                float speed = 0f;
+                bool off = false;
+                if (ok) yield return RunSlide((float)args[0], engage, (s, l) => { speed = s; off = l; });
+                var acts = events.Skip(mark).Where(ev => ev.who == brain).Select(ev => ev.what).ToList();
+                int warned = acts.FindIndex(a => a.StartsWith("windup")), went = acts.FindIndex(a => a == "slide Engage");
+                Check(went > 0 && warned >= 0 && warned < went, "slide: the warning shows before the slide", string.Join(", ", acts.Take(8)));
+                Check(speed >= 9f, "slide: it is fast", speed.ToString("0.0") + " u/s");
+                Check(acts.Any(a => a.StartsWith("hit player")), "slide: a player standing in the lane is hit");
+                Check(acts.Any(a => a == "state Recover"), "slide: after the slide it stands open (or fights on)", string.Join(", ", acts.Skip(Mathf.Max(0, went)).Take(6)));
+                Check((float)nextSlide.GetValue(brain) > Time.time - 1f, "slide: its cooldown is set");
+                Check(!off, "slide: stays on the arena");
+                Check(!Physics2D.GetIgnoreCollision(boss.BodyCollider, playerCollider), "slide: collisions with the player are back afterwards");
+
+                // Near and cornered at each edge: it slides past the player and comes up on the far side.
+                foreach (int side in new[] { 1, -1 })
+                {
+                    RestoreHealth(boss);
+                    float edgeX = (side > 0 ? arena.max.x : arena.min.x) - side * (half + 0.3f);
+                    PlaceBoss(edgeX);
+                    float playerX = edgeX - side * (half + 1.2f);
+                    Place(new Vector2(playerX, floor + 0.9f), Vector2.zero);
+                    yield return new WaitForSeconds(0.3f);
+                    PlaceBoss(edgeX);
+                    args = new object[] { 0f };
+                    ok = (bool)passTarget.Invoke(brain, args);
+                    string edge = side > 0 ? "right" : "left";
+                    Check(ok, "slide: cornered at the " + edge + " edge it has a way past the player");
+                    if (!ok) continue;
+                    yield return RunSlide((float)args[0], pass, (s, l) => off = l);
+                    float beyond = (boss.BodyCollider.bounds.center.x - player.transform.position.x) * -side;
+                    Check(beyond > 0.5f, "slide: from the " + edge + " corner it comes up past the player", beyond.ToString("0.0"));
+                    Check(!off && BossOnArena(), "slide: from the " + edge + " corner it stays on the arena");
+                    Check(!Physics2D.GetIgnoreCollision(boss.BodyCollider, playerCollider), "slide: collisions back after sliding past");
+                }
+
+                // Toward an edge with the player beyond reach: it stops at the arena limit.
+                RestoreHealth(boss);
+                PlaceBoss(arena.max.x - 6f);
+                Place(new Vector2(arena.max.x - 0.6f, floor + 0.9f), Vector2.zero);
+                yield return new WaitForSeconds(0.3f);
+                PlaceBoss(arena.max.x - 6f);
+                yield return RunSlide(arena.max.x + 3f, engage, (s, l) => off = l);
+                Check(!off && BossOnArena(), "slide: aimed past the arena edge it stops on the arena");
+
+                // A player above it (hovering 4 units up) is never slid at.
+                RestoreHealth(boss);
+                PlaceBoss(cx);
+                nextSlide.SetValue(brain, 0f);
+                mark = events.Count;
+                for (float t = 0f; t < 4f; t += Time.deltaTime)
+                {
+                    KeepAlive();
+                    Place(new Vector2(boss.transform.position.x + 0.5f, floor + 4.5f), Vector2.zero);
+                    yield return null;
+                }
+                Check(!events.Skip(mark).Any(ev => ev.who == brain && (ev.what.Contains("Engage") || ev.what.Contains("Pass"))),
+                    "slide: never slides in at (or past) a player above it - only under a stomp");
+                Place(new Vector2(Mathf.Clamp(boss.transform.position.x - 4f, arena.min.x + 1f, arena.max.x - 1f), floor + 0.9f), Vector2.zero);
+            }
+
             // ---------------------------------------------------------------- regular enemies
 
             private IEnumerator RegularEnemyTrials()
             {
                 // Up to three kinds of regular enemy standing on platforms with room to work.
                 GoblinEnemy[] regulars = FindObjectsByType<GoblinEnemy>()
-                    .Where(g => !g.IsBoss && !g.IsDead && g.Platform != null && g.Platform.bounds.size.x >= 3.5f && g.GetComponent<EnemyBehaviour>() != null)
+                    .Where(g => !g.IsBoss && !g.IsDead && g.Platform != null && g.Platform.bounds.size.x - g.BodyCollider.bounds.size.x >= 3.5f && g.GetComponent<EnemyBehaviour>() != null)
                     .GroupBy(g => g.GetComponent<EnemyBehaviour>().GetType()).Select(grp => grp.First()).Take(3).ToArray();
                 Check(regulars.Length >= 2, "regular enemies to test", string.Join(", ", regulars.Select(g => g.name)));
 
@@ -654,7 +876,10 @@ namespace MazeRunner.EditorTools
                     moved = Mathf.Abs(e.BodyCollider.bounds.center.x - x0) > 0.25f || (brain != null && (brain.IsBusy || events.Count(ev => ev.who == brain) > acts));
                     yield return null;
                 }
-                Check(inward && moved, who + " moves normally again after the " + edge + " edge trial", "step inward allowed " + inward + ", AI moved or acted " + moved);
+                Check(inward && moved, who + " moves normally again after the " + edge + " edge trial", "step inward allowed " + inward + ", AI moved or acted " + moved +
+                    (moved || e == null ? "" : " | v " + e.Body.linearVelocity.ToString("F2") + " feet " + e.BodyCollider.bounds.min.y.ToString("F2") + " on " + e.StandsOnPlatform +
+                     " locked " + e.IsAttackLocked + " knocked " + e.IsKnockedBack + " type " + e.Body.bodyType + " sim " + e.Body.simulated + " constraints " + e.Body.constraints +
+                     " enabled " + e.enabled + " brain " + (brain != null && brain.enabled) + " player " + player.transform.position.ToString("F1")));
             }
 
             private static float Stand(Bounds platform, float x) => Mathf.Clamp(x, platform.min.x + 0.5f, platform.max.x - 0.5f);
@@ -814,7 +1039,8 @@ namespace MazeRunner.EditorTools
                 Check(stomps.Any(r => r.ReactedBeforeImpact), who + " sometimes answers a stomp before it lands", Summary(stomps));
                 Check(stomps.Count(r => r.Reacted) < stomps.Count(r => r.Threat), who + " does not dodge every stomp it reads", Summary(stomps));
                 Check(stomps.Any(r => r.Landed), who + " can still be stomped", Summary(stomps));
-                Check(!hops.Any(r => r.Reacted && !r.Threat), who + " never reacts to a hop that cannot land on it", Summary(hops));
+                // The Warchief's landing counter ("read" a landing beside it, "punish" it after) is by design, not a read of the hop.
+                Check(!hops.Any(r => r.ReactedBeforeImpact && !r.Threat && r.Reaction != "read" && r.Reaction != "punish"), who + " never reacts to a hop that cannot land on it", Summary(hops));
                 Check(attempts >= 3 && learnedChance > 0.3f, who + " learns from repeated stomps", attempts + " attempts, chance 0.30 -> " + learnedChance.ToString("0.00"));
 
                 var mine = events.Skip(firstEvent).Where(ev => ev.who == brain).Select(ev => ev.what.Split(' ')[0]).ToList();

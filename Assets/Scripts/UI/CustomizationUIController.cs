@@ -121,7 +121,6 @@ namespace MazeRunner.UI
             {
                 if (keyboard.leftArrowKey.wasPressedThisFrame || keyboard.aKey.wasPressedThisFrame) Press(optionPrevButton);
                 else if (keyboard.rightArrowKey.wasPressedThisFrame || keyboard.dKey.wasPressedThisFrame) Press(optionNextButton);
-                else if (keyboard.enterKey.wasPressedThisFrame || keyboard.numpadEnterKey.wasPressedThisFrame) Press(applyButton);
                 else if (keyboard.escapeKey.wasPressedThisFrame) Press(backButton);
             }
 
@@ -153,6 +152,9 @@ namespace MazeRunner.UI
             if (index != currentIndex && previewImage != null) previewImage.rectTransform.localScale = Vector3.one * 0.9f;
             currentIndex = index;
             RefreshUI();
+            // A new hero to confirm: the keyboard focus goes back to Confirm (Enter / Space presses it).
+            if (applyButton != null && applyButton.interactable && EventSystem.current != null)
+                EventSystem.current.SetSelectedGameObject(applyButton.gameObject);
         }
 
         private void Apply()
@@ -203,13 +205,32 @@ namespace MazeRunner.UI
             // Reset only does something when another character is shown.
             if (applyButton != null) applyButton.interactable = !isSelected;
             if (resetButton != null) resetButton.interactable = character.Id != PlayableCharacters.Default.Id;
-
-            // A clicked button keeps the selection, and Enter would then press it as well as Confirm.
-            if (EventSystem.current != null) EventSystem.current.SetSelectedGameObject(null);
+            LinkActionButtons();
 
             // If the scene shows a Player, preview the character on it too.
             var skin = FindAnyObjectByType<PlayerCharacterSkin>();
             if (skin != null) skin.Apply(character);
+        }
+
+        /// <summary>Up / Down cycle through the action buttons that can be pressed right now (never a disabled or hidden one).</summary>
+        private void LinkActionButtons()
+        {
+            var usable = new List<Button>();
+            foreach (Button b in new[] { applyButton, resetButton, backButton })
+            {
+                if (b == null) continue;
+                if (b.interactable && b.gameObject.activeInHierarchy) usable.Add(b);
+                else b.navigation = new Navigation { mode = Navigation.Mode.None };
+            }
+            for (int i = 0; i < usable.Count; i++)
+            {
+                usable[i].navigation = new Navigation
+                {
+                    mode = Navigation.Mode.Explicit,
+                    selectOnUp = usable[(i + usable.Count - 1) % usable.Count],
+                    selectOnDown = usable[(i + 1) % usable.Count],
+                };
+            }
         }
 
         private static string TypeName(string rigId)
@@ -284,12 +305,15 @@ namespace MazeRunner.UI
                 button.transform.SetParent(actions, false);
                 if (button.GetComponent<LayoutElement>() is LayoutElement old) Destroy(old);
             }
+            // Keyboard: Left / Right browse heroes (see Update), Up / Down move between these buttons (see
+            // LinkActionButtons), Enter or Space presses the focused one; Confirm has the focus first.
+            MenuNavigator.PreferFocus(panel.gameObject, applyButton, backButton, resetButton);
 
             // Keyboard shortcuts, only where there is a keyboard to press them (the web player registers a
             // touchscreen even on desktop, so the platform is asked instead).
             if (!Application.isMobilePlatform)
             {
-                TMP_Text keys = CreateText("KeyHint", root, "Left / Right  Browse        Enter  Confirm        Esc  Back", 22f, FontStyles.Normal, mutedTextColor);
+                TMP_Text keys = CreateText("KeyHint", root, "Left / Right  Browse      Up / Down  Buttons      Enter  Select      Esc  Back", 22f, FontStyles.Normal, mutedTextColor);
                 Place(keys.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(RosterX, -400f), new Vector2(700f, 34f), centrePivot: true);
             }
 
