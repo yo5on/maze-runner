@@ -1,39 +1,17 @@
-# Prefabs Directory
+# Prefabs
 
-Reusable game objects and components.
+This folder contains reusable prefabs currently committed for player and environment objects.
 
-## Subdirectories
+## Current Layout
 
-### Player/
-- Player prefab with all components
-- Player variants (if multiple character types)
-- Player customization layer prefabs
+- `Player/Player.prefab` — the player object and its attached gameplay components.
+- `Environment/` — platform prefabs and the ruin-pillar background prefab.
+- Enemy prefabs are organised under `Assets/Enemies/`, rather than in `Assets/Prefabs/Enemies/`.
 
-### Enemies/
-- Enemy prefabs (each enemy type)
-- Enemy projectiles (if any)
+Unity `.meta` entries for `Collectibles`, `Enemies`, and `UI` remain in this folder, but those paths do not currently contain tracked prefab assets.
 
-### Collectibles/
-- Coin/gem prefabs
-- Power-up prefabs
-- Health pickups
+## Working with Prefabs
 
-### Environment/
-- Platform prefabs
-- Moving platform prefabs
-- Hazard prefabs
-- Checkpoint prefabs
-- Goal/finish prefabs
-
-### UI/
-- Menu prefabs
-- HUD prefabs
-- UI panel prefabs
-
-## Best Practices
-
-- Keep prefabs self-contained
-- Avoid deep prefab nesting when possible
-- Use prefab variants for similar objects
-- Test prefabs in isolation before using in levels
-- Document any special setup requirements
+- Preserve the existing prefab and asset GUIDs when updating referenced assets.
+- Prefer shared prefabs for objects that must behave consistently across levels.
+- Test changes in the relevant scene, not only in prefab isolation; gameplay behaviour may depend on colliders, scripts, and scene references.
