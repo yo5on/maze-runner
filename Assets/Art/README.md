@@ -1,52 +1,20 @@
-# Art Directory
+# Art Assets
 
-All visual assets for the game.
+This folder holds project-specific visual assets used by Maze Runner. The current tracked files are concentrated in the environment and health-UI areas.
 
-## Important: Original Assets Only
+## Current Assets
 
-⚠️ **Do not use copyrighted assets from Mario, Nintendo, or any other existing games.**
+- `Environment/Moon.png` — the moon artwork used by the sky setup.
+- `Environment/SkyGradient.png` — the sky background gradient.
+- `Environment/Spikes.png` — the spike hazard sprite.
+- `Environment/Blender/MazeRunner_RuinPillar.png` — the ruin-pillar background artwork.
+- `UI/Hearts/` — the heart sprite sheet and reusable heart prefab for the health display.
 
-All sprites, textures, and visual elements must be original or properly licensed.
+Player and enemy art is organised elsewhere under `Assets/`, including `Assets/Enemies/`; the raw source-pack material is kept separately in `ArtSource/`.
 
-## Subdirectories
+## Asset Handling
 
-### Characters/
-- Player body parts (for customization system)
-- Player animation frames
-- NPC sprites (if any)
-
-### Enemies/
-- Original enemy sprites
-- Enemy animation frames
-- Enemy visual effects
-
-### Environment/
-- Platform tiles
-- Background layers
-- Foreground elements
-- Hazards (spikes, pits, etc.)
-- Checkpoint markers
-- Goal/finish markers
-
-### UI/
-- Button sprites
-- Icons
-- Menu backgrounds
-- HUD elements
-
-## Placeholder Assets
-
-During development, use:
-- Simple colored squares/circles
-- Unity default sprites
-- Procedurally generated shapes
-
-Replace with final art later.
-
-## Import Settings
-
-- Sprite Mode: Single or Multiple (for sprite sheets)
-- Pixels Per Unit: 16 or 32 (consistent across project)
-- Filter Mode: Point (for pixel art) or Bilinear (for smooth art)
-- Compression: None during development
-- Max Size: Appropriate for target platform
+- Keep art original or properly licensed, and retain any source-pack licence or attribution requirements.
+- Preserve the Unity `.meta` files so asset GUID references remain stable.
+- Check import settings and sprite pivots before changing an asset used by scenes or prefabs.
+- The `Characters.meta` and `Enemies.meta` entries under this folder do not currently have tracked child assets; the active player/enemy art is not stored in those paths.
