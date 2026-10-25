@@ -1,30 +1,23 @@
-# Scripts Directory
+# Scripts
 
-All C# scripts organized by system.
+Gameplay and interface code is organised by system. The main runtime systems currently tracked here are:
 
-## Subdirectories
+- **Audio/** — audio manager and per-channel volume sources.
+- **Camera/** — camera-follow behaviour.
+- **Collectibles/** — collectible interaction.
+- **Customization/** — character definitions, rendering, and player-skin configuration.
+- **Enemies/** — enemy state and combat support, with specialised AI under **Enemies/Behaviours/**. This includes regular enemy behaviours and the Ogre Warlord, Plague Alchemist, and Goblin Warchief boss behaviours.
+- **Levels/** — checkpoints, hazards, goals, enemy spawning/tracking, moving platforms, sky/moon behaviour, and level progression.
+- **Player/** — movement, animation, combat, and health.
+- **SaveSystem/** — serialisable customization data.
+- **Settings/** — saved audio and mobile-control preferences.
+- **Testing/** — development-only AI test probes.
+- **UI/** — menus, HUD, health display, pause/settings, level-complete and game-over flows, and the WebGL bridge.
 
-- **Player/** - Player controller, movement, physics, death/respawn
-- **Customization/** - Character customization manager and layer system
-- **Enemies/** - Enemy base classes, AI behaviors, collision
-- **Collectibles/** - Collectible items (coins, gems, power-ups)
-- **Levels/** - Level management, transitions, checkpoints
-- **UI/** - UI controllers for menus, HUD, pause screen
-- **Managers/** - Global managers (GameManager, AudioManager, SaveManager)
-- **Camera/** - Camera controller and follow scripts
-- **SaveSystem/** - Save/load functionality
+## Conventions
 
-## Naming Conventions
-
-- Use PascalCase for class names: `PlayerController.cs`
-- One class per file
-- Match filename to class name
-- Use meaningful, descriptive names
-
-## Code Style
-
-- Follow Unity C# conventions
-- Use `[SerializeField]` for Inspector-exposed private fields
-- Add XML documentation comments for public APIs
-- Keep classes focused (Single Responsibility Principle)
-- Use namespaces where appropriate
+- Use PascalCase for C# types and filenames.
+- Keep each main class in a matching `.cs` file.
+- Keep Inspector-exposed implementation details private and mark them with `[SerializeField]` when needed.
+- Preserve Unity `.meta` files and GUID references when moving assets.
+- Update scene/prefab wiring and the root README when a code change alters player-facing behaviour or setup instructions.
