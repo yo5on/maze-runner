@@ -43,6 +43,7 @@ namespace MazeRunner.EditorTools
         private const string LevelKey = "BossSmoke.Level";
         private const string ExitKey = "BossSmoke.Exit";
         private const string LastKey = "BossSmoke.Last";
+        private const string SeedKey = "BossSmoke.Seed";
         private const string ResultFile = "Logs/boss-smoke.txt";
         private static readonly string[] Scenes =
         {
@@ -70,6 +71,9 @@ namespace MazeRunner.EditorTools
             string[] args = System.Environment.GetCommandLineArgs();
             int only = System.Array.IndexOf(args, "-bossSmokeLevel");
             int first = only >= 0 && only + 1 < args.Length && int.TryParse(args[only + 1], out int n) ? Mathf.Clamp(n, 1, Scenes.Length) - 1 : 0;
+            int seedAt = System.Array.IndexOf(args, "-bossSmokeSeed");
+            int seed = seedAt >= 0 && seedAt + 1 < args.Length && int.TryParse(args[seedAt + 1], out int parsedSeed) ? parsedSeed : 0;
+            SessionState.SetInt(SeedKey, seed);
             SessionState.SetInt(LastKey, only >= 0 ? first : Scenes.Length - 1);
             SessionState.SetInt(LevelKey, first);
             Unlocks.Save();
@@ -100,11 +104,17 @@ namespace MazeRunner.EditorTools
             if (!SessionState.GetBool(ActiveKey, false)) return;
             if (change == PlayModeStateChange.EnteredPlayMode)
             {
+                int level = SessionState.GetInt(LevelKey, 0);
+                int seed = 1000 + level + 100 * SessionState.GetInt(SeedKey, 0);
+                Time.captureDeltaTime = Time.fixedDeltaTime;
+                Random.InitState(seed);
+                Log("INFO L" + (level + 1) + " deterministic Unity Random seed " + seed + " and capture step " + Time.captureDeltaTime.ToString("0.000") + " applied before scene Start");
                 var go = new GameObject("BossSmokeDriver");
-                go.AddComponent<Driver>().Level = SessionState.GetInt(LevelKey, 0);
+                go.AddComponent<Driver>().Level = level;
             }
             else if (change == PlayModeStateChange.EnteredEditMode)
             {
+                Time.captureDeltaTime = 0f;
                 SessionState.SetInt(LevelKey, SessionState.GetInt(LevelKey, 0) + 1);
                 EditorApplication.delayCall += StartLevel;
             }
@@ -168,7 +178,6 @@ namespace MazeRunner.EditorTools
 
             private IEnumerator Start()
             {
-                Random.InitState(1000 + Level); // the AI's rolls repeat run to run
                 EnemyBehaviour.Traced += OnTrace;
                 EnemyBehaviour.Traced += OnAnyTrace;
                 Application.logMessageReceived += OnLog;
@@ -187,6 +196,7 @@ namespace MazeRunner.EditorTools
                 EnemyBehaviour.Traced -= OnTrace;
                 EnemyBehaviour.Traced -= OnAnyTrace;
                 Time.timeScale = 1f;
+                Time.captureDeltaTime = 0f;
                 EditorApplication.ExitPlaymode();
             }
 
@@ -202,11 +212,15 @@ namespace MazeRunner.EditorTools
             private InputSettings.BackgroundBehavior savedBackground;
             private InputSettings.EditorInputBehaviorInPlayMode savedEditorInput;
             private bool inputSettingsChanged;
+            private bool unexpectedPlayerDeath;
+            private string unexpectedDeathReason = "";
 
             private static readonly FieldInfo HealthField = typeof(GoblinEnemy).GetField("currentHealth", BindingFlags.Instance | BindingFlags.NonPublic);
             private static readonly FieldInfo AccelField = typeof(PlayerController).GetField("acceleration", BindingFlags.Instance | BindingFlags.NonPublic);
             private static readonly FieldInfo DecelField = typeof(PlayerController).GetField("deceleration", BindingFlags.Instance | BindingFlags.NonPublic);
             private static readonly FieldInfo JumpForceField = typeof(PlayerController).GetField("jumpForce", BindingFlags.Instance | BindingFlags.NonPublic);
+            private static readonly FieldInfo ReactionCooldownField = typeof(EnemyBehaviour).GetField("nextReaction", BindingFlags.Instance | BindingFlags.NonPublic);
+            private static readonly FieldInfo PunishCooldownField = typeof(BossHunterBehaviour).GetField("nextPunish", BindingFlags.Instance | BindingFlags.NonPublic);
 
             /// <summary>Test-only: puts an enemy back to full health so a long trial cannot kill it.</summary>
             private static void RestoreHealth(GoblinEnemy e) => HealthField.SetValue(e, e.MaxHealth);
@@ -302,7 +316,7 @@ namespace MazeRunner.EditorTools
                 player = GameObject.FindGameObjectWithTag("Player");
                 health = player.GetComponent<PlayerHealth>();
                 playerBody = player.GetComponent<Rigidbody2D>();
-                GoblinEnemy[] bosses = FindObjectsByType<GoblinEnemy>().Where(g => g.IsBoss).ToArray();
+                GoblinEnemy[] bosses = SceneEnemies().Where(g => g.IsBoss).ToArray();
                 Check(bosses.Length == 1, "exactly one boss", bosses.Length + " found");
                 if (bosses.Length == 0) return;
                 boss = bosses[0];
@@ -317,6 +331,7 @@ namespace MazeRunner.EditorTools
                     "goal is in the boss arena");
                 LevelProgressionManager.Instance.LevelCompleted += _ => completed = true;
                 health.OnPlayerDeath += OnPlayerDied;
+                trialWaitSpot = playerBody.position;
                 safeSpot = new Vector2(arena.center.x, arena.max.y + 1f);
             }
 
@@ -325,13 +340,15 @@ namespace MazeRunner.EditorTools
                 boss.transform.position.y >= arena.max.y - 0.6f;
 
             private Vector2 safeSpot;
+            private Vector2 trialWaitSpot;
 
             private void Update()
             {
                 // A test move that drops the player off a platform must not end the run in a game over.
                 if (player != null && player.transform.position.y < -6f) Place(safeSpot, Vector2.zero);
+                if (unexpectedPlayerDeath && Time.timeScale == 0f) Time.timeScale = 1f;
                 // The scripted player never dies by accident (it has one respawn, which the death test uses).
-                if (health != null && !expectingDeath) KeepAlive();
+                if (health != null && !expectingDeath && !unexpectedPlayerDeath) KeepAlive();
                 // Watchdog: a game stuck paused (a game over) fails the level instead of hanging the run.
                 pausedSince = Time.timeScale > 0f ? -1f : pausedSince < 0f ? Time.realtimeSinceStartup : pausedSince;
                 if (pausedSince >= 0f && Time.realtimeSinceStartup - pausedSince > 8f)
@@ -347,7 +364,10 @@ namespace MazeRunner.EditorTools
 
             private void OnPlayerDied()
             {
-                if (!expectingDeath) Check(false, "the scripted player died unexpectedly", "health " + health.CurrentHealth + " at " + player.transform.position.ToString("F1"));
+                if (expectingDeath) return;
+                unexpectedPlayerDeath = true;
+                unexpectedDeathReason = "player died at " + player.transform.position.ToString("F1");
+                Check(false, "the scripted player died unexpectedly", "health " + health.CurrentHealth + " at " + player.transform.position.ToString("F1"));
             }
 
             private void Place(Vector2 p, Vector2 v)
@@ -367,6 +387,7 @@ namespace MazeRunner.EditorTools
                 yield return new WaitForSeconds(0.6f);
                 Check(!completed, "goal blocked while the boss lives");
                 yield return SetupKeyboard();
+                if (unexpectedPlayerDeath) { Log("ABORT " + L + " scenario before fight: " + unexpectedDeathReason); yield break; }
 
                 // 1b. A player waiting at the far end of the arena (just past its entrance) still draws the boss out.
                 float farX = boss.transform.position.x > arena.center.x ? arena.min.x + 1.5f : arena.max.x - 1.5f;
@@ -387,7 +408,7 @@ namespace MazeRunner.EditorTools
                 float minY = float.MaxValue, lastX = boss.transform.position.x, still = 0f, longestStill = 0f;
                 bool leftArena = false;
                 Place(new Vector2(boss.transform.position.x - 4f, floor + 1f), Vector2.zero);
-                for (float t = 0f; t < 26f && boss != null && !boss.IsDead; t += Time.deltaTime)
+                for (float t = 0f; t < 26f && boss != null && !boss.IsDead && !unexpectedPlayerDeath; t += Time.deltaTime)
                 {
                     if (health.CurrentHealth < 4) health.Heal(10); // keep the scripted player alive
                     if (player.transform.position.y < floor - 1.5f) Place(new Vector2(arena.center.x, floor + 1f), Vector2.zero);
@@ -432,6 +453,7 @@ namespace MazeRunner.EditorTools
                     lastX = x;
                     yield return null;
                 }
+                if (unexpectedPlayerDeath) { Log("ABORT " + L + " scenario before prediction: " + unexpectedDeathReason); yield break; }
                 string moves = string.Join(", ", traces.OrderBy(k => k.Key).Select(k => k.Key + "=" + k.Value));
                 Log("INFO " + L + " fight: " + drops + " drops, " + landed + " landed, hp " + startHp + " -> " + boss.CurrentHealth + "; moves: " + moves + "; threat/busy/frames per drop:" + dropNotes);
                 Check(!leftArena, "boss stayed on its arena during the fight", "lowest y " + minY.ToString("0.00") + " vs floor " + floor.ToString("0.00"));
@@ -455,6 +477,7 @@ namespace MazeRunner.EditorTools
                 // 2b. Prediction: real jumps at the boss, deliberate misses, vertical hops, approaches.
                 RestoreHealth(boss);
                 yield return PredictionTrials(boss, "boss", Level + 1);
+                if (unexpectedPlayerDeath) { Log("ABORT " + L + " scenario after boss prediction: " + unexpectedDeathReason); yield break; }
                 yield return ApproachTrials(boss, "boss");
                 RestoreHealth(boss);
 
@@ -724,11 +747,16 @@ namespace MazeRunner.EditorTools
 
             private IEnumerator RegularEnemyTrials()
             {
-                // Up to three kinds of regular enemy standing on platforms with room to work.
-                GoblinEnemy[] regulars = FindObjectsByType<GoblinEnemy>()
+                // Prefer the two prediction targets, then fill the platform sample in a stable order.
+                GoblinEnemy[] regulars = SceneEnemies()
                     .Where(g => !g.IsBoss && !g.IsDead && g.Platform != null && g.Platform.bounds.size.x - g.BodyCollider.bounds.size.x >= 3.5f && g.GetComponent<EnemyBehaviour>() != null)
-                    .GroupBy(g => g.GetComponent<EnemyBehaviour>().GetType()).Select(grp => grp.First()).Take(3).ToArray();
-                Check(regulars.Length >= 2, "regular enemies to test", string.Join(", ", regulars.Select(g => g.name)));
+                    .GroupBy(g => g.GetComponent<EnemyBehaviour>().GetType())
+                    .OrderBy(grp => grp.Key == typeof(GoblinSkirmisherBehaviour) ? 0 : grp.Key == typeof(DuelistBehaviour) ? 1 : 2)
+                    .ThenBy(grp => grp.Key.FullName, System.StringComparer.Ordinal)
+                    .Select(grp => grp.OrderBy(g => StablePath(g.transform), System.StringComparer.Ordinal).First())
+                    .Take(3).ToArray();
+                Check(regulars.Length >= 2, "regular enemies to test", string.Join(", ", regulars.Select(DescribeEnemy)));
+                Log("INFO " + L + " selected platform trials: " + string.Join("; ", regulars.Select(DescribeEnemy)));
 
                 foreach (GoblinEnemy e in regulars)
                 {
@@ -759,11 +787,37 @@ namespace MazeRunner.EditorTools
                 }
 
                 // Prediction for one basic and one elite enemy, when the level has them.
-                GoblinEnemy basic = FindObjectsByType<GoblinEnemy>().FirstOrDefault(g => !g.IsBoss && !g.IsDead && g.GetComponent<EnemyBehaviour>() is GoblinSkirmisherBehaviour && g.Platform.bounds.size.x >= 5f);
-                GoblinEnemy elite = FindObjectsByType<GoblinEnemy>().FirstOrDefault(g => !g.IsBoss && !g.IsDead && g.GetComponent<EnemyBehaviour>() is DuelistBehaviour && g.Platform.bounds.size.x >= 5f);
+                GoblinEnemy basic = SelectPredictionTarget<GoblinSkirmisherBehaviour>();
+                GoblinEnemy elite = SelectPredictionTarget<DuelistBehaviour>();
                 if (basic != null) yield return PredictionTrials(basic, "basic goblin", 0);
+                else Check(false, "basic goblin prediction target available", "SKIPPED: no GoblinSkirmisherBehaviour on a platform at least 5 units wide");
+                if (unexpectedPlayerDeath) { Log("ABORT " + L + " regular-enemy trials: " + unexpectedDeathReason); yield break; }
                 if (elite != null) yield return PredictionTrials(elite, "elite duelist", 0);
+                else Check(false, "elite duelist prediction target available", "SKIPPED: no DuelistBehaviour on a platform at least 5 units wide");
             }
+
+            private static GoblinEnemy[] SceneEnemies() =>
+                FindObjectsByType<GoblinEnemy>(FindObjectsInactive.Exclude, FindObjectsSortMode.None)
+                    .OrderBy(g => StablePath(g.transform), System.StringComparer.Ordinal).ToArray();
+
+            private static GoblinEnemy SelectPredictionTarget<T>() where T : EnemyBehaviour => SceneEnemies()
+                .Where(g => !g.IsBoss && !g.IsDead && g.Platform != null && g.Platform.bounds.size.x >= 5f && g.GetComponent<T>() != null)
+                .OrderBy(g => StablePath(g.transform), System.StringComparer.Ordinal).FirstOrDefault();
+
+            private static string StablePath(Transform target)
+            {
+                var parts = new List<string>();
+                while (target != null)
+                {
+                    parts.Add(target.GetSiblingIndex().ToString("D4") + ":" + target.name);
+                    target = target.parent;
+                }
+                parts.Reverse();
+                return string.Join("/", parts);
+            }
+
+            private static string DescribeEnemy(GoblinEnemy target) =>
+                target.name + " [" + target.GetComponent<EnemyBehaviour>().GetType().Name + "] " + StablePath(target.transform);
 
             // ---------------------------------------------------------------- platform safety
 
@@ -842,7 +896,13 @@ namespace MazeRunner.EditorTools
                 Place(new Vector2(Stand(p, start - side * 6f), floor + 1f), Vector2.zero);
                 yield return new WaitForSeconds(0.4f);
                 sampling = false;
-                if (e == null || e.IsDead || samples.Count < 10) { Log("INFO " + L + " " + who + " gone during the " + edge + " edge trial"); yield break; }
+                if (unexpectedPlayerDeath || e == null || e.IsDead || samples.Count < 10)
+                {
+                    string reason = unexpectedPlayerDeath ? "player death: " + unexpectedDeathReason : e == null || e.IsDead ? "target died or was removed" : "only " + samples.Count + " physics samples";
+                    Log("ABORT " + L + " " + who + " " + edge + " edge trial: " + reason + "; samples=" + samples.Count + ", shove-steps=" + shoveSteps);
+                    Check(false, who + " " + edge + " edge trial completed", reason + "; samples=" + samples.Count + ", shove-steps=" + shoveSteps);
+                    yield break;
+                }
 
                 bool stayed = samples.All(s => s.x >= p.min.x && s.x <= p.max.x && s.y > floor - 0.5f);
                 float lowest = samples.Min(s => s.y), outmost = side > 0 ? samples.Max(s => s.x) : samples.Min(s => s.x);
@@ -888,7 +948,10 @@ namespace MazeRunner.EditorTools
 
             private struct JumpResult
             {
-                public bool Threat, Reacted, ReactedBeforeImpact, Landed;
+                public bool Valid, ImpactObserved, Threat, Reacted, ReactedBeforeImpact, Landed;
+                public int Frames, ReactionCount;
+                public float ReactionCooldown, PunishCooldown;
+                public string InvalidReason;
                 public string Reaction;
             }
 
@@ -920,17 +983,33 @@ namespace MazeRunner.EditorTools
             /// </summary>
             private IEnumerator Jump(GoblinEnemy e, float startOffset, List<JumpResult> results, float landShortBy, bool drop = false)
             {
+                var r = new JumpResult();
+                void Abort(string reason) { r.InvalidReason = reason; results.Add(r); }
+                if (unexpectedPlayerDeath) { Abort("player death: " + unexpectedDeathReason); yield break; }
+                if (e == null || e.IsDead) { Abort("target missing or dead before attempt"); yield break; }
                 Bounds p = e.Platform.bounds;
                 KeepAlive();
                 Release();
                 float sx = Mathf.Clamp(e.BodyCollider.bounds.center.x + startOffset, p.min.x + 0.5f, p.max.x - 0.5f);
-                Place(new Vector2(sx, p.max.y + 0.9f), Vector2.zero);
-                safeSpot = new Vector2(sx, p.max.y + 1f);
-                for (float w = 0f; w < 1.5f && (w < 0.35f || !controller.IsGrounded); w += Time.deltaTime) yield return null;
-
                 var brain = e.GetComponent<EnemyBehaviour>();
-                // Jump once it is free to react: a move it is committed to (an attack and its recovery) is an opening by design.
-                for (float w = 0f; w < 3f && brain.IsBusy; w += Time.deltaTime) yield return null;
+                // Let a committed move finish with the player safely away, then place the jump start once.
+                safeSpot = trialWaitSpot;
+                Place(trialWaitSpot, Vector2.zero);
+                for (float w = 0f; w < 2.5f && !controller.IsGrounded && !unexpectedPlayerDeath; w += Time.deltaTime) yield return null;
+                if (unexpectedPlayerDeath) { Abort("player death while preparing jump: " + unexpectedDeathReason); yield break; }
+                if (!controller.IsGrounded)
+                {
+                    Abort("player did not reach ground at " + player.transform.position.ToString("F2") + " within 2.5 s");
+                    yield break;
+                }
+                // A move can chain while the target sees the player; waiting at the far side avoids restarting it.
+                for (float w = 0f; w < 6f && brain.IsBusy && !unexpectedPlayerDeath; w += Time.deltaTime) yield return null;
+                if (unexpectedPlayerDeath) { Abort("player death while waiting for target: " + unexpectedDeathReason); yield break; }
+                if (brain.IsBusy) { Abort("target remained busy after 6 s at player x=" + player.transform.position.x.ToString("0.00")); yield break; }
+                if (!controller.IsGrounded) { Abort("player lost ground while target finished its move"); yield break; }
+                // Keep this reposition and jump in the same frame so the target cannot strike during setup.
+                Place(new Vector2(sx, p.max.y + 1f), Vector2.zero);
+                safeSpot = new Vector2(sx, p.max.y + 1f);
                 int hp = e.CurrentHealth;
                 int dir = 0;
                 float speed = 0f;
@@ -948,28 +1027,42 @@ namespace MazeRunner.EditorTools
                 }
                 float start = Time.time, impact = -1f;
                 bool left = false, threat = false;
-                for (float t = 0f; t < 2.2f && e != null && !e.IsDead; t += Time.deltaTime)
+                bool completed = false;
+                for (float t = 0f; t < 2.2f && e != null && !e.IsDead && !unexpectedPlayerDeath; t += Time.deltaTime)
                 {
+                    r.Frames++;
                     KeepAlive();
                     if (!drop) Hold(dir, true, speed);
                     if (!controller.IsGrounded) left = true;
                     if (brain.Forecast.OnTarget) threat = true;
-                    if (e.CurrentHealth < hp || (left && controller.IsGrounded && t > 0.1f)) { impact = Time.time; break; }
+                    if (e.CurrentHealth < hp || (left && controller.IsGrounded && t > 0.1f)) { impact = Time.time; completed = true; break; }
                     yield return null;
                 }
                 Release();
-                if (impact < 0f) impact = Time.time;
+                if (unexpectedPlayerDeath) { Abort("player died during jump: " + unexpectedDeathReason); yield break; }
+                if (e == null || e.IsDead) { Abort("target died or was removed during jump"); yield break; }
+                if (!left) { Abort("player never left the ground"); yield break; }
+                // A full observation window without impact is a valid no-impact observation, but it cannot
+                // count as a pre-impact response or as a landed short stomp.
+                if (!completed) impact = Time.time;
                 yield return new WaitForSeconds(0.15f);
-                var r = new JumpResult { Threat = threat, Landed = e != null && e.CurrentHealth < hp };
+                if (unexpectedPlayerDeath) { Abort("player died while recording jump: " + unexpectedDeathReason); yield break; }
+                r.Valid = true;
+                r.ImpactObserved = completed;
+                r.Threat = threat;
+                r.Landed = e.CurrentHealth < hp;
                 foreach (var ev in events)
                 {
                     if (ev.who != brain || ev.time < start || ev.time > impact + 0.1f) continue;
                     string key = ev.what.Split(' ')[0];
                     if (!Defences.Contains(key)) continue;
                     r.Reacted = true;
+                    r.ReactionCount++;
                     r.Reaction = r.Reaction == null ? key : r.Reaction;
-                    r.ReactedBeforeImpact |= ev.time < impact;
+                    r.ReactedBeforeImpact |= completed && ev.time < impact;
                 }
+                r.ReactionCooldown = CooldownRemaining(ReactionCooldownField, brain);
+                r.PunishCooldown = CooldownRemaining(PunishCooldownField, brain);
                 results.Add(r);
                 // Step off and wait, as a player resets between attempts (and the enemy finishes what it started).
                 if (e != null)
@@ -979,6 +1072,10 @@ namespace MazeRunner.EditorTools
                 }
                 yield return new WaitForSeconds(1.2f);
             }
+
+            private static float CooldownRemaining(FieldInfo field, EnemyBehaviour brain) =>
+                field == null || brain == null || !field.DeclaringType.IsInstanceOfType(brain)
+                    ? -1f : Mathf.Max(0f, (float)field.GetValue(brain) - Time.time);
 
             /// <summary>
             /// Direct stomp jumps, vertical hops beside it and jumps that land short on purpose. <paramref name="bossLevel"/>
@@ -996,40 +1093,83 @@ namespace MazeRunner.EditorTools
                 var misses = new List<JumpResult>();
                 int firstEvent = events.Count;
                 int attempts = 0;
+                int attemptsRun = 0;
                 float learnedChance = 0f;
+                int planned = direct + 14;
+
+                List<JumpResult> AllResults() => hits.Concat(drops).Concat(hops).Concat(misses).ToList();
+                string Metrics(IEnumerable<JumpResult> values)
+                {
+                    var rs = values.ToList();
+                    float reactionCooldown = rs.Where(r => r.Valid && r.ReactionCooldown >= 0f).Select(r => r.ReactionCooldown).DefaultIfEmpty(0f).Max();
+                    var punishCooldowns = rs.Where(r => r.Valid && r.PunishCooldown >= 0f).Select(r => r.PunishCooldown).ToArray();
+                    float punishCooldown = punishCooldowns.Length > 0 ? punishCooldowns.Max() : -1f;
+                    return "attempts=" + rs.Count + ", valid=" + rs.Count(r => r.Valid) + ", threats=" + rs.Count(r => r.Valid && r.Threat) +
+                           ", impact-observed=" + rs.Count(r => r.Valid && r.ImpactObserved) + ", frames=" + rs.Sum(r => r.Frames) +
+                           ", reactions=" + rs.Sum(r => r.ReactionCount) + ", before-impact=" + rs.Count(r => r.ReactedBeforeImpact) +
+                           ", reaction-cooldown-max=" + reactionCooldown.ToString("0.00") + "s" +
+                           (punishCooldown >= 0f ? ", punish-cooldown-max=" + punishCooldown.ToString("0.00") + "s" : "");
+                }
+                void Abort(string reason)
+                {
+                    var all = AllResults();
+                    Log("ABORT " + L + " " + who + " prediction trial: " + Metrics(all) + ", planned=" + planned + ", reason=" + reason);
+                    Check(false, who + " prediction trials completed", Metrics(all) + ", planned=" + planned + ", reason=" + reason);
+                }
 
                 // Direct stomp jumps from alternate sides, then drops straight over its head.
-                for (int i = 0; i < direct + 6 && e != null && !e.IsDead; i++)
+                for (int i = 0; i < direct + 6; i++)
                 {
+                    if (unexpectedPlayerDeath) { Abort("player death: " + unexpectedDeathReason); yield break; }
+                    if (e == null || e.IsDead) { Abort("target died or was removed before direct/overhead attempt " + (i + 1)); yield break; }
                     if (e.CurrentHealth <= 1) RestoreHealth(e);
                     if (i < direct)
                     {
                         int from = i % 2 == 0 ? -1 : 1;
                         if (Room(e, from) < run && Room(e, -from) > Room(e, from)) from = -from;
+                        attemptsRun++;
                         yield return Jump(e, from * Mathf.Min(run, Room(e, from)), hits, 0f);
+                        if (!hits[hits.Count - 1].Valid) { Abort(hits[hits.Count - 1].InvalidReason); yield break; }
                     }
-                    else yield return Jump(e, 0f, drops, 0f, drop: true);
-                    if (e == null) break;
+                    else
+                    {
+                        attemptsRun++;
+                        yield return Jump(e, 0f, drops, 0f, drop: true);
+                        if (!drops[drops.Count - 1].Valid) { Abort(drops[drops.Count - 1].InvalidReason); yield break; }
+                    }
                     attempts = Mathf.Max(attempts, brain.RecentStompAttempts);
                     learnedChance = Mathf.Max(learnedChance, brain.ReadChance(0.3f));
                 }
-                for (int i = 0; i < 4 && e != null && !e.IsDead; i++)
+                for (int i = 0; i < 4; i++)
                 {
+                    if (unexpectedPlayerDeath) { Abort("player death: " + unexpectedDeathReason); yield break; }
+                    if (e == null || e.IsDead) { Abort("target died or was removed before hop attempt " + (i + 1)); yield break; }
                     if (e.CurrentHealth <= 1) RestoreHealth(e);
+                    attemptsRun++;
                     yield return Jump(e, (i % 2 == 0 ? -1f : 1f) * (half + 2.8f), hops, float.NaN);
+                    if (!hops[hops.Count - 1].Valid) { Abort(hops[hops.Count - 1].InvalidReason); yield break; }
                 }
-                for (int i = 0; i < 4 && e != null && !e.IsDead; i++)
+                for (int i = 0; i < 4; i++)
                 {
+                    if (unexpectedPlayerDeath) { Abort("player death: " + unexpectedDeathReason); yield break; }
+                    if (e == null || e.IsDead) { Abort("target died or was removed before short-landing attempt " + (i + 1)); yield break; }
                     if (e.CurrentHealth <= 1) RestoreHealth(e);
                     int from = i % 2 == 0 ? -1 : 1;
                     float shortBy = half + 1.3f; // comes down about 1.3 short of its body
                     if (Room(e, from) < run + shortBy && Room(e, -from) > Room(e, from)) from = -from;
+                    attemptsRun++;
                     yield return Jump(e, from * Mathf.Min(run + shortBy, Room(e, from)), misses, shortBy);
+                    if (!misses[misses.Count - 1].Valid) { Abort(misses[misses.Count - 1].InvalidReason); yield break; }
                 }
-                if (e == null || e.IsDead) { Log("INFO " + L + " " + who + " died during the prediction trials"); yield break; }
+                if (attemptsRun != planned || AllResults().Count(r => r.Valid) != planned)
+                {
+                    Abort("completed " + attemptsRun + " of " + planned + " attempts");
+                    yield break;
+                }
 
                 string Summary(List<JumpResult> rs) => rs.Count(r => r.Threat) + " read, " + rs.Count(r => r.ReactedBeforeImpact) + " answered before impact, " +
                                                       rs.Count(r => r.Landed) + " landed of " + rs.Count + " [" + string.Join(" ", rs.Select(r => r.Reaction ?? "-")) + "]";
+                Log("INFO " + L + " " + who + " prediction observations: " + Metrics(AllResults()));
                 Log("INFO " + L + " " + who + " (" + brain.Tier + ") direct: " + Summary(hits) + "; overhead: " + Summary(drops) + "; hops: " + Summary(hops) +
                     "; short: " + Summary(misses) + "; most attempts remembered " + attempts + ", chance 0.30 learned up to " + learnedChance.ToString("0.00") +
                     "; input " + (keysDrive ? "keyboard" : "body"));
@@ -1049,7 +1189,7 @@ namespace MazeRunner.EditorTools
                 if (bossLevel == 3)
                 {
                     Check(mine.Contains("dodge"), "Goblin Warchief dodges a predicted stomp", string.Join(",", mine.Distinct()));
-                    Check(misses.Any(r => r.Reaction == "read" || r.Reaction == "punish"), "Goblin Warchief punishes a stomp that lands short", Summary(misses));
+                    Check(misses.Any(r => r.Valid && r.ImpactObserved && (r.Reaction == "read" || r.Reaction == "punish")), "Goblin Warchief punishes a stomp that lands short", Summary(misses));
                 }
             }
 

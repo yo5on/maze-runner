@@ -19,28 +19,24 @@
   <meta name="twitter:card" content="summary_large_image">
   <link rel="icon" type="image/png" href="../TemplateData/icon-192.png">
   <link rel="apple-touch-icon" href="../TemplateData/icon-180.png">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Instrument+Sans:wght@400..700&family=Instrument+Serif&display=swap">
   <style>
-    /* In the portfolio's palette (yo5on.runs-at.dev, default theme): deep navy, stone text,
-       crimson accent, moth ivory; Instrument Serif headings, Instrument Sans UI, IBM Plex Mono.
-       Small letter-spaced labels; hairlines; square corners; corner-marked plates.
+    /* In the portfolio's palette (yo5on.runs-at.dev): navy, stone, crimson, moth ivory, and the
+       game's display face (yoster). Small letter-spaced labels; hairlines; corner-marked plates.
        Desktop (>= 900px): a landscape card - screenshot on the left, details and
        Play Now on the right. Narrower screens: one compact column. */
+    @font-face { font-family: "Yoster"; src: url("../TemplateData/yoster.ttf") format("truetype"); font-display: swap; }
     :root {
       --navy: #1b1e4a;
-      --surface: #14163a;
       --mist: #afaea2;
       --accent: #d21319;
       --accent-text: #da1e24;
       --cream: #f3ead7;
       --mist-soft: rgba(175, 174, 162, 0.86);
-      --mist-faint: rgba(175, 174, 162, 0.72); /* portfolio's .48 is too faint for 11px labels */
+      --mist-faint: rgba(175, 174, 162, 0.75);
       --hair: rgba(175, 174, 162, 0.2);
-      --ui: "Instrument Sans", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
-      --display: "Instrument Serif", "Times New Roman", serif;
-      --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+      --ui: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+      --display: "Yoster", system-ui, sans-serif;
+      --mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
       --fs-label: 11px;
       --ls-label: 0.08em;
       --ease: cubic-bezier(0.22, 1, 0.36, 1);
@@ -77,8 +73,8 @@
     .frame {
       width: min(100%, 560px);
       border: 1px solid var(--hair);
-      border-radius: 0;
-      background: var(--surface);
+      border-radius: 12px;
+      background: var(--navy);
       overflow: hidden;
     }
 
@@ -118,19 +114,19 @@
       line-height: 1;
       text-transform: uppercase;
       white-space: nowrap;
-      color: var(--accent-text);
+      color: var(--cream);
     }
 
     .kicker {
       font-size: var(--fs-label);
-      font-weight: 600;
+      font-weight: 500;
       letter-spacing: var(--ls-label);
       text-transform: uppercase;
       color: var(--mist-faint);
       white-space: nowrap;
     }
 
-    .kicker b { color: var(--cream); font-weight: 600; }
+    .kicker b { color: var(--accent-text); font-weight: 500; }
 
     .tags {
       margin-left: auto;
@@ -157,7 +153,7 @@
       margin: 0;
       padding: 8px;
       border: 1px solid var(--hair);
-      border-radius: 0;
+      border-radius: 6px;
       background: rgba(175, 174, 162, 0.05);
     }
 
@@ -171,8 +167,8 @@
       pointer-events: none;
     }
 
-    .plate::before { top: -1px; left: -1px; border-width: 1px 0 0 1px; }
-    .plate::after { bottom: -1px; right: -1px; border-width: 0 1px 1px 0; }
+    .plate::before { top: -1px; left: -1px; border-width: 1px 0 0 1px; border-top-left-radius: 6px; }
+    .plate::after { bottom: -1px; right: -1px; border-width: 0 1px 1px 0; border-bottom-right-radius: 6px; }
 
     .plate img {
       display: block;
@@ -181,7 +177,7 @@
       aspect-ratio: 16 / 9;
       object-fit: cover;
       object-position: 50% 80%;
-      border-radius: 0;
+      border-radius: 3px;
       background: var(--navy);
     }
 
@@ -191,7 +187,7 @@
       gap: 12px;
       padding: 8px 2px 0;
       font-size: var(--fs-label);
-      font-weight: 600;
+      font-weight: 500;
       letter-spacing: var(--ls-label);
       text-transform: uppercase;
       color: var(--mist-faint);
@@ -223,7 +219,7 @@
 
     .facts dt {
       font-size: var(--fs-label);
-      font-weight: 600;
+      font-weight: 500;
       letter-spacing: var(--ls-label);
       text-transform: uppercase;
       color: var(--mist-faint);
@@ -240,10 +236,10 @@
       gap: 12px;
       min-height: 56px;
       padding: 14px 24px;
-      border: 1px solid var(--accent);
-      border-radius: 0;
+      border: 2px solid var(--accent);
+      border-radius: 6px;
       background: rgba(210, 19, 25, 0.16);
-      color: var(--cream);
+      color: var(--mist);
       font-family: var(--ui);
       font-size: 16px;
       font-weight: 700;
@@ -258,7 +254,7 @@
     .play:hover { background: rgba(210, 19, 25, 0.3); }
 
     .play:active { transform: translateY(1px); background: rgba(210, 19, 25, 0.4); }
-    .play:focus-visible { outline: 1px solid var(--accent-text); outline-offset: 5px; }
+    .play:focus-visible { outline: 2px solid var(--mist); outline-offset: 3px; }
     .play:disabled, .play[aria-disabled="true"] { border-color: var(--hair); background: transparent; color: var(--mist-faint); }
 
     .play svg { width: 15px; height: 15px; fill: var(--accent-text); transition: transform 0.3s var(--ease); }
@@ -285,7 +281,7 @@
       padding: 10px 12px;
       border: 1px solid var(--accent);
       border-left-width: 3px;
-      border-radius: 0;
+      border-radius: 6px;
       font-size: 14px;
       line-height: 1.45;
       color: var(--mist);
@@ -314,7 +310,7 @@
       padding: 1px 5px;
       border: 1px solid var(--hair);
       border-bottom-width: 2px;
-      border-radius: 0;
+      border-radius: 4px;
       font-family: var(--mono);
       font-size: 10px;
       line-height: 1.5;
@@ -326,7 +322,7 @@
 
     .links a {
       font-size: var(--fs-label);
-      font-weight: 600;
+      font-weight: 500;
       letter-spacing: var(--ls-label);
       text-transform: uppercase;
       color: var(--mist-soft);
@@ -337,7 +333,7 @@
     }
 
     .links a:hover { color: var(--mist); border-bottom-width: 2px; }
-    .links a:focus-visible { outline: 1px solid var(--accent-text); outline-offset: 5px; }
+    .links a:focus-visible { outline: 2px solid var(--mist); outline-offset: 3px; }
 
     .links svg {
       width: 0.95em;
@@ -345,7 +341,7 @@
       margin-left: 0.3em;
       vertical-align: -1px;
       fill: none;
-      stroke: var(--accent-text);
+      stroke: var(--accent);
       stroke-width: 2;
     }
 
@@ -384,7 +380,7 @@
     /* Short landscape screens (phones turned sideways): tighter chrome. */
     @media (orientation: landscape) and (max-height: 540px) and (min-width: 560px) {
       body { padding-top: max(8px, env(safe-area-inset-top)); padding-bottom: max(8px, env(safe-area-inset-bottom)); }
-      .frame { --floor: 0px; --chrome: 92px; --share: 0.6; }
+      .frame { --floor: 0px; --chrome: 92px; --share: 0.6; border-radius: 10px; }
       .head { padding: 9px 16px; gap: 10px; }
       .head svg { width: 20px; height: 20px; }
       h1 { font-size: 22px; }

@@ -443,6 +443,7 @@ namespace MazeRunner.UI
 
             var button = rect.gameObject.AddComponent<PaletteButton>();
             button.Init(style, frame, fill);
+            rect.gameObject.AddComponent<UIButtonSound>();
             button.onClick.AddListener(action);
             return button;
         }

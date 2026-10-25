@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using MazeRunner.Player;
 using MazeRunner.Collectibles;
 using MazeRunner.Levels;
@@ -6,8 +7,15 @@ using MazeRunner.Settings;
 
 namespace MazeRunner.Audio
 {
+    /// <summary>
+    /// The game's one music + sound-effects player. It is spawned from Resources/AudioManager before the
+    /// first scene and lives for the whole session, so the menus have sound and the music carries on
+    /// across scenes instead of restarting (scenes must not hold their own copy).
+    /// </summary>
     public class AudioManager : MonoBehaviour
     {
+        public const string ResourcePath = "AudioManager";
+
         private static AudioManager instance;
         
         [Header("Audio Sources")]
@@ -26,6 +34,19 @@ namespace MazeRunner.Audio
         [SerializeField] private AudioClip respawnClip;
         
         public static AudioManager Instance => instance;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+        private static void CreateOnLoad()
+        {
+            if (instance != null) return;
+            var prefab = Resources.Load<AudioManager>(ResourcePath);
+            if (prefab == null)
+            {
+                Debug.LogError("AudioManager: Resources/" + ResourcePath + " prefab is missing - the game has no sound.");
+                return;
+            }
+            Instantiate(prefab).name = prefab.name;
+        }
         
         private void Awake()
         {
@@ -47,10 +68,12 @@ namespace MazeRunner.Audio
             // stay the 100% level.
             VolumeChannelSource.Attach(sfxSource, VolumeChannel.Sfx);
             VolumeChannelSource.Attach(musicSource, VolumeChannel.Music);
+            SceneManager.sceneLoaded += OnSceneLoaded;
         }
         
         private void Start()
         {
+            ResumeMusic();
             Collectible.OnCollected += OnCollectibleCollected;
             
             if (LevelProgressionManager.Instance != null)
@@ -63,6 +86,7 @@ namespace MazeRunner.Audio
         {
             if (instance == this)
             {
+                SceneManager.sceneLoaded -= OnSceneLoaded;
                 Collectible.OnCollected -= OnCollectibleCollected;
                 
                 if (LevelProgressionManager.Instance != null)
@@ -127,12 +151,19 @@ namespace MazeRunner.Audio
             }
         }
         
+        /// <summary>Continues the music where it was paused, or starts it if it has not played yet.</summary>
         public void ResumeMusic()
         {
-            if (musicSource != null && !musicSource.isPlaying)
-            {
-                musicSource.UnPause();
-            }
+            if (musicSource == null || musicSource.clip == null || musicSource.isPlaying) return;
+            musicSource.UnPause();
+            if (!musicSource.isPlaying) musicSource.Play();
+        }
+
+        // A pause menu or game-over screen pauses the music; restarting, retrying or going back to a menu
+        // loads a scene without resuming it, so every new scene brings it back.
+        private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+        {
+            ResumeMusic();
         }
         
         private void PlaySFX(AudioClip clip)

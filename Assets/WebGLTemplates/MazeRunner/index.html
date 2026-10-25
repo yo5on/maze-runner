@@ -420,6 +420,8 @@
     // files, so the game is not started again until Play Now is clicked.
     window.mazeRunnerQuit = function () {
       releaseAll();
+      // Embedded in the preview page's stage: let that page close the game instead.
+      try { if (window.parent !== window && window.parent.mazeRunnerCloseGame) { window.parent.mazeRunnerCloseGame(); return; } } catch (e) { /* other origin */ }
       window.location.assign(new URL("preview/", window.location.href).href);
     };
 

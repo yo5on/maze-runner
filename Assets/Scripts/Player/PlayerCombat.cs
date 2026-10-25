@@ -80,7 +80,6 @@ namespace MazeRunner.Player
                     Audio.AudioManager.Instance.PlayEnemyDefeat();
                 }
             }
-            // Body collision does not damage player - only sword attacks via Animation Events
         }
     }
 }

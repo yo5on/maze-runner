@@ -1,6 +1,7 @@
 using System.Collections;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using TMPro;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -230,7 +231,7 @@ namespace MazeRunner.EditorTools
                 Check(play != null && Selected == play.gameObject, "main menu: Play has the focus when it opens", Name(Selected));
                 Check(!FrameOn(Selected), "main menu: no focus frame before any key is pressed");
                 TMP_Text playLabel = play != null ? play.GetComponentInChildren<TMP_Text>() : null;
-                Check(playLabel != null && playLabel.text.Contains("Level 2"), "main menu: Play shows the level it continues", playLabel != null ? playLabel.text : "");
+                Check(playLabel != null && playLabel.text.Trim() == "Play", "main menu: Play is labelled just Play, with no level number", playLabel != null ? playLabel.text : "");
                 GameObject before = Selected;
                 yield return Press(Key.DownArrow);
                 Check(Selected != null && Selected != before && MenuNavigator.IsOpen("MainMenuPanel"), "main menu: Down moves the focus", Name(before) + " -> " + Name(Selected));
@@ -250,6 +251,10 @@ namespace MazeRunner.EditorTools
                     Check(Selected == settings.gameObject, "main menu: arrows reach Settings", Name(Selected));
                     yield return Press(Key.Enter);
                     Check(SettingsMenu.IsOpen, "Enter opens Settings");
+                    var menu = FindAnyObjectByType<SettingsMenu>();
+                    var hint = menu != null ? (TMP_Text)typeof(SettingsMenu).GetField("hint", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(menu) : null;
+                    Check(hint != null && hint.preferredHeight <= hint.rectTransform.rect.height, "Settings: the controls hint fits its box (clear of the buttons)",
+                        hint != null ? hint.preferredHeight.ToString("0") + " / " + hint.rectTransform.rect.height.ToString("0") : "no hint");
                     Slider slider = Selected != null ? Selected.GetComponent<Slider>() : null;
                     Check(slider != null, "Settings: a slider has the focus", Name(Selected));
                     if (slider != null)
