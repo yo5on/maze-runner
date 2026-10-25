@@ -29,11 +29,11 @@
 | <samp>Fullscreen</samp> | <samp><kbd>F</kbd> or the fullscreen button</samp> | <samp>Fullscreen button (Android); Home Screen on iPhone</samp> |
 | <samp>Menus</samp> | <samp>Mouse click</samp> | <samp>Tap</samp> |
 
-<samp>Enemies are defeated by landing on them. The joystick and buttons appear only on touch devices and can be used at the same time (run and jump). Landscape gives the largest view.</samp>
+<samp>Most regular enemies are defeated by landing on them; boss encounters use their own health pools and display a boss health bar. The joystick and buttons appear only on touch devices and can be used at the same time (run and jump). Landscape gives the largest view.</samp>
 
 <samp><b>Characters:</b> Main Menu → Customization lets you pick one of six complete characters (Silver Angel, Hooded Angel and Crowned Angel from the Fallen Angels pack; Dark Oracle 2, Dark Oracle 3 and Valkyrie 1, each with its own skeleton and animations) with Previous / Next and a preview, then Apply. The choice is saved in the browser (PlayerPrefs) and used in Levels 1–3, after restarts and on later visits; movement, physics, health and combat are the same for every character.</samp>
 
-<samp><b>Goblins:</b> regular goblins patrol their platform with their swords drawn, turn at ledges, walls and the ends of their patrol, and stop to slash when you are in reach. When one of two goblins sharing a platform dies, the other patrols the whole platform. The boss stands guard until it spots you, then runs at you.</samp>
+<samp><b>Goblins:</b> regular goblins patrol their platform with their swords drawn, turn at ledges, walls and the ends of their patrol, and stop to slash when you are in reach. When one of two goblins sharing a platform dies, the other patrols the whole platform. The three boss encounters are the Level 1 Ogre Warlord, Level 2 Plague Alchemist and Level 3 Goblin Warchief, each with a dedicated boss health bar. The Ogre focuses on close-range slams; the Plague Alchemist keeps distance and throws potions; the Warchief pursues the player.</samp>
 
 <samp><b>More enemies (Level 1):</b> Villager Zombie 1 and 3, Skeleton Warrior 2 and 3, Bloody Alchemist 1, Skeleton Crusader 1, Wraith 3 and an Ogre patrol the platforms between the goblins. They use the goblins' AI (patrol, notice, slash, hurt, die) with their own speed and health; stomp them like goblins. Placement: <code>Assets/Resources/LevelEnemies/Level1.asset</code>.</samp>
 
@@ -53,7 +53,7 @@
 
 <samp>The project is an active college project prototype. Its current source includes implemented game systems and authored Unity scenes; the repository does not include a release build or a complete testing record. Descriptions of implemented systems below are based on the current source, scene, prefab, and project configuration files. A script existing in the project does not by itself guarantee it is used in every scene.</samp>
 
-<samp>Recent history (September 2026) records work on enemy animations, level audio, enemy fall death, a one-respawn game-over flow, and a heart-based health HUD that shows one heart per point of the player’s maximum health (seven in Level 1, three in Levels 2 and 3). Older root notes describe an earlier phase and conflict with the current scenes and packages, so they should not be treated as the present project specification.</samp>
+<samp>Recent history (October 2026) includes work on enemy animations, level audio, fall-death handling, the one-respawn game-over flow, the heart-based health HUD, settings and customization, and the three boss encounters. The maximum-health HUD is currently configured for seven hearts in Level 1 and three in Levels 2 and 3. Older root notes describe an earlier phase and conflict with the current scenes and packages, so they should not be treated as the present project specification.</samp>
 
 ---
 
@@ -118,7 +118,7 @@ powershell -ExecutionPolicy Bypass -File tools/deploy-gh-pages.ps1
 <samp><b>Known limitations of the Web version:</b></samp>
 
 - <samp>The live build was produced with Unity <b>6000.6.5f1</b> (the project targets <b>6000.5.1f1</b>); the version upgrade was not committed.</samp>
-- <samp><b>Quit</b> does nothing in a browser; close the tab instead. <b>Settings</b> is not implemented yet (same as desktop).</samp>
+- <samp>In WebGL, <b>Quit</b> returns to the game's preview page because a browser page cannot close its own tab. <b>Settings</b> provides Music and Sound Effects volume sliders plus a mobile control layout choice (joystick + Jump or Left/Right buttons + Jump). Changes apply immediately and are saved in browser storage.</samp>
 - <samp>Progress and customization are saved in the browser's storage (IndexedDB) and are lost if site data is cleared or in private windows.</samp>
 - <samp>In portrait on phones the game is small because the levels are 16:9; rotate to landscape.</samp>
 - <samp>Progress saved in the Home Screen version of the game is stored separately from progress saved in Safari.</samp>
