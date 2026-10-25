@@ -420,6 +420,8 @@
     // files, so the game is not started again until Play Now is clicked.
     window.mazeRunnerQuit = function () {
       releaseAll();
+      // Embedded in the preview page's stage: let that page close the game instead.
+      try { if (window.parent !== window && window.parent.mazeRunnerCloseGame) { window.parent.mazeRunnerCloseGame(); return; } } catch (e) { /* other origin */ }
       window.location.assign(new URL("preview/", window.location.href).href);
     };
 
@@ -594,9 +596,9 @@
     var buildUrl = "Build";
     var config = {
       arguments: [],
-      dataUrl: buildUrl + "/1bc2dafd9899db90ecadbce9294fddca.data.unityweb",
+      dataUrl: buildUrl + "/2814775d9e0012f93b81c8814e7960ab.data.unityweb",
       frameworkUrl: buildUrl + "/08361952a81dc88dd84e7995b052f0de.framework.js.unityweb",
-      codeUrl: buildUrl + "/9bbb241a54f4168c373512c323dd2d8d.wasm.unityweb",
+      codeUrl: buildUrl + "/144b75b975d5f88afeaf5955cf3fc7cd.wasm.unityweb",
       streamingAssetsUrl: "StreamingAssets",
       companyName: "DefaultCompany",
       productName: "maze-runner",
@@ -611,7 +613,7 @@
     var fill = document.getElementById("loading-fill");
     var loadingText = document.getElementById("loading-text");
     var script = document.createElement("script");
-    script.src = buildUrl + "/f3d8c2e987a9ef13a24f83414a394b95.loader.js";
+    script.src = buildUrl + "/07d4666958929fdadb03203a1f8e367d.loader.js";
     script.onload = function () {
       createUnityInstance(canvas, config, function (progress) {
         var pct = Math.round(progress * 100);

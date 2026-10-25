@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Maze Runner — Play in your browser</title>
   <meta name="description" content="Maze Runner, a 2D side-scrolling platformer made with Unity. Play it in your browser on desktop or mobile.">
-  <meta name="theme-color" content="#1b2b4a">
+  <meta name="theme-color" content="#1b1e4a">
   <meta name="color-scheme" content="dark">
   <link rel="canonical" href="https://yo5on.github.io/maze-runner/preview/">
   <meta property="og:type" content="website">
@@ -20,19 +20,20 @@
   <link rel="icon" type="image/png" href="../TemplateData/icon-192.png">
   <link rel="apple-touch-icon" href="../TemplateData/icon-180.png">
   <style>
-    /* In the game's own palette: night navy, pale-sky mist, grass green, moon cream, and the
+    /* In the portfolio's palette (yo5on.runs-at.dev): navy, stone, crimson, moth ivory, and the
        game's display face (yoster). Small letter-spaced labels; hairlines; corner-marked plates.
        Desktop (>= 900px): a landscape card - screenshot on the left, details and
        Play Now on the right. Narrower screens: one compact column. */
     @font-face { font-family: "Yoster"; src: url("../TemplateData/yoster.ttf") format("truetype"); font-display: swap; }
     :root {
-      --navy: #1b2b4a;
-      --mist: #b4c2d6;
-      --accent: #4da861;
+      --navy: #1b1e4a;
+      --mist: #afaea2;
+      --accent: #d21319;
+      --accent-text: #da1e24;
       --cream: #f3ead7;
-      --mist-soft: rgba(180, 194, 214, 0.9);
-      --mist-faint: rgba(180, 194, 214, 0.75);
-      --hair: rgba(180, 194, 214, 0.2);
+      --mist-soft: rgba(175, 174, 162, 0.86);
+      --mist-faint: rgba(175, 174, 162, 0.75);
+      --hair: rgba(175, 174, 162, 0.2);
       --ui: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
       --display: "Yoster", system-ui, sans-serif;
       --mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
@@ -125,7 +126,7 @@
       white-space: nowrap;
     }
 
-    .kicker b { color: var(--accent); font-weight: 500; }
+    .kicker b { color: var(--accent-text); font-weight: 500; }
 
     .tags {
       margin-left: auto;
@@ -153,7 +154,7 @@
       padding: 8px;
       border: 1px solid var(--hair);
       border-radius: 6px;
-      background: rgba(180, 194, 214, 0.05);
+      background: rgba(175, 174, 162, 0.05);
     }
 
     .plate::before,
@@ -237,7 +238,7 @@
       padding: 14px 24px;
       border: 2px solid var(--accent);
       border-radius: 6px;
-      background: rgba(77, 168, 97, 0.16);
+      background: rgba(210, 19, 25, 0.16);
       color: var(--mist);
       font-family: var(--ui);
       font-size: 16px;
@@ -250,26 +251,26 @@
       -webkit-tap-highlight-color: transparent;
     }
 
-    .play:hover { background: rgba(77, 168, 97, 0.3); }
+    .play:hover { background: rgba(210, 19, 25, 0.3); }
 
-    .play:active { transform: translateY(1px); background: rgba(77, 168, 97, 0.4); }
+    .play:active { transform: translateY(1px); background: rgba(210, 19, 25, 0.4); }
     .play:focus-visible { outline: 2px solid var(--mist); outline-offset: 3px; }
     .play:disabled, .play[aria-disabled="true"] { border-color: var(--hair); background: transparent; color: var(--mist-faint); }
 
-    .play svg { width: 15px; height: 15px; fill: var(--accent); transition: transform 0.3s var(--ease); }
+    .play svg { width: 15px; height: 15px; fill: var(--accent-text); transition: transform 0.3s var(--ease); }
     .play:hover svg, .play:focus-visible svg { transform: translateX(2px); }
 
     .play .spinner {
       display: none;
       width: 16px;
       height: 16px;
-      border: 2px solid rgba(180, 194, 214, 0.35);
+      border: 2px solid rgba(175, 174, 162, 0.35);
       border-top-color: var(--mist);
       border-radius: 50%;
       animation: spin 0.8s linear infinite;
     }
 
-    .play[aria-busy="true"] { cursor: progress; background: rgba(77, 168, 97, 0.3); }
+    .play[aria-busy="true"] { cursor: progress; background: rgba(210, 19, 25, 0.3); }
     .play[aria-busy="true"] svg { display: none; }
     .play[aria-busy="true"] .spinner { display: block; }
 
@@ -284,7 +285,7 @@
       font-size: 14px;
       line-height: 1.45;
       color: var(--mist);
-      background: rgba(77, 168, 97, 0.08);
+      background: rgba(210, 19, 25, 0.08);
     }
 
     .error[hidden] { display: none; }
