@@ -17,8 +17,9 @@ namespace MazeRunner.UI
     ///   default focus (its own preference, see <see cref="PreferFocus"/>, else its first control); when it
     ///   closes, the menu below gets back the control that had focus. A focus that becomes invalid (a
     ///   button disabled or hidden) moves to the default again.
-    /// - The focused control wears a cream frame - the moon colour of the titles - that pulses gently, so
-    ///   keyboard focus reads on every button colour.
+    /// - The focused control wears a thin cream frame - the moon colour of the titles - that pulses gently, so
+    ///   keyboard focus reads on every button colour. It shows only while the keyboard (or a gamepad) drives
+    ///   the menus: a mouse move, click or scroll, or a touch, hides it until the next key press.
     /// - With no menu open (gameplay) nothing keeps the focus, so Space and Enter can never press a hidden
     ///   or HUD button; while a menu is open, <see cref="BlocksGameplayInput"/> keeps the player's jump and
     ///   movement out of it.
@@ -41,6 +42,7 @@ namespace MazeRunner.UI
         private readonly Dictionary<GameObject, GameObject> lastFocus = new Dictionary<GameObject, GameObject>();
         private bool scanned;
         private bool freshScene = true;
+        private bool keyboardFocus;
         private GameObject top;
         private RectTransform frame;
         private Image frameImage;
@@ -110,6 +112,7 @@ namespace MazeRunner.UI
             EventSystem events = EventSystem.current;
             // Menus built in code when a scene loads exist by its first frame: scan again then.
             if (freshScene) { freshScene = false; scanned = false; }
+            UpdateInputMode();
             if (events == null) { ShowFrame(null); return; }
 
             GameObject open = FindTop();
@@ -142,11 +145,28 @@ namespace MazeRunner.UI
                 events.SetSelectedGameObject(selected);
             }
             if (selected != null) lastFocus[open] = selected;
-            ShowFrame(selected);
+            ShowFrame(keyboardFocus ? selected : null);
 
             // Space presses the focused control as Enter does (the default UI actions submit on Enter only).
             if (selected != null && Keyboard.current != null && Keyboard.current.spaceKey.wasPressedThisFrame)
                 ExecuteEvents.Execute(selected, new BaseEventData(events), ExecuteEvents.submitHandler);
+        }
+
+        /// <summary>Pointer or touch input hides the focus frame; a key press (or gamepad navigation) shows it again.</summary>
+        private void UpdateInputMode()
+        {
+            Mouse mouse = Mouse.current;
+            if (mouse != null && (mouse.delta.ReadValue().sqrMagnitude > 4f || mouse.scroll.ReadValue() != Vector2.zero
+                || mouse.leftButton.wasPressedThisFrame || mouse.rightButton.wasPressedThisFrame))
+                keyboardFocus = false;
+            if (Touchscreen.current != null && Touchscreen.current.primaryTouch.press.wasPressedThisFrame) keyboardFocus = false;
+
+            // Checked last so a key pressed while the mouse drifts still shows the frame.
+            Gamepad pad = Gamepad.current;
+            if ((Keyboard.current != null && Keyboard.current.anyKey.wasPressedThisFrame)
+                || (pad != null && (pad.dpad.ReadValue() != Vector2.zero || pad.leftStick.ReadValue().sqrMagnitude > 0.25f
+                    || pad.buttonSouth.wasPressedThisFrame)))
+                keyboardFocus = true;
         }
 
         private static bool Valid(GameObject go, GameObject panel)
@@ -183,8 +203,8 @@ namespace MazeRunner.UI
                 frame.SetParent(rect, false);
                 frame.anchorMin = Vector2.zero;
                 frame.anchorMax = Vector2.one;
-                frame.offsetMin = new Vector2(-7f, -7f);
-                frame.offsetMax = new Vector2(7f, 7f);
+                frame.offsetMin = new Vector2(-4f, -4f);
+                frame.offsetMax = new Vector2(4f, 4f);
                 frame.localScale = Vector3.one;
                 frame.localRotation = Quaternion.identity;
             }
@@ -206,11 +226,11 @@ namespace MazeRunner.UI
             frameImage.raycastTarget = false;
         }
 
-        /// <summary>A rounded 4 px ring, 9-sliced so it fits any control.</summary>
+        /// <summary>A rounded 1.5 px ring, 9-sliced so it fits any control.</summary>
         private static Sprite FrameSprite()
         {
             const int size = 32, radius = 10;
-            const float ring = 4f;
+            const float ring = 1.5f;
             var tex = new Texture2D(size, size, TextureFormat.RGBA32, false) { name = "KeyboardFocusFrame", wrapMode = TextureWrapMode.Clamp };
             var pixels = new Color32[size * size];
             for (int y = 0; y < size; y++)

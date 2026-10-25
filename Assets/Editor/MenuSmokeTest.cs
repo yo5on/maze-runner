@@ -162,6 +162,15 @@ namespace MazeRunner.EditorTools
                 yield return null;
             }
 
+            private IEnumerator MoveMouse()
+            {
+                Mouse mouse = Mouse.current ?? InputSystem.AddDevice<Mouse>();
+                if (!mouse.enabled) InputSystem.EnableDevice(mouse);
+                InputSystem.QueueStateEvent(mouse, new MouseState { position = new Vector2(10f, 10f), delta = new Vector2(30f, 0f) });
+                yield return null;
+                yield return null;
+            }
+
             private static GameObject Selected => EventSystem.current != null ? EventSystem.current.currentSelectedGameObject : null;
             private static string Name(GameObject go) => go != null ? go.name : "nothing";
 
@@ -219,16 +228,20 @@ namespace MazeRunner.EditorTools
                 Button play = ButtonCalling("PlayGame");
                 Button settings = ButtonCalling("OpenSettings");
                 Check(play != null && Selected == play.gameObject, "main menu: Play has the focus when it opens", Name(Selected));
-                Check(FrameOn(Selected), "main menu: the focused button wears the focus frame");
+                Check(!FrameOn(Selected), "main menu: no focus frame before any key is pressed");
                 TMP_Text playLabel = play != null ? play.GetComponentInChildren<TMP_Text>() : null;
                 Check(playLabel != null && playLabel.text.Contains("Level 2"), "main menu: Play shows the level it continues", playLabel != null ? playLabel.text : "");
                 GameObject before = Selected;
                 yield return Press(Key.DownArrow);
                 Check(Selected != null && Selected != before && MenuNavigator.IsOpen("MainMenuPanel"), "main menu: Down moves the focus", Name(before) + " -> " + Name(Selected));
+                Check(FrameOn(Selected), "main menu: a key press shows the focus frame");
+                yield return MoveMouse();
+                Check(Selected != null && !FrameOn(Selected), "main menu: moving the mouse hides the focus frame");
                 yield return Press(Key.S);
                 yield return Press(Key.W);
                 yield return Press(Key.UpArrow);
                 Check(Selected == before, "main menu: W/S and Up bring the focus back", Name(Selected));
+                Check(FrameOn(Selected), "main menu: keys after the mouse show the focus frame again");
 
                 // Settings: open with Enter, a slider with the arrows, close with Escape.
                 if (settings != null)
