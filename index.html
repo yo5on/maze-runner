@@ -85,10 +85,10 @@
     "use strict";
 
     // The game renders 1080 px tall - the height its Constant Pixel Size UI was laid
-    // out for - at the window's own aspect ratio, clamped to MIN..MAX. Every camera
-    // is orthographic with a fixed vertical size, so a wider canvas shows more of the
-    // level sideways instead of stretching anything. Only windows narrower than 16:9
-    // or wider than 2.4:1 get (thin) bars.
+    // out for - at the window's aspect ratio. Every camera is orthographic with a fixed
+    // vertical size, so a wider canvas shows more of the level sideways instead of
+    // stretching anything. Desktop windows stay within 16:9..2.4:1; touch uses its
+    // full landscape viewport and only keeps 16:9 in portrait.
     var GAME_H = 1080, MIN_ASPECT = 16 / 9, MAX_ASPECT = 2.4;
 
     var root = document.documentElement;
@@ -119,12 +119,11 @@
     }
 
     function viewportSize() {
-      // innerWidth/innerHeight track the visible area on iOS Safari as its
-      // toolbars collapse and expand; visualViewport is the more precise source.
+      // Safari's layout viewport can lag the visible area while its toolbars move.
       var vv = window.visualViewport;
       var w = vv ? Math.round(vv.width) : window.innerWidth;
       var h = vv ? Math.round(vv.height) : window.innerHeight;
-      return { w: Math.min(w, window.innerWidth) || w, h: Math.min(h, window.innerHeight) || h };
+      return { w: w || window.innerWidth, h: h || window.innerHeight };
     }
 
     function layout() {
@@ -145,7 +144,8 @@
       var availW = vp.w - left - right;
       var availH = vp.h - top;
 
-      var aspect = Math.min(MAX_ASPECT, Math.max(MIN_ASPECT, availW / availH));
+      var aspect = Math.max(MIN_ASPECT, availW / availH);
+      if (!isTouch) aspect = Math.min(MAX_ASPECT, aspect);
       var w, h;
       if (availW / availH > aspect) { h = availH; w = Math.round(h * aspect); }
       else { w = availW; h = Math.round(w / aspect); }
@@ -351,16 +351,19 @@
 
       btn.addEventListener("pointerdown", function (e) {
         e.preventDefault();
-        // Touch input is captured by the touched element automatically; release that so
-        // pointerleave fires when the finger slides off the button.
-        try { if (btn.hasPointerCapture(e.pointerId)) btn.releasePointerCapture(e.pointerId); } catch (err) { /* optional */ }
+        var id = e.pointerId;
         engage(e.pointerId);
+        // Touch capture is applied after pointerdown dispatch, so release it on the next task.
+        setTimeout(function () {
+          if (!pointers[id]) return;
+          try { if (btn.hasPointerCapture(id)) btn.releasePointerCapture(id); } catch (err) { /* optional */ }
+        }, 0);
       });
       btn.addEventListener("pointerenter", function (e) {
         // A finger (or held mouse button) sliding in from the other button.
         if (e.buttons & 1) engage(e.pointerId);
       });
-      ["pointerup", "pointercancel", "pointerleave", "lostpointercapture"].forEach(function (type) {
+      ["pointerup", "pointercancel", "pointerleave"].forEach(function (type) {
         btn.addEventListener(type, function (e) { disengage(e.pointerId); });
       });
     });
@@ -555,7 +558,7 @@
           "<ol><li>Tap <b>Share</b> " +
           "<svg class='inline-icon' viewBox='0 0 24 24' aria-hidden='true'><path d='M12 3v12M8 7l4-4 4 4M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7'/></svg>" +
           " in the browser toolbar.</li>" +
-          "<li>Choose <b>Add to Home Screen</b>.</li>" +
+          "<li>Choose <b>Add to Home Screen</b> and enable <b>Open as Web App</b>.</li>" +
           "<li>Open <b>Maze Runner</b> from your Home Screen and turn your phone sideways.</li></ol>" +
           "<p class='sheet-note'>Progress saved in the Home Screen app is kept separately from Safari.</p>";
       } else {
@@ -596,9 +599,9 @@
     var buildUrl = "Build";
     var config = {
       arguments: [],
-      dataUrl: buildUrl + "/2814775d9e0012f93b81c8814e7960ab.data.unityweb",
+      dataUrl: buildUrl + "/d184a4285635c36ae45f27968bd13097.data.unityweb",
       frameworkUrl: buildUrl + "/08361952a81dc88dd84e7995b052f0de.framework.js.unityweb",
-      codeUrl: buildUrl + "/144b75b975d5f88afeaf5955cf3fc7cd.wasm.unityweb",
+      codeUrl: buildUrl + "/b18d09fe3f5ab2d5d89501def49e44a3.wasm.unityweb",
       streamingAssetsUrl: "StreamingAssets",
       companyName: "DefaultCompany",
       productName: "maze-runner",
@@ -613,7 +616,7 @@
     var fill = document.getElementById("loading-fill");
     var loadingText = document.getElementById("loading-text");
     var script = document.createElement("script");
-    script.src = buildUrl + "/07d4666958929fdadb03203a1f8e367d.loader.js";
+    script.src = buildUrl + "/9663074304d92e740159199ebd94782e.loader.js";
     script.onload = function () {
       createUnityInstance(canvas, config, function (progress) {
         var pct = Math.round(progress * 100);
