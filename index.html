@@ -23,7 +23,6 @@
   <div id="stage">
     <canvas id="unity-canvas" tabindex="-1"></canvas>
     <div id="loading" role="status" aria-live="polite">
-      <img id="loading-logo" src="TemplateData/maze-runner-logo.png" alt="" aria-hidden="true">
       <div id="loading-title">Maze Runner</div>
       <div id="loading-track"><div id="loading-fill"></div></div>
       <div id="loading-text">Loading 0%</div>
@@ -599,9 +598,9 @@
     var buildUrl = "Build";
     var config = {
       arguments: [],
-      dataUrl: buildUrl + "/06080d28801737f4fe680e8f71d9928e.data.unityweb",
+      dataUrl: buildUrl + "/b06d5a582871d0434b110d42566d234c.data.unityweb",
       frameworkUrl: buildUrl + "/08361952a81dc88dd84e7995b052f0de.framework.js.unityweb",
-      codeUrl: buildUrl + "/56b464ac4935455b9f9ea0ec293d404d.wasm.unityweb",
+      codeUrl: buildUrl + "/983f36ce1f65dcd63f11fc9c5b91117d.wasm.unityweb",
       streamingAssetsUrl: "StreamingAssets",
       companyName: "DefaultCompany",
       productName: "maze-runner",
@@ -616,7 +615,7 @@
     var fill = document.getElementById("loading-fill");
     var loadingText = document.getElementById("loading-text");
     var script = document.createElement("script");
-    script.src = buildUrl + "/af0dcb471e453e236c328559eb508b45.loader.js";
+    script.src = buildUrl + "/26d489c8e5fafda5e4805b21313abbde.loader.js";
     script.onload = function () {
       createUnityInstance(canvas, config, function (progress) {
         var pct = Math.round(progress * 100);
