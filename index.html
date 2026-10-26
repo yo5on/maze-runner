@@ -13,6 +13,8 @@
   <meta name="apple-mobile-web-app-title" content="Maze Runner">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="apple-touch-icon" href="TemplateData/icon-180.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="TemplateData/icon-16.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="TemplateData/icon-32.png">
   <link rel="icon" type="image/png" href="TemplateData/icon-192.png">
   <title>Maze Runner</title>
   <link rel="stylesheet" href="TemplateData/style.css">
@@ -21,6 +23,7 @@
   <div id="stage">
     <canvas id="unity-canvas" tabindex="-1"></canvas>
     <div id="loading" role="status" aria-live="polite">
+      <img id="loading-logo" src="TemplateData/maze-runner-logo.png" alt="" aria-hidden="true">
       <div id="loading-title">Maze Runner</div>
       <div id="loading-track"><div id="loading-fill"></div></div>
       <div id="loading-text">Loading 0%</div>
@@ -84,12 +87,11 @@
   (function () {
     "use strict";
 
-    // The game renders 1080 px tall - the height its Constant Pixel Size UI was laid
-    // out for - at the window's aspect ratio. Every camera is orthographic with a fixed
-    // vertical size, so a wider canvas shows more of the level sideways instead of
-    // stretching anything. Desktop windows stay within 16:9..2.4:1; touch uses its
-    // full landscape viewport and only keeps 16:9 in portrait.
-    var GAME_H = 1080, MIN_ASPECT = 16 / 9, MAX_ASPECT = 2.4;
+    // Every camera is orthographic with a fixed vertical size, so a wider canvas
+    // shows more of the level sideways instead of stretching anything. Desktop
+    // windows stay within 16:9..2.4:1; touch uses its full landscape viewport and
+    // only keeps 16:9 in portrait.
+    var MIN_ASPECT = 16 / 9, MAX_ASPECT = 2.4;
 
     var root = document.documentElement;
     var body = document.body;
@@ -123,7 +125,12 @@
       var vv = window.visualViewport;
       var w = vv ? Math.round(vv.width) : window.innerWidth;
       var h = vv ? Math.round(vv.height) : window.innerHeight;
-      return { w: w || window.innerWidth, h: h || window.innerHeight };
+      return {
+        x: vv ? Math.round(vv.offsetLeft) : 0,
+        y: vv ? Math.round(vv.offsetTop) : 0,
+        w: w || window.innerWidth,
+        h: h || window.innerHeight
+      };
     }
 
     function layout() {
@@ -150,21 +157,14 @@
       if (availW / availH > aspect) { h = availH; w = Math.round(h * aspect); }
       else { w = availW; h = Math.round(w / aspect); }
 
-      // Render size follows the aspect ratio; Unity picks up the new canvas size.
-      var renderW = Math.round(GAME_H * aspect);
-      if (canvas.width !== renderW || canvas.height !== GAME_H) {
-        canvas.width = renderW;
-        canvas.height = GAME_H;
-      }
-
-      var x = Math.round(left + (availW - w) / 2);
-      var y = Math.round((vp.h - h) / 2);
+      var x = Math.round(vp.x + left + (availW - w) / 2);
+      var y = Math.round(vp.y + (vp.h - h) / 2);
       if (isTouch && portrait) {
         // Center the game in the space above the controls, leaving a row
         // below it for the hint / pause / fullscreen chips.
         var controlsTop = movementControl().getBoundingClientRect().top || vp.h * 0.7;
-        var room = controlsTop - top - 16 - (h + 56);
-        y = Math.round(top + Math.max(0, room / 2));
+        var room = controlsTop - vp.y - top - 16 - (h + 56);
+        y = Math.round(vp.y + top + Math.max(0, room / 2));
       }
 
       stage.style.width = w + "px";
@@ -175,16 +175,16 @@
       root.style.setProperty("--stage-w", w + "px");
       root.style.setProperty("--stage-h", h + "px");
       root.style.setProperty("--stage-bottom", (y + h) + "px");
-      root.style.setProperty("--stage-right", (vp.w - x - w) + "px");
+      root.style.setProperty("--stage-right", (vp.x + vp.w - x - w) + "px");
       updateRotateHint();
 
       // How far the device's safe area cuts into the game, in render pixels.
       var px = canvas.width / w;
       sendSafeArea([
-        Math.max(0, inset.left - x),
-        Math.max(0, inset.top - y),
-        Math.max(0, (x + w) - (vp.w - inset.right)),
-        Math.max(0, (y + h) - (vp.h - inset.bottom))
+        Math.max(0, inset.left - (x - vp.x)),
+        Math.max(0, inset.top - (y - vp.y)),
+        Math.max(0, (x - vp.x + w) - (vp.w - inset.right)),
+        Math.max(0, (y - vp.y + h) - (vp.h - inset.bottom))
       ].map(function (v) { return Math.round(v * px); }).join(","));
     }
 
@@ -599,14 +599,14 @@
     var buildUrl = "Build";
     var config = {
       arguments: [],
-      dataUrl: buildUrl + "/d184a4285635c36ae45f27968bd13097.data.unityweb",
+      dataUrl: buildUrl + "/06080d28801737f4fe680e8f71d9928e.data.unityweb",
       frameworkUrl: buildUrl + "/08361952a81dc88dd84e7995b052f0de.framework.js.unityweb",
-      codeUrl: buildUrl + "/b18d09fe3f5ab2d5d89501def49e44a3.wasm.unityweb",
+      codeUrl: buildUrl + "/56b464ac4935455b9f9ea0ec293d404d.wasm.unityweb",
       streamingAssetsUrl: "StreamingAssets",
       companyName: "DefaultCompany",
       productName: "maze-runner",
       productVersion: "1.0",
-      matchWebGLToCanvasSize: false,
+      matchWebGLToCanvasSize: true,
       showBanner: function (msg, type) {
         if (type === "error") showError(msg);
         else console.warn(msg);
@@ -616,7 +616,7 @@
     var fill = document.getElementById("loading-fill");
     var loadingText = document.getElementById("loading-text");
     var script = document.createElement("script");
-    script.src = buildUrl + "/9663074304d92e740159199ebd94782e.loader.js";
+    script.src = buildUrl + "/af0dcb471e453e236c328559eb508b45.loader.js";
     script.onload = function () {
       createUnityInstance(canvas, config, function (progress) {
         var pct = Math.round(progress * 100);
