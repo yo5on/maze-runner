@@ -130,6 +130,12 @@ body.ready #loading {
   color: var(--cream);
 }
 
+#loading-logo {
+  display: block;
+  width: clamp(88px, 18vw, 144px);
+  height: auto;
+}
+
 #loading-track {
   width: min(44%, 240px);
   height: 1px;

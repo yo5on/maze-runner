@@ -1,4 +1,6 @@
 <div align="center">
+<img src="Assets/WebGLTemplates/MazeRunner/TemplateData/maze-runner-logo.png" width="160" alt="Maze Runner logo">
+
 <samp><b>MAZE RUNNER</b></samp>
 
 <samp>unity · c# · 2d platformer · game development</samp>

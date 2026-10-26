@@ -50,7 +50,7 @@ namespace MazeRunner.UI
                 else
                 {
                     // Final level: the victory screen.
-                    ShowTitle("VICTORY!", "The Goblin Boss is defeated and all three levels are cleared.");
+                    ShowTitle("VICTORY!", "The Goblin Warchief is defeated and all three levels are cleared.");
                 }
             }
             Time.timeScale = 0f;

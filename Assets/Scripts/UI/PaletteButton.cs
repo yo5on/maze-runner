@@ -29,6 +29,7 @@ namespace MazeRunner.UI
         private Image fill;
         private Image border;
         private TMP_Text[] labels;
+        private bool lastKeyboardFocus;
 
         public bool IsOn
         {
@@ -53,13 +54,21 @@ namespace MazeRunner.UI
             Apply(state);
         }
 
+        private void LateUpdate()
+        {
+            bool keyboardFocus = MenuNavigator.KeyboardFocusVisible;
+            if (lastKeyboardFocus == keyboardFocus) return;
+            lastKeyboardFocus = keyboardFocus;
+            Apply(currentSelectionState);
+        }
+
         private void Refresh() => Apply(currentSelectionState);
 
         private void Apply(SelectionState state)
         {
             if (fill == null) return;
             if (labels == null) labels = GetComponentsInChildren<TMP_Text>(true);
-            bool hot = state == SelectionState.Highlighted || state == SelectionState.Selected;
+            bool hot = state == SelectionState.Highlighted || (state == SelectionState.Selected && MenuNavigator.KeyboardFocusVisible);
             bool pressed = state == SelectionState.Pressed;
 
             Color fillColor, borderColor, textColor;

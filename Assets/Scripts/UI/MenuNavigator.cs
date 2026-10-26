@@ -67,6 +67,9 @@ namespace MazeRunner.UI
         /// <summary>The menu panel the keyboard is in, or null during gameplay.</summary>
         public static GameObject OpenMenu => instance != null ? instance.FindTop() : null;
 
+        /// <summary>Whether keyboard or directional gamepad input currently drives menu focus visuals.</summary>
+        public static bool KeyboardFocusVisible => instance != null && instance.keyboardFocus;
+
         /// <summary>True while a menu is open: the player's jump and movement are ignored.</summary>
         public static bool BlocksGameplayInput => OpenMenu != null;
 
@@ -122,6 +125,7 @@ namespace MazeRunner.UI
             {
                 // A menu opened or closed: give the new top menu its focus back, or its default.
                 top = open;
+                keyboardFocus = false;
                 if (open != null)
                 {
                     GameObject restore = lastFocus.TryGetValue(open, out GameObject last) && Valid(last, open) ? last
@@ -163,9 +167,12 @@ namespace MazeRunner.UI
 
             // Checked last so a key pressed while the mouse drifts still shows the frame.
             Gamepad pad = Gamepad.current;
-            if ((Keyboard.current != null && Keyboard.current.anyKey.wasPressedThisFrame)
-                || (pad != null && (pad.dpad.ReadValue() != Vector2.zero || pad.leftStick.ReadValue().sqrMagnitude > 0.25f
-                    || pad.buttonSouth.wasPressedThisFrame)))
+            Keyboard keyboard = Keyboard.current;
+            bool navigated = keyboard != null && (keyboard.upArrowKey.wasPressedThisFrame || keyboard.downArrowKey.wasPressedThisFrame
+                || keyboard.leftArrowKey.wasPressedThisFrame || keyboard.rightArrowKey.wasPressedThisFrame
+                || keyboard.wKey.wasPressedThisFrame || keyboard.aKey.wasPressedThisFrame
+                || keyboard.sKey.wasPressedThisFrame || keyboard.dKey.wasPressedThisFrame || keyboard.tabKey.wasPressedThisFrame);
+            if (navigated || (pad != null && (pad.dpad.ReadValue() != Vector2.zero || pad.leftStick.ReadValue().sqrMagnitude > 0.25f)))
                 keyboardFocus = true;
         }
 

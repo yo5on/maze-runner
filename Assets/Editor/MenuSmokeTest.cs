@@ -11,6 +11,8 @@ using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.LowLevel;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using MazeRunner.Customization;
+using MazeRunner.Enemies;
 using MazeRunner.Levels;
 using MazeRunner.Player;
 using MazeRunner.UI;
@@ -43,9 +45,12 @@ namespace MazeRunner.EditorTools
         private const string ExitKey = "MenuSmoke.Exit";
         private const string ResultFile = "Logs/menu-smoke.txt";
         private const string UnlockPrefix = "MazeRunner.LevelUnlocked.";
+        private const string ClearedPrefix = "MazeRunner.LevelCleared.";
         private static readonly string[] SavedKeys =
         {
-            UnlockPrefix + 0, UnlockPrefix + 1, UnlockPrefix + 2, UnlockPrefix + 3, LevelProgressionManager.CurrentLevelKey,
+            UnlockPrefix + 0, UnlockPrefix + 1, UnlockPrefix + 2, UnlockPrefix + 3,
+            ClearedPrefix + 0, ClearedPrefix + 1, ClearedPrefix + 2,
+            LevelProgressionManager.CurrentLevelKey,
         };
 
         static MenuSmokeTest()
@@ -88,12 +93,16 @@ namespace MazeRunner.EditorTools
         private static void Finish()
         {
             SessionState.SetBool(ActiveKey, false);
+            bool restored = true;
             foreach (string key in SavedKeys)
             {
                 string v = SessionState.GetString("MenuSmoke." + key, "");
                 if (v.Length == 0) PlayerPrefs.DeleteKey(key); else PlayerPrefs.SetInt(key, int.Parse(v));
+                restored &= PlayerPrefs.HasKey(key) == (v.Length > 0)
+                    && (v.Length == 0 || PlayerPrefs.GetInt(key) == int.Parse(v));
             }
             PlayerPrefs.Save();
+            File.AppendAllText(ResultFile, restored ? "PASS saved progression restoration\n" : "FAIL saved progression restoration\n");
             string text = File.ReadAllText(ResultFile);
             bool failed = text.Contains("FAIL") || !text.Contains("DONE");
             File.AppendAllText(ResultFile, failed ? "RESULT: FAILED\n" : "RESULT: ALL PASSED\n");
@@ -208,13 +217,77 @@ namespace MazeRunner.EditorTools
 
             private IEnumerator Steps()
             {
+                Texture2D logoTexture = Resources.Load<Texture2D>("Brand/MazeRunnerLogo");
+                RawImage menuLogo = Object.FindObjectsByType<RawImage>(FindObjectsSortMode.None)
+                    .FirstOrDefault(image => image.name == "ScreenLogo");
+                Check(logoTexture != null && menuLogo != null && menuLogo.texture == logoTexture,
+                    "Main Menu displays the official logo texture");
+                Check(PlayableCharacters.All.Count == 6
+                    && PlayableCharacters.All.All(c => !string.IsNullOrWhiteSpace(c.DisplayName))
+                    && PlayableCharacters.All.Select(c => c.DisplayName).Distinct(System.StringComparer.OrdinalIgnoreCase).Count() == PlayableCharacters.All.Count,
+                    "all playable characters have distinct display names");
+                Check(EnemyIntel.All.Length == 12
+                    && EnemyIntel.All.All(e => !string.IsNullOrWhiteSpace(e.Name))
+                    && EnemyIntel.All.Select(e => e.Name).Distinct(System.StringComparer.OrdinalIgnoreCase).Count() == EnemyIntel.All.Length,
+                    "all enemy types and bosses have distinct display names");
+                Check(!PlayableCharacters.All.Select(c => c.DisplayName)
+                    .Intersect(EnemyIntel.All.Select(e => e.Name), System.StringComparer.OrdinalIgnoreCase).Any(),
+                    "playable character names do not duplicate enemy names");
+                bool hadSavedCharacter = PlayerPrefs.HasKey(PlayableCharacters.SaveKey);
+                string savedCharacterId = PlayerPrefs.GetString(PlayableCharacters.SaveKey, string.Empty);
+                bool characterIdsStillSave = true;
+                try
+                {
+                    foreach (var character in PlayableCharacters.All)
+                    {
+                        PlayableCharacters.SaveSelection(character);
+                        characterIdsStillSave &= PlayableCharacters.Selected.Id == character.Id;
+                    }
+                }
+                finally
+                {
+                    if (hadSavedCharacter) PlayerPrefs.SetString(PlayableCharacters.SaveKey, savedCharacterId);
+                    else PlayerPrefs.DeleteKey(PlayableCharacters.SaveKey);
+                    PlayerPrefs.Save();
+                }
+                Check(characterIdsStillSave, "character choices still save and restore by stable ID");
+
                 var progress = LevelProgressionManager.Instance;
 
                 // 1. Progression rules (one source of truth: unlocks + the saved current level).
                 progress.ResetProgress();
                 Check(progress.ResumeLevelIndex == 0, "fresh progress: Play starts Level 1", "resume " + progress.ResumeLevelIndex);
-                PlayerPrefs.SetInt(UnlockPrefix + 1, 1);
-                PlayerPrefs.SetInt(LevelProgressionManager.CurrentLevelKey, 1);
+                Check(progress.IsLevelUnlocked(0) && !progress.IsLevelCleared(0)
+                    && !progress.IsLevelUnlocked(1) && !progress.IsLevelCleared(1)
+                    && !progress.IsLevelUnlocked(2) && !progress.IsLevelCleared(2),
+                    "fresh progress: only uncleared Level 1 is unlocked");
+
+                SceneManager.LoadScene("LevelSelect");
+                yield return WaitForScene("LevelSelect");
+                Button freshLevel1 = LevelButton(1), freshLevel2 = LevelButton(2), freshLevel3 = LevelButton(3);
+                Check(freshLevel1 != null && freshLevel1.interactable
+                    && LevelLabel(freshLevel1) == "Level 1"
+                    && freshLevel1.colors.normalColor == new Color32(0x1b, 0x2b, 0x4a, 0xff),
+                    "fresh Level Select: Level 1 is normally styled and uncleared");
+                Check(freshLevel2 != null && !freshLevel2.interactable
+                    && LevelLabel(freshLevel2) == "Level 2",
+                    "fresh Level Select: Level 2 is locked");
+                Check(freshLevel3 != null && !freshLevel3.interactable
+                    && LevelLabel(freshLevel3) == "Level 3",
+                    "fresh Level Select: Level 3 is locked");
+                Check(!progress.StartLevel(1) && !progress.StartLevel(2), "locked levels cannot be started");
+                SceneManager.LoadScene("MainMenu");
+                yield return WaitForScene("MainMenu");
+
+                progress.StartLevel(0);
+                yield return WaitForScene("Level1");
+                progress.CompleteCurrentLevel();
+                Check(progress.IsLevelCleared(0) && progress.IsLevelUnlocked(1) && !progress.IsLevelCleared(1),
+                    "completing Level 1 clears it and unlocks uncleared Level 2");
+                PlayerPrefs.DeleteKey(ClearedPrefix + 0);
+                Check(progress.IsLevelCleared(0), "legacy saved unlock restores the prior level's cleared state");
+                PlayerPrefs.SetInt(ClearedPrefix + 0, 1);
+                Time.timeScale = 1f;
                 Check(progress.ResumeLevelIndex == 1, "returning player: Play continues the saved current level (Level 2)");
                 PlayerPrefs.SetInt(LevelProgressionManager.CurrentLevelKey, 2);
                 Check(progress.ResumeLevelIndex == 1, "a saved level that is still locked is never loaded", "resume " + progress.ResumeLevelIndex);
@@ -230,6 +303,8 @@ namespace MazeRunner.EditorTools
                 Button settings = ButtonCalling("OpenSettings");
                 Check(play != null && Selected == play.gameObject, "main menu: Play has the focus when it opens", Name(Selected));
                 Check(!FrameOn(Selected), "main menu: no focus frame before any key is pressed");
+                Check(play != null && play.colors.selectedColor == play.colors.normalColor,
+                    "main menu default selection keeps its normal button styling");
                 TMP_Text playLabel = play != null ? play.GetComponentInChildren<TMP_Text>() : null;
                 Check(playLabel != null && playLabel.text.Trim() == "Play", "main menu: Play is labelled just Play, with no level number", playLabel != null ? playLabel.text : "");
                 GameObject before = Selected;
@@ -251,24 +326,31 @@ namespace MazeRunner.EditorTools
                     Check(Selected == settings.gameObject, "main menu: arrows reach Settings", Name(Selected));
                     yield return Press(Key.Enter);
                     Check(SettingsMenu.IsOpen, "Enter opens Settings");
+                    Check(!FrameOn(Selected), "Settings opens without inheriting the prior focus outline");
                     var menu = FindAnyObjectByType<SettingsMenu>();
                     var hint = menu != null ? (TMP_Text)typeof(SettingsMenu).GetField("hint", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(menu) : null;
                     Check(hint != null && hint.preferredHeight <= hint.rectTransform.rect.height, "Settings: the controls hint fits its box (clear of the buttons)",
                         hint != null ? hint.preferredHeight.ToString("0") + " / " + hint.rectTransform.rect.height.ToString("0") : "no hint");
                     Slider slider = Selected != null ? Selected.GetComponent<Slider>() : null;
                     Check(slider != null, "Settings: a slider has the focus", Name(Selected));
+                    Check(slider != null && slider.targetGraphic.color == Color.white,
+                        "Settings slider does not show keyboard focus before navigation");
                     if (slider != null)
                     {
                         float v0 = slider.value;
                         yield return Press(slider.value >= slider.maxValue ? Key.LeftArrow : Key.RightArrow);
                         Check(!Mathf.Approximately(slider.value, v0), "Settings: arrows move the focused slider", v0 + " -> " + slider.value);
+                        Check(slider.targetGraphic.color == PaletteButton.GreenHover,
+                            "Settings slider shows focus styling after keyboard navigation");
                         slider.value = v0;
                     }
                     yield return Press(Key.DownArrow);
                     Check(Selected != null && MenuNavigator.IsOpen("SettingsPanel"), "Settings: Down moves the focus inside Settings", Name(Selected));
+                    Check(FrameOn(Selected), "Settings keyboard navigation shows its focus outline");
                     yield return Press(Key.Escape);
                     Check(!SettingsMenu.IsOpen, "Escape closes Settings");
                     Check(Selected == settings.gameObject, "closing Settings gives the focus back to the Settings button", Name(Selected));
+                    Check(!FrameOn(Selected), "returning to Main Menu resets the focus outline");
                 }
 
                 // Level Select: the next level focused, Escape back.
@@ -278,9 +360,19 @@ namespace MazeRunner.EditorTools
                 yield return WaitForScene("LevelSelect");
                 Check(SceneManager.GetActiveScene().name == "LevelSelect", "Enter on Level Select opens it");
                 Button level2 = ButtonCalling("SelectLevel") != null
-                    ? FindObjectsByType<Button>(FindObjectsSortMode.None).FirstOrDefault(b => b.GetComponentInChildren<TMP_Text>() != null && b.GetComponentInChildren<TMP_Text>().text.StartsWith("Level 2"))
+                    ? LevelButton(2)
                     : null;
                 Check(level2 != null && Selected == level2.gameObject, "Level Select: the next level to play has the focus", Name(Selected));
+                Button level1 = LevelButton(1), level3 = LevelButton(3);
+                Check(level1 != null && level1.interactable && LevelLabel(level1) == "Level 1"
+                    && level1.colors.normalColor == PaletteButton.Green,
+                    "legacy saved progress shows completed Level 1 in green");
+                Check(level2 != null && level2.interactable && LevelLabel(level2) == "Level 2"
+                    && level2.colors.normalColor == new Color32(0x1b, 0x2b, 0x4a, 0xff),
+                    "unlocked Level 2 remains normally styled until completed");
+                Check(level3 != null && !level3.interactable && LevelLabel(level3) == "Level 3",
+                    "Level 3 remains locked until Level 2 is completed");
+                Check(!FrameOn(Selected), "Level Select opens without a keyboard focus outline");
                 yield return Press(Key.Escape);
                 yield return WaitForScene("MainMenu");
                 Check(SceneManager.GetActiveScene().name == "MainMenu", "Level Select: Escape goes back to the main menu");
@@ -289,10 +381,38 @@ namespace MazeRunner.EditorTools
                 SceneManager.LoadScene("Customization");
                 yield return WaitForScene("Customization");
                 Check(Selected != null && MenuNavigator.IsOpen("CustomizationPanel"), "character select: a button has the focus", Name(Selected));
+                Check(!FrameOn(Selected), "character selection opens without a keyboard focus outline");
                 TMP_Text heroName = FindObjectsByType<TMP_Text>(FindObjectsSortMode.None).FirstOrDefault(t => t.name == "OptionLabel" || t.name.Contains("Option"));
+                Transform characterLayout = GameObject.Find("SelectionLayout")?.transform;
+                bool rosterNamesMatch = characterLayout != null;
+                bool rosterPreviewsPresent = characterLayout != null;
+                foreach (var character in PlayableCharacters.All)
+                {
+                    Transform card = characterLayout != null ? characterLayout.Find("Card " + character.DisplayName) : null;
+                    TMP_Text cardName = card != null
+                        ? card.GetComponentsInChildren<TMP_Text>(true).FirstOrDefault(t => t.name == "Name")
+                        : null;
+                    Image portrait = card != null
+                        ? card.GetComponentsInChildren<Image>(true).FirstOrDefault(i => i.name == "Portrait")
+                        : null;
+                    rosterNamesMatch &= cardName != null && cardName.text == character.DisplayName;
+                    rosterPreviewsPresent &= portrait != null && portrait.sprite != null;
+                }
+                int shownIndex = PlayableCharacters.IndexOf(PlayableCharacters.Selected.Id);
+                Image characterPreview = characterLayout != null
+                    ? characterLayout.GetComponentsInChildren<Image>(true).FirstOrDefault(i => i.name == "CharacterPreview")
+                    : null;
+                Check(rosterNamesMatch, "character roster labels match the central display names");
+                Check(rosterPreviewsPresent, "every character roster card has a preview sprite");
+                Check(heroName != null && shownIndex >= 0 && heroName.text == PlayableCharacters.All[shownIndex].DisplayName
+                    && characterPreview != null && characterPreview.sprite != null,
+                    "selected character preview label matches its display name");
                 string hero0 = heroName != null ? heroName.text : "";
                 yield return Press(Key.RightArrow);
-                Check(heroName == null || heroName.text != hero0, "character select: Right shows the next hero", hero0 + " -> " + (heroName != null ? heroName.text : "?"));
+                Check(FrameOn(Selected), "character selection keyboard input shows its focus outline");
+                int nextShownIndex = (shownIndex + 1) % PlayableCharacters.All.Count;
+                Check(heroName != null && heroName.text == PlayableCharacters.All[nextShownIndex].DisplayName,
+                    "character select: Right shows the next hero name", hero0 + " -> " + (heroName != null ? heroName.text : "?"));
                 Check(Selected != null && Selected.GetComponentInChildren<TMP_Text>() != null && Selected.GetComponentInChildren<TMP_Text>().text.ToUpperInvariant().Contains("CONFIRM"),
                     "character select: a new hero puts the focus on Confirm", Name(Selected));
                 GameObject confirm = Selected;
@@ -324,6 +444,7 @@ namespace MazeRunner.EditorTools
                 Check(Time.timeScale == 0f && MenuNavigator.IsOpen("PauseMenuPanel"), "Escape pauses");
                 Button resume = ButtonCalling("Resume");
                 Check(resume != null && Selected == resume.gameObject, "pause: Resume has the focus", Name(Selected));
+                Check(!FrameOn(Selected), "Pause opens without a keyboard focus outline");
                 float y0 = body.position.y;
                 yield return Press(Key.Space);
                 Check(Time.timeScale == 1f && !MenuNavigator.IsOpen("PauseMenuPanel"), "Space on Resume resumes");
@@ -339,6 +460,7 @@ namespace MazeRunner.EditorTools
                     yield return FocusWithArrows(pauseSettings);
                     yield return Press(Key.Enter);
                     Check(SettingsMenu.IsOpen, "pause: Enter on Settings opens it");
+                    Check(!FrameOn(Selected), "Pause Settings opens without a focus outline");
                     yield return Press(Key.Escape);
                     Check(!SettingsMenu.IsOpen && Time.timeScale == 0f && MenuNavigator.IsOpen("PauseMenuPanel"), "Escape from Settings returns to the pause menu (still paused)");
                     Check(Selected == pauseSettings, "the pause menu's focus is back on Settings", Name(Selected));
@@ -355,6 +477,7 @@ namespace MazeRunner.EditorTools
                 yield return Wait(0.5f);
                 Check(MenuNavigator.IsOpen("GameOverPanel"), "second death shows Game Over");
                 Check(Selected != null && Selected.transform.IsChildOf(MenuNavigator.OpenMenu.transform), "Game Over: a button has the focus", Name(Selected));
+                Check(!FrameOn(Selected), "Game Over opens without a keyboard focus outline");
                 yield return Press(Key.Escape);
                 Check(Time.timeScale == 0f && MenuNavigator.IsOpen("GameOverPanel"), "Escape does not resume the game under Game Over");
                 yield return Press(Key.Enter); // the focused Restart
@@ -369,6 +492,8 @@ namespace MazeRunner.EditorTools
                 Check(MenuNavigator.IsOpen("LevelCompletePanel"), "completing the level shows Level Complete");
                 Check(Selected != null && Selected.transform.IsChildOf(MenuNavigator.OpenMenu.transform), "Level Complete: a button has the focus", Name(Selected));
                 Check(progress.IsLevelUnlocked(2) && progress.ResumeLevelIndex == 2, "completing Level 2 unlocks Level 3 and Play continues there", "resume " + progress.ResumeLevelIndex);
+                Check(progress.IsLevelCleared(1) && !progress.IsLevelCleared(2), "Level 2 is cleared while unlocked Level 3 is not");
+                Check(!FrameOn(Selected), "Level Complete opens without a keyboard focus outline");
 
                 // 7. Quitting mid-level: Play restarts that level.
                 Time.timeScale = 1f;
@@ -388,7 +513,20 @@ namespace MazeRunner.EditorTools
                 yield return Press(Key.Enter); // Play has the focus
                 yield return WaitForScene("Level3");
                 Check(SceneManager.GetActiveScene().name == "Level3", "Play restarts the level that was quit", SceneManager.GetActiveScene().name);
+                Check(!progress.IsLevelCleared(2), "Level 3 remains uncleared before completion");
+                progress.CompleteCurrentLevel();
+                Check(progress.IsLevelCleared(2), "completing Level 3 marks it cleared");
+                Time.timeScale = 1f;
             }
         }
+
+        private static Button LevelButton(int level) =>
+            UnityEngine.Object.FindObjectsByType<Button>(FindObjectsSortMode.None).FirstOrDefault(b =>
+                b.GetComponentInChildren<TMP_Text>() != null && b.GetComponentInChildren<TMP_Text>().text.StartsWith("Level " + level));
+
+        private static string LevelLabel(Button button) =>
+            button != null && button.GetComponentInChildren<TMP_Text>() != null
+                ? button.GetComponentInChildren<TMP_Text>().text.Trim()
+                : string.Empty;
     }
 }

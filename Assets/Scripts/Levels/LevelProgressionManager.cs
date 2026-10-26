@@ -8,6 +8,7 @@ namespace MazeRunner.Levels
     /// Tracks level unlocks and loads the configured level sequence (Level1 -> Level2 -> Level3).
     /// The single source of truth for progression, saved in PlayerPrefs:
     /// - Unlocks: which levels may be played (Level Select). Completing a level unlocks the next.
+    /// - Cleared state: levels genuinely completed; older saves infer this from the next unlock.
     /// - Current level: the level Play continues - the level last entered, or the next one once a level
     ///   is completed. Quitting to the menu mid-level keeps it, so Play restarts that level from its start
     ///   (checkpoints are per run of a level and are not saved). A new player starts Level 1.
@@ -16,6 +17,7 @@ namespace MazeRunner.Levels
     public sealed class LevelProgressionManager : MonoBehaviour
     {
         private const string UnlockKeyPrefix = "MazeRunner.LevelUnlocked.";
+        private const string ClearedKeyPrefix = "MazeRunner.LevelCleared.";
         public const string CurrentLevelKey = "MazeRunner.CurrentLevel";
 
         /// <summary>
@@ -120,6 +122,17 @@ namespace MazeRunner.Levels
             return levelIndex == 0 || PlayerPrefs.GetInt(GetUnlockKey(levelIndex), 0) == 1;
         }
 
+        public bool IsLevelCleared(int levelIndex)
+        {
+            if (!IsLevelEnabled(levelIndex)) return false;
+
+            string key = GetClearedKey(levelIndex);
+            if (PlayerPrefs.HasKey(key)) return PlayerPrefs.GetInt(key, 0) == 1;
+
+            // Older saves recorded completion only by unlocking the next level.
+            return levelIndex + 1 < LevelCount && IsLevelUnlocked(levelIndex + 1);
+        }
+
         public bool StartLevel(int levelIndex)
         {
             if (!IsValidLevelIndex(levelIndex) || !IsLevelUnlocked(levelIndex))
@@ -142,6 +155,7 @@ namespace MazeRunner.Levels
                 return;
             }
 
+            SetLevelCleared(currentLevelIndex, true);
             LevelCompleted?.Invoke(currentLevelIndex);
 
             int nextLevelIndex = currentLevelIndex + 1;
@@ -187,6 +201,7 @@ namespace MazeRunner.Levels
             for (int i = 0; i < LevelCount; i++)
             {
                 PlayerPrefs.DeleteKey(GetUnlockKey(i));
+                PlayerPrefs.DeleteKey(GetClearedKey(i));
             }
             PlayerPrefs.DeleteKey(CurrentLevelKey);
 
@@ -233,6 +248,13 @@ namespace MazeRunner.Levels
             }
         }
 
+        private void SetLevelCleared(int levelIndex, bool cleared)
+        {
+            if (!IsValidLevelIndex(levelIndex)) return;
+            PlayerPrefs.SetInt(GetClearedKey(levelIndex), cleared ? 1 : 0);
+            PlayerPrefs.Save();
+        }
+
         private int GetLevelIndex(string sceneName)
         {
             if (levelSceneNames == null)
@@ -262,6 +284,11 @@ namespace MazeRunner.Levels
         private static string GetUnlockKey(int levelIndex)
         {
             return UnlockKeyPrefix + levelIndex;
+        }
+
+        private static string GetClearedKey(int levelIndex)
+        {
+            return ClearedKeyPrefix + levelIndex;
         }
     }
 }

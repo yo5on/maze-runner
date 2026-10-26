@@ -10,6 +10,7 @@ namespace MazeRunner.UI
     {
         private Image handle;
         private bool hover, down, selected;
+        private bool lastKeyboardFocus;
 
         public void Init(Image handleImage)
         {
@@ -24,9 +25,17 @@ namespace MazeRunner.UI
         public void OnSelect(BaseEventData e) { selected = true; Apply(); }
         public void OnDeselect(BaseEventData e) { selected = false; Apply(); }
 
+        private void LateUpdate()
+        {
+            bool keyboardFocus = MenuNavigator.KeyboardFocusVisible;
+            if (lastKeyboardFocus == keyboardFocus) return;
+            lastKeyboardFocus = keyboardFocus;
+            Apply();
+        }
+
         private void Apply()
         {
-            if (handle != null) handle.color = hover || down || selected ? PaletteButton.GreenHover : Color.white;
+            if (handle != null) handle.color = hover || down || (selected && MenuNavigator.KeyboardFocusVisible) ? PaletteButton.GreenHover : Color.white;
         }
     }
 }

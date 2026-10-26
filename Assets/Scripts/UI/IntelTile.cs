@@ -18,6 +18,7 @@ namespace MazeRunner.UI
         private Image underline;
         private TMP_Text number;
         private bool isOn;
+        private bool lastKeyboardFocus;
 
         /// <summary>Keyboard focus reached this tile (arrow keys / WASD): the panel shows its enemy.</summary>
         public System.Action Focused;
@@ -51,10 +52,19 @@ namespace MazeRunner.UI
             Apply(state);
         }
 
+        private void LateUpdate()
+        {
+            bool keyboardFocus = MenuNavigator.KeyboardFocusVisible;
+            if (lastKeyboardFocus == keyboardFocus) return;
+            lastKeyboardFocus = keyboardFocus;
+            Apply(currentSelectionState);
+        }
+
         private void Apply(SelectionState state)
         {
             if (frame == null) return;
-            bool hot = state == SelectionState.Highlighted || state == SelectionState.Selected || state == SelectionState.Pressed;
+            bool hot = state == SelectionState.Highlighted || (state == SelectionState.Selected && MenuNavigator.KeyboardFocusVisible)
+                || state == SelectionState.Pressed;
             frame.color = isOn || hot ? PaletteButton.Green : PaletteButton.Mist;
             float inset = isOn ? 4f : 1.5f;
             surface.offsetMin = new Vector2(inset, inset);

@@ -130,10 +130,14 @@ namespace MazeRunner.EditorTools
         private static class Unlocks
         {
             private const string Prefix = "MazeRunner.LevelUnlocked.";
+            private const string ClearedPrefix = "MazeRunner.LevelCleared.";
             public static void Save()
             {
                 for (int i = 0; i < 4; i++)
+                {
                     SessionState.SetInt("BossSmoke.Unlock" + i, PlayerPrefs.HasKey(Prefix + i) ? PlayerPrefs.GetInt(Prefix + i) : -1);
+                    SessionState.SetInt("BossSmoke.Cleared" + i, PlayerPrefs.HasKey(ClearedPrefix + i) ? PlayerPrefs.GetInt(ClearedPrefix + i) : -1);
+                }
                 string current = LevelProgressionManager.CurrentLevelKey;
                 SessionState.SetInt("BossSmoke.Current", PlayerPrefs.HasKey(current) ? PlayerPrefs.GetInt(current) : -1);
             }
@@ -143,6 +147,8 @@ namespace MazeRunner.EditorTools
                 {
                     int v = SessionState.GetInt("BossSmoke.Unlock" + i, -1);
                     if (v < 0) PlayerPrefs.DeleteKey(Prefix + i); else PlayerPrefs.SetInt(Prefix + i, v);
+                    int cleared = SessionState.GetInt("BossSmoke.Cleared" + i, -1);
+                    if (cleared < 0) PlayerPrefs.DeleteKey(ClearedPrefix + i); else PlayerPrefs.SetInt(ClearedPrefix + i, cleared);
                 }
                 int c = SessionState.GetInt("BossSmoke.Current", -1);
                 if (c < 0) PlayerPrefs.DeleteKey(LevelProgressionManager.CurrentLevelKey); else PlayerPrefs.SetInt(LevelProgressionManager.CurrentLevelKey, c);

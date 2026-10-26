@@ -123,7 +123,7 @@ namespace MazeRunner.UI
             var colors = button.colors;
             colors.normalColor = PaletteButton.Navy;
             colors.highlightedColor = PaletteButton.SecondaryHover;
-            colors.selectedColor = PaletteButton.SecondaryHover;
+            colors.selectedColor = colors.normalColor;
             colors.pressedColor = new Color32(0x11, 0x1a, 0x2c, 0xff);
             colors.disabledColor = new Color32(0x59, 0x64, 0x77, 0x80);
             colors.colorMultiplier = 1f;

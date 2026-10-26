@@ -61,7 +61,8 @@ namespace MazeRunner.UI
                 {
                     var panelImage = rect.GetComponent<Image>();
                     if (panelImage != null) panelImage.color = PaletteButton.SteelBlue;
-                    AddTitle(rect, rect.name == "MainMenuPanel" ? "Maze Runner" : "Select Level", rect.name == "MainMenuPanel" ? 104f : 64f);
+                    if (rect.name == "MainMenuPanel") AddLogo(rect);
+                    else AddTitle(rect, "Select Level", 64f);
                 }
                 else if (rect.name == "PauseMenuPanel" || rect.name == "LevelCompletePanel" || rect.name == "GameOverPanel")
                 {
@@ -88,7 +89,7 @@ namespace MazeRunner.UI
                 colors.normalColor = primary ? PaletteButton.Green : PaletteButton.Navy;
                 colors.highlightedColor = primary ? PaletteButton.GreenHover : PaletteButton.SecondaryHover;
                 colors.pressedColor = primary ? PaletteButton.GreenPressed : new Color32(0x11, 0x1a, 0x2c, 0xff);
-                colors.selectedColor = colors.highlightedColor;
+                colors.selectedColor = colors.normalColor;
                 colors.disabledColor = new Color32(0x59, 0x64, 0x77, 0x80);
                 colors.colorMultiplier = 1f;
                 colors.fadeDuration = 0.1f;
@@ -98,6 +99,25 @@ namespace MazeRunner.UI
                     label.color = Color.white;
                 }
             }
+        }
+
+        /// <summary>Adds the wordless brand mark above the main menu buttons.</summary>
+        private static void AddLogo(RectTransform panel)
+        {
+            if (panel.GetComponent<VerticalLayoutGroup>() == null || panel.Find("ScreenLogo") != null) return;
+            Texture2D logo = Resources.Load<Texture2D>("Brand/MazeRunnerLogo");
+            if (logo == null)
+            {
+                AddTitle(panel, "Maze Runner", 104f);
+                return;
+            }
+
+            var rect = PaletteUI.NewRect("ScreenLogo", panel);
+            rect.SetAsFirstSibling();
+            rect.sizeDelta = new Vector2(156f, 156f);
+            var image = rect.gameObject.AddComponent<RawImage>();
+            image.texture = logo;
+            image.raycastTarget = false;
         }
 
         /// <summary>

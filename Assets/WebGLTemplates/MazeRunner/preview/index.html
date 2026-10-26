@@ -12,11 +12,13 @@
   <meta property="og:title" content="Maze Runner">
   <meta property="og:description" content="A 2D platformer made with Unity — playable in your browser.">
   <meta property="og:url" content="https://yo5on.github.io/maze-runner/preview/">
-  <meta property="og:image" content="https://yo5on.github.io/maze-runner/preview/maze-runner.webp">
-  <meta property="og:image:width" content="1015">
-  <meta property="og:image:height" content="710">
-  <meta property="og:image:alt" content="Maze Runner Level 1: the hooded player mid-jump above a green goblin on a platform">
+  <meta property="og:image" content="https://yo5on.github.io/maze-runner/TemplateData/maze-runner-logo.png">
+  <meta property="og:image:width" content="1254">
+  <meta property="og:image:height" content="1254">
+  <meta property="og:image:alt" content="Maze Runner's circular maze emblem with a running figure and crimson scarf">
   <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" type="image/png" sizes="16x16" href="../TemplateData/icon-16.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="../TemplateData/icon-32.png">
   <link rel="icon" type="image/png" href="../TemplateData/icon-192.png">
   <link rel="apple-touch-icon" href="../TemplateData/icon-180.png">
   <style>
@@ -87,15 +89,11 @@
       border-bottom: 1px solid var(--hair);
     }
 
-    .head svg {
+    .head-logo {
       flex: none;
-      width: 24px;
-      height: 24px;
-      fill: none;
-      stroke: var(--mist);
-      stroke-width: 1.5;
-      stroke-linecap: round;
-      stroke-linejoin: round;
+      width: 42px;
+      height: 42px;
+      object-fit: contain;
     }
 
     .titles {
@@ -382,7 +380,7 @@
       body { padding-top: max(8px, env(safe-area-inset-top)); padding-bottom: max(8px, env(safe-area-inset-bottom)); }
       .frame { --floor: 0px; --chrome: 92px; --share: 0.6; border-radius: 10px; }
       .head { padding: 9px 16px; gap: 10px; }
-      .head svg { width: 20px; height: 20px; }
+      .head-logo { width: 34px; height: 34px; }
       h1 { font-size: 22px; }
       .tags { display: none; }
       .body { padding: 12px 16px 14px; gap: 16px; grid-template-columns: minmax(0, 1.55fr) minmax(200px, 1fr); }
@@ -418,12 +416,7 @@
 <body>
   <main class="frame" aria-labelledby="title">
     <header class="head">
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M7 8h10a5 5 0 0 1 4.9 6l-.6 3a2.5 2.5 0 0 1-4.3 1.2L15 16H9l-2 2.2A2.5 2.5 0 0 1 2.7 17l-.6-3A5 5 0 0 1 7 8z"/>
-        <path d="M7.5 11v3M6 12.5h3"/>
-        <circle cx="16" cy="11.5" r="0.6"/>
-        <circle cx="17.8" cy="13.4" r="0.6"/>
-      </svg>
+      <img class="head-logo" src="../TemplateData/maze-runner-logo.png" width="42" height="42" alt="" aria-hidden="true">
       <div class="titles">
         <h1 id="title">Maze Runner</h1>
         <span class="kicker"><b>N° 05</b> — Game development</span>

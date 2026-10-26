@@ -48,12 +48,12 @@ namespace MazeRunner.Customization
 
         private static readonly PlayableCharacter[] Characters =
         {
-            new PlayableCharacter("Fallen_Angels_1", "Silver Seraph", false),
-            new PlayableCharacter("Fallen_Angels_2", "Shadow Wanderer", true),
-            new PlayableCharacter("Fallen_Angels_3", "Crowned Revenant", false),
-            new PlayableCharacter("Dark_Oracle_2", "Oracle of Dusk", true, "Dark_Oracle"),
-            new PlayableCharacter("Dark_Oracle_3", "Oracle of the Void", false, "Dark_Oracle"),
-            new PlayableCharacter("Valkyrie_1", "Valkyrie Dawn", true, "Valkyrie"),
+            new PlayableCharacter("Fallen_Angels_1", "Pale Vesper", false),
+            new PlayableCharacter("Fallen_Angels_2", "Gloamveil", true),
+            new PlayableCharacter("Fallen_Angels_3", "Ashen Sovereign", false),
+            new PlayableCharacter("Dark_Oracle_2", "Lantern-Eyed Seer", true, "Dark_Oracle"),
+            new PlayableCharacter("Dark_Oracle_3", "Goldvein Oracle", false, "Dark_Oracle"),
+            new PlayableCharacter("Valkyrie_1", "Stormward Valkyrie", true, "Valkyrie"),
         };
 
         private const int DefaultIndex = 1;

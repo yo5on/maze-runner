@@ -13,6 +13,8 @@
   <meta name="apple-mobile-web-app-title" content="Maze Runner">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="apple-touch-icon" href="TemplateData/icon-180.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="TemplateData/icon-16.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="TemplateData/icon-32.png">
   <link rel="icon" type="image/png" href="TemplateData/icon-192.png">
   <title>Maze Runner</title>
   <link rel="stylesheet" href="TemplateData/style.css">
@@ -21,6 +23,7 @@
   <div id="stage">
     <canvas id="unity-canvas" tabindex="-1"></canvas>
     <div id="loading" role="status" aria-live="polite">
+      <img id="loading-logo" src="TemplateData/maze-runner-logo.png" alt="" aria-hidden="true">
       <div id="loading-title">Maze Runner</div>
       <div id="loading-track"><div id="loading-fill"></div></div>
       <div id="loading-text">Loading 0%</div>
@@ -84,12 +87,11 @@
   (function () {
     "use strict";
 
-    // The game renders 1080 px tall - the height its Constant Pixel Size UI was laid
-    // out for - at the window's own aspect ratio, clamped to MIN..MAX. Every camera
-    // is orthographic with a fixed vertical size, so a wider canvas shows more of the
-    // level sideways instead of stretching anything. Only windows narrower than 16:9
-    // or wider than 2.4:1 get (thin) bars.
-    var GAME_H = 1080, MIN_ASPECT = 16 / 9, MAX_ASPECT = 2.4;
+    // Every camera is orthographic with a fixed vertical size, so a wider canvas
+    // shows more of the level sideways instead of stretching anything. Desktop
+    // windows stay within 16:9..2.4:1; touch uses its full landscape viewport and
+    // only keeps 16:9 in portrait.
+    var MIN_ASPECT = 16 / 9, MAX_ASPECT = 2.4;
 
     var root = document.documentElement;
     var body = document.body;
@@ -119,12 +121,16 @@
     }
 
     function viewportSize() {
-      // innerWidth/innerHeight track the visible area on iOS Safari as its
-      // toolbars collapse and expand; visualViewport is the more precise source.
+      // Safari's layout viewport can lag the visible area while its toolbars move.
       var vv = window.visualViewport;
       var w = vv ? Math.round(vv.width) : window.innerWidth;
       var h = vv ? Math.round(vv.height) : window.innerHeight;
-      return { w: Math.min(w, window.innerWidth) || w, h: Math.min(h, window.innerHeight) || h };
+      return {
+        x: vv ? Math.round(vv.offsetLeft) : 0,
+        y: vv ? Math.round(vv.offsetTop) : 0,
+        w: w || window.innerWidth,
+        h: h || window.innerHeight
+      };
     }
 
     function layout() {
@@ -145,26 +151,20 @@
       var availW = vp.w - left - right;
       var availH = vp.h - top;
 
-      var aspect = Math.min(MAX_ASPECT, Math.max(MIN_ASPECT, availW / availH));
+      var aspect = Math.max(MIN_ASPECT, availW / availH);
+      if (!isTouch) aspect = Math.min(MAX_ASPECT, aspect);
       var w, h;
       if (availW / availH > aspect) { h = availH; w = Math.round(h * aspect); }
       else { w = availW; h = Math.round(w / aspect); }
 
-      // Render size follows the aspect ratio; Unity picks up the new canvas size.
-      var renderW = Math.round(GAME_H * aspect);
-      if (canvas.width !== renderW || canvas.height !== GAME_H) {
-        canvas.width = renderW;
-        canvas.height = GAME_H;
-      }
-
-      var x = Math.round(left + (availW - w) / 2);
-      var y = Math.round((vp.h - h) / 2);
+      var x = Math.round(vp.x + left + (availW - w) / 2);
+      var y = Math.round(vp.y + (vp.h - h) / 2);
       if (isTouch && portrait) {
         // Center the game in the space above the controls, leaving a row
         // below it for the hint / pause / fullscreen chips.
         var controlsTop = movementControl().getBoundingClientRect().top || vp.h * 0.7;
-        var room = controlsTop - top - 16 - (h + 56);
-        y = Math.round(top + Math.max(0, room / 2));
+        var room = controlsTop - vp.y - top - 16 - (h + 56);
+        y = Math.round(vp.y + top + Math.max(0, room / 2));
       }
 
       stage.style.width = w + "px";
@@ -175,16 +175,16 @@
       root.style.setProperty("--stage-w", w + "px");
       root.style.setProperty("--stage-h", h + "px");
       root.style.setProperty("--stage-bottom", (y + h) + "px");
-      root.style.setProperty("--stage-right", (vp.w - x - w) + "px");
+      root.style.setProperty("--stage-right", (vp.x + vp.w - x - w) + "px");
       updateRotateHint();
 
       // How far the device's safe area cuts into the game, in render pixels.
       var px = canvas.width / w;
       sendSafeArea([
-        Math.max(0, inset.left - x),
-        Math.max(0, inset.top - y),
-        Math.max(0, (x + w) - (vp.w - inset.right)),
-        Math.max(0, (y + h) - (vp.h - inset.bottom))
+        Math.max(0, inset.left - (x - vp.x)),
+        Math.max(0, inset.top - (y - vp.y)),
+        Math.max(0, (x - vp.x + w) - (vp.w - inset.right)),
+        Math.max(0, (y - vp.y + h) - (vp.h - inset.bottom))
       ].map(function (v) { return Math.round(v * px); }).join(","));
     }
 
@@ -351,16 +351,19 @@
 
       btn.addEventListener("pointerdown", function (e) {
         e.preventDefault();
-        // Touch input is captured by the touched element automatically; release that so
-        // pointerleave fires when the finger slides off the button.
-        try { if (btn.hasPointerCapture(e.pointerId)) btn.releasePointerCapture(e.pointerId); } catch (err) { /* optional */ }
+        var id = e.pointerId;
         engage(e.pointerId);
+        // Touch capture is applied after pointerdown dispatch, so release it on the next task.
+        setTimeout(function () {
+          if (!pointers[id]) return;
+          try { if (btn.hasPointerCapture(id)) btn.releasePointerCapture(id); } catch (err) { /* optional */ }
+        }, 0);
       });
       btn.addEventListener("pointerenter", function (e) {
         // A finger (or held mouse button) sliding in from the other button.
         if (e.buttons & 1) engage(e.pointerId);
       });
-      ["pointerup", "pointercancel", "pointerleave", "lostpointercapture"].forEach(function (type) {
+      ["pointerup", "pointercancel", "pointerleave"].forEach(function (type) {
         btn.addEventListener(type, function (e) { disengage(e.pointerId); });
       });
     });
@@ -555,7 +558,7 @@
           "<ol><li>Tap <b>Share</b> " +
           "<svg class='inline-icon' viewBox='0 0 24 24' aria-hidden='true'><path d='M12 3v12M8 7l4-4 4 4M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7'/></svg>" +
           " in the browser toolbar.</li>" +
-          "<li>Choose <b>Add to Home Screen</b>.</li>" +
+          "<li>Choose <b>Add to Home Screen</b> and enable <b>Open as Web App</b>.</li>" +
           "<li>Open <b>Maze Runner</b> from your Home Screen and turn your phone sideways.</li></ol>" +
           "<p class='sheet-note'>Progress saved in the Home Screen app is kept separately from Safari.</p>";
       } else {
@@ -611,7 +614,7 @@
       companyName: {{{ JSON.stringify(COMPANY_NAME) }}},
       productName: {{{ JSON.stringify(PRODUCT_NAME) }}},
       productVersion: {{{ JSON.stringify(PRODUCT_VERSION) }}},
-      matchWebGLToCanvasSize: false,
+      matchWebGLToCanvasSize: true,
       showBanner: function (msg, type) {
         if (type === "error") showError(msg);
         else console.warn(msg);
