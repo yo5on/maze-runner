@@ -217,11 +217,12 @@ namespace MazeRunner.EditorTools
 
             private IEnumerator Steps()
             {
-                Texture2D logoTexture = Resources.Load<Texture2D>("Brand/MazeRunnerLogo");
+                TMP_Text menuTitle = Object.FindObjectsByType<TMP_Text>(FindObjectsSortMode.None)
+                    .FirstOrDefault(text => text.name == "ScreenTitle");
                 RawImage menuLogo = Object.FindObjectsByType<RawImage>(FindObjectsSortMode.None)
                     .FirstOrDefault(image => image.name == "ScreenLogo");
-                Check(logoTexture != null && menuLogo != null && menuLogo.texture == logoTexture,
-                    "Main Menu displays the official logo texture");
+                Check(menuTitle != null && menuTitle.text == "Maze Runner" && menuLogo == null,
+                    "Main Menu displays the original text title without a logo");
                 Check(PlayableCharacters.All.Count == 6
                     && PlayableCharacters.All.All(c => !string.IsNullOrWhiteSpace(c.DisplayName))
                     && PlayableCharacters.All.Select(c => c.DisplayName).Distinct(System.StringComparer.OrdinalIgnoreCase).Count() == PlayableCharacters.All.Count,

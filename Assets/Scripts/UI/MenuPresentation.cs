@@ -61,7 +61,7 @@ namespace MazeRunner.UI
                 {
                     var panelImage = rect.GetComponent<Image>();
                     if (panelImage != null) panelImage.color = PaletteButton.SteelBlue;
-                    if (rect.name == "MainMenuPanel") AddLogo(rect);
+                    if (rect.name == "MainMenuPanel") AddTitle(rect, "Maze Runner", 104f);
                     else AddTitle(rect, "Select Level", 64f);
                 }
                 else if (rect.name == "PauseMenuPanel" || rect.name == "LevelCompletePanel" || rect.name == "GameOverPanel")
@@ -99,25 +99,6 @@ namespace MazeRunner.UI
                     label.color = Color.white;
                 }
             }
-        }
-
-        /// <summary>Adds the wordless brand mark above the main menu buttons.</summary>
-        private static void AddLogo(RectTransform panel)
-        {
-            if (panel.GetComponent<VerticalLayoutGroup>() == null || panel.Find("ScreenLogo") != null) return;
-            Texture2D logo = Resources.Load<Texture2D>("Brand/MazeRunnerLogo");
-            if (logo == null)
-            {
-                AddTitle(panel, "Maze Runner", 104f);
-                return;
-            }
-
-            var rect = PaletteUI.NewRect("ScreenLogo", panel);
-            rect.SetAsFirstSibling();
-            rect.sizeDelta = new Vector2(156f, 156f);
-            var image = rect.gameObject.AddComponent<RawImage>();
-            image.texture = logo;
-            image.raycastTarget = false;
         }
 
         /// <summary>
