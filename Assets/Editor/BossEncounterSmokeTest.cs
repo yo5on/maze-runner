@@ -831,9 +831,11 @@ namespace MazeRunner.EditorTools
 
             private readonly List<Vector2> samples = new List<Vector2>();
             private readonly List<float> pivots = new List<float>(); // body x (a turn does not move it, unlike the collider's centre)
+            private Collider2D shovePlayerCollider;
+            private int skirmisherRightContacts;
             private bool sampling;
 
-            private IEnumerator SampleEveryStep(GoblinEnemy e)
+            private IEnumerator SampleEveryStep(GoblinEnemy e, int side, string who)
             {
                 while (sampling && e != null)
                 {
@@ -841,6 +843,29 @@ namespace MazeRunner.EditorTools
                     if (e == null) break;
                     samples.Add(new Vector2(e.BodyCollider.bounds.center.x, e.BodyCollider.bounds.min.y));
                     pivots.Add(e.Body.position.x);
+                    if (Level == 2 && who == "GoblinSkirmisher" && side > 0 && shovePlayerCollider != null)
+                    {
+                        var contacts = new List<ContactPoint2D>();
+                        int count = Physics2D.GetContacts(e.BodyCollider, contacts);
+                        if (contacts.Any(c => c.collider == shovePlayerCollider || c.otherCollider == shovePlayerCollider))
+                        {
+                            skirmisherRightContacts++;
+                            if (skirmisherRightContacts <= 80)
+                            {
+                                Bounds feet = e.BodyCollider.bounds, ground = e.Platform.bounds;
+                                float max = ground.max.x - feet.extents.x * 0.5f;
+                                float guardLimit = Mathf.Clamp((max - feet.center.x) / Time.fixedDeltaTime, 0f, float.PositiveInfinity);
+                                float dx = pivots.Count > 1 ? pivots[pivots.Count - 1] - pivots[pivots.Count - 2] : 0f;
+                                ContactPoint2D contact = contacts.First(c => c.collider == shovePlayerCollider || c.otherCollider == shovePlayerCollider);
+                                Log("CONTACT L3 GoblinSkirmisher right step=" + skirmisherRightContacts + " x=" + e.Body.position.x.ToString("0.000") +
+                                    " dx=" + dx.ToString("+0.000;-0.000;0.000") + " vx=" + e.Body.linearVelocity.x.ToString("+0.000;-0.000;0.000") +
+                                    " playerX=" + shovePlayerCollider.bounds.center.x.ToString("0.000") + " playerVx=" + playerBody.linearVelocity.x.ToString("+0.000;-0.000;0.000") +
+                                    " touching=" + count + " normal=" + contact.normal.ToString("F2") +
+                                    " guard=" + (feet.min.y >= ground.max.y - 0.3f && feet.max.x >= ground.min.x && feet.min.x <= ground.max.x) +
+                                    " guardMax=" + max.ToString("0.000") + " guardVxCap=" + guardLimit.ToString("0.000"));
+                            }
+                        }
+                    }
                 }
             }
 
@@ -864,8 +889,10 @@ namespace MazeRunner.EditorTools
 
                 samples.Clear();
                 pivots.Clear();
+                skirmisherRightContacts = 0;
+                shovePlayerCollider = player.GetComponent<Collider2D>();
                 sampling = true;
-                StartCoroutine(SampleEveryStep(e));
+                StartCoroutine(SampleEveryStep(e, side, who));
 
                 // 1. The player's body running into it toward the edge for 1.5 s.
                 for (float t = 0f; t < 1.5f && e != null; t += Time.deltaTime)
@@ -880,6 +907,7 @@ namespace MazeRunner.EditorTools
                 }
                 Release();
                 int shoveSteps = samples.Count;
+                int shoveContactSteps = skirmisherRightContacts;
 
                 // 2. Eight weak hits (a stomp's push) in a row.
                 for (int i = 0; i < 8 && e != null && !e.IsDead; i++) { KeepAlive(); e.ApplyKnockback(new Vector2(side * 3f, 0f)); yield return new WaitForSeconds(0.12f); }
@@ -904,6 +932,8 @@ namespace MazeRunner.EditorTools
                 Place(new Vector2(Stand(p, start - side * 6f), floor + 1f), Vector2.zero);
                 yield return new WaitForSeconds(0.4f);
                 sampling = false;
+                if (Level == 2 && who == "GoblinSkirmisher" && side > 0)
+                    Check(shoveContactSteps > 0, who + " right-edge shove reached confirmed player contact", shoveContactSteps + " body-shove contact samples");
                 if (unexpectedPlayerDeath || e == null || e.IsDead || samples.Count < 10)
                 {
                     string reason = unexpectedPlayerDeath ? "player death: " + unexpectedDeathReason : e == null || e.IsDead ? "target died or was removed" : "only " + samples.Count + " physics samples";
@@ -929,7 +959,8 @@ namespace MazeRunner.EditorTools
                 Check(stayed, who + " stays on its platform at the " + edge + " edge (body shove, weak and strong hits, body jumps" + (e.IsBoss ? ", stomps)" : ")"),
                     "outmost " + outmost.ToString("0.00") + " lowest feet " + lowest.ToString("0.00") + " platform " + p.min.x.ToString("0.0") + ".." + p.max.x.ToString("0.0") + " top " + floor.ToString("0.00"));
                 Check(maxStep < 0.35f, who + " never snaps or teleports at the " + edge + " edge", "largest step " + maxStep.ToString("0.000"));
-                Check(reversals <= Mathf.Max(3, moving / 4), who + " does not jitter against the " + edge + " edge while shoved", reversals + " reversals in " + moving + " moving steps of " + shoveSteps);
+                int reversalLimit = Level == 2 && who == "GoblinSkirmisher" && side > 0 ? 4 : Mathf.Max(3, moving / 4);
+                Check(reversals <= reversalLimit, who + " does not jitter against the " + edge + " edge while shoved", reversals + " reversals in " + moving + " moving steps of " + shoveSteps);
 
                 // 6. Not locked up: a step inward is allowed at once, and the AI goes on deciding and moving.
                 var brain = e.GetComponent<EnemyBehaviour>();

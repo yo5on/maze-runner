@@ -487,13 +487,15 @@ namespace MazeRunner.Enemies
         {
             if (isDead || !hasOwnedMotion || playerCollider == null || collision.collider != playerCollider) return;
             float away = Mathf.Sign(rb.position.x - playerCollider.bounds.center.x);
-            float ownVx = ownedVelocity.x * away < 0f ? 0f : ownedVelocity.x;
+            bool ownStepIntoPlayer = ownedVelocity.x * away < 0f;
+            float ownVx = ownStepIntoPlayer ? 0f : ownedVelocity.x;
             float expected = ownedPosition.x + ownVx * Time.fixedDeltaTime;
             float push = (rb.position.x - expected) * away;
             float give = (isBoss ? bossShoveGive : shoveGive) * Time.fixedDeltaTime;
             if (push > give) rb.position = new Vector2(expected + away * give, rb.position.y);
+            else if (ownStepIntoPlayer && push < 0f) rb.position = new Vector2(expected, rb.position.y);
             Vector2 v = rb.linearVelocity;
-            float vx = v.x * away > 0f ? Mathf.Min(v.x * away, ownVx * away) * away : v.x;
+            float vx = v.x * away > 0f ? Mathf.Min(v.x * away, ownVx * away) * away : 0f;
             rb.linearVelocity = new Vector2(vx, Mathf.Min(v.y, Mathf.Max(ownedVelocity.y, 0f)));
         }
 
