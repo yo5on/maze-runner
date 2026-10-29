@@ -1277,6 +1277,9 @@ namespace MazeRunner.EditorTools
                 for (int i = 0; i < 4 && e != null; i++)
                 {
                     float cx = e.BodyCollider.bounds.center.x;
+                    // Potion pools and flasks left by earlier trials would bounce the player off its floor at the start spot.
+                    foreach (Hazard h in FindObjectsByType<Hazard>()) if (h.name == "PotionPool") Destroy(h.gameObject);
+                    foreach (AlchemistFlask f in FindObjectsByType<AlchemistFlask>()) Destroy(f.gameObject);
                     Place(new Vector2(Mathf.Max(p.min.x + 0.5f, cx - 7f), p.max.y + 1f), Vector2.zero);
                     yield return new WaitForSeconds(0.3f);
                     for (float t = 0f; t < 2f && Mathf.Abs(e.BodyCollider.bounds.center.x - player.transform.position.x) > 2.5f; t += Time.deltaTime)
