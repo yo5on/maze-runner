@@ -4,7 +4,7 @@
 
 The project uses Unity scenes and MonoBehaviours as its composition model. Scenes hold level/menu GameObjects and serialized component references; prefabs package reusable objects; ScriptableObjects hold customization category/option data. Most tunable behavior is exposed through serialized Inspector fields.
 
-The current Unity editor version is **6000.5.1f1**. Rendering uses URP with 2D renderer assets. Input is handled by the New Input System. UI uses Unity UI and TextMesh Pro. The project does not currently declare Cinemachine in its package manifest.
+The current Unity editor version is **6000.6.5f1**. Rendering uses URP with 2D renderer assets. Input is handled by the New Input System. UI uses Unity UI and TextMesh Pro. The project does not currently declare Cinemachine in its package manifest.
 
 ## Source layout
 

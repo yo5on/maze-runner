@@ -3,10 +3,10 @@
 ## Overview
 Original 2D side-scrolling platformer built with Unity 6 and Universal Render Pipeline (URP).
 
-**Project Name:** maze-runner  
-**Unity Version:** 6000.5.1f1  
-**Template:** Universal 2D (URP)  
-**Input System:** New Input System (v1.19.0)
+**Project Name:** maze-runner
+**Unity Version:** 6000.6.5f1
+**Template:** Universal 2D (URP)
+**Input System:** New Input System (v1.20.0)
 
 ---
 

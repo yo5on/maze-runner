@@ -2,13 +2,13 @@
 
 ## Current baseline
 
-Use Unity **6000.5.1f1**. Keep Unity-authored content (scenes, prefabs, ProjectSettings, package manifests, and `.meta` files) under Unity's control. The repository's direct packages are recorded in `Packages/manifest.json`; review that file when changing package dependencies.
+Use Unity **6000.6.5f1**. Keep Unity-authored content (scenes, prefabs, ProjectSettings, package manifests, and `.meta` files) under Unity's control. The repository's direct packages are recorded in `Packages/manifest.json`; review that file when changing package dependencies.
 
 The recent repository history through September 15, 2026 includes updates to goblin animations, level audio, enemy fall death, one-respawn game over, and the three-heart health HUD. This is a summary of commit subjects, not a claim that the project has passed a release QA cycle.
 
 ## Working in the project
 
-1. Open the project using Unity 6000.5.1f1 and let packages/import finish.
+1. Open the project using Unity 6000.6.5f1 and let packages/import finish.
 2. Check the Console for compile or asset-reference errors.
 3. Open the relevant scene and inspect its serialized components and references before editing behavior.
 4. Use Play mode to verify the affected player/enemy/UI flow in context.

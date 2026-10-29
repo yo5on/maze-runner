@@ -61,7 +61,7 @@
 
 <div align="center"><samp><b>Requirements</b></samp></div>
 
-- <samp>Unity <b>6000.5.1f1</b></samp>
+- <samp>Unity <b>6000.6.5f1</b></samp>
 - <samp>Unity Package Manager dependencies in <code>Packages/manifest.json</code></samp>
 - <samp>A desktop platform supported by the installed Unity Editor</samp>
 
@@ -72,7 +72,7 @@
 <div align="center"><samp><b>Open the Project</b></samp></div>
 
 1. <samp>Install or open Unity Hub and add this repository as a project.</samp>
-2. <samp>Select Unity <b>6000.5.1f1</b> when prompted.</samp>
+2. <samp>Select Unity <b>6000.6.5f1</b> when prompted.</samp>
 3. <samp>Allow Unity Package Manager to resolve the packages and import assets.</samp>
 4. <samp>Open <code>Assets/Scenes/MainMenu.unity</code> or one of the gameplay scenes under <code>Assets/Scenes/Levels/</code>.</samp>
 5. <samp>Use the Unity Editor Play control to run the selected scene.</samp>
@@ -119,7 +119,7 @@ powershell -ExecutionPolicy Bypass -File tools/deploy-gh-pages.ps1
 
 <samp><b>Known limitations of the Web version:</b></samp>
 
-- <samp>The live build was produced with Unity <b>6000.6.5f1</b> (the project targets <b>6000.5.1f1</b>); the version upgrade was not committed.</samp>
+- <samp>The live build and project target Unity <b>6000.6.5f1</b>.</samp>
 - <samp><b>Quit</b> does nothing in a browser; close the tab instead. <b>Settings</b> is not implemented yet (same as desktop).</samp>
 - <samp>Progress and customization are saved in the browser's storage (IndexedDB) and are lost if site data is cleared or in private windows.</samp>
 - <samp>In portrait on phones the game is small because the levels are 16:9; rotate to landscape.</samp>

@@ -2,7 +2,7 @@
 
 ## Software
 
-- Unity Editor **6000.5.1f1**, as specified by `ProjectSettings/ProjectVersion.txt`
+- Unity Editor **6000.6.5f1**, as specified by `ProjectSettings/ProjectVersion.txt`
 - Unity Hub (recommended for installing/selecting the project editor)
 - Git, if obtaining the project by clone
 
@@ -12,7 +12,7 @@ The package manifest identifies the project dependencies. Unity Package Manager 
 
 1. Clone or download the repository.
 2. In Unity Hub, choose **Add project from disk** and select the repository root.
-3. If Unity asks for an editor version, use **6000.5.1f1**.
+3. If Unity asks for an editor version, use **6000.6.5f1**.
 4. Wait for package resolution and import to complete. Review the Unity Console for errors before playtesting.
 5. Open `Assets/Scenes/MainMenu.unity` or a scene under `Assets/Scenes/Levels/`.
 
@@ -37,16 +37,16 @@ Key direct package versions in `Packages/manifest.json`:
 
 | Package | Version | Use indicated by package/project |
 |---|---:|---|
-| `com.unity.inputsystem` | 1.19.0 | New Input System |
-| `com.unity.render-pipelines.universal` | 17.5.0 | Universal Render Pipeline |
-| `com.unity.2d.animation` | 15.1.0 | 2D animation support |
-| `com.unity.2d.aseprite` | 5.0.3 | Aseprite importer |
-| `com.unity.2d.psdimporter` | 14.0.3 | PSD importer |
-| `com.unity.2d.spriteshape` | 15.0.3 | Sprite Shape |
-| `com.unity.2d.tilemap.extras` | 8.0.3 | Tilemap extras |
-| `com.unity.ugui` | 2.5.0 | Unity UI |
+| `com.unity.inputsystem` | 1.20.0 | New Input System |
+| `com.unity.render-pipelines.universal` | 17.6.0 | Universal Render Pipeline |
+| `com.unity.2d.animation` | 16.0.1 | 2D animation support |
+| `com.unity.2d.aseprite` | 6.0.0 | Aseprite importer |
+| `com.unity.2d.psdimporter` | 15.0.1 | PSD importer |
+| `com.unity.2d.spriteshape` | 16.0.0 | Sprite Shape |
+| `com.unity.2d.tilemap.extras` | 9.0.1 | Tilemap extras |
+| `com.unity.ugui` | 2.6.0 | Unity UI |
 
-Other direct dependencies are listed in the manifest, including Timeline 1.8.12, Visual Scripting 1.9.11, Test Framework 1.7.0, IDE integrations, and Unity modules. TextMesh Pro assets/resources are present under `Assets/TextMesh Pro/`; TextMesh Pro does not appear as a direct entry in the current manifest. The project contains URP 2D renderer settings. Cinemachine is not a current manifest dependency.
+Other direct dependencies are listed in the manifest, including Timeline 6.6.0, Visual Scripting 1.9.12, Test Framework 1.8.0, IDE integrations, and Unity modules. TextMesh Pro assets/resources are present under `Assets/TextMesh Pro/`; TextMesh Pro does not appear as a direct entry in the current manifest. The project contains URP 2D renderer settings. Cinemachine is not a current manifest dependency.
 
 ## Input and controls
 
