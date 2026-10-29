@@ -105,7 +105,10 @@ namespace MazeRunner.Camera
             
             transform.position = targetPosition;
         }
-        
+
+        /// <summary>The height <see cref="SnapToTarget"/> would put the camera at right now (where it settles).</summary>
+        public float RestingY => target != null && followY ? target.position.y + offset.y : transform.position.y;
+
         private void OnDrawGizmosSelected()
         {
             if (!useBoundaries) return;

@@ -4,10 +4,12 @@ namespace MazeRunner.Levels
 {
     /// <summary>
     /// The moon in the night sky: a plain unlit sprite drawn behind everything (lowest sorting order, no
-    /// collider), kept at the same spot of the screen - upper right, clear of the HUD buttons - and the
-    /// same on-screen size whatever the camera position, zoom or aspect ratio (so it reads as infinitely
-    /// far away). Optionally stretches a sky-gradient backdrop over the whole view so the moon sits in a
-    /// deepening sky rather than on a flat clear colour. Runs after the camera has moved each frame.
+    /// collider), kept at the same horizontal spot of the screen - right side, clear of the HUD buttons -
+    /// and the same on-screen size whatever the camera position, zoom or aspect ratio (so it reads as
+    /// infinitely far away). Its height is fixed in the world, set once from where the camera settles at the start, so
+    /// the camera's vertical movement (jumps, smoothing, respawn snaps) never moves it up or down.
+    /// Optionally stretches a sky-gradient backdrop over the whole view so the moon sits in a deepening
+    /// sky rather than on a flat clear colour. Runs after the camera has moved each frame.
     /// </summary>
     [DefaultExecutionOrder(1000)]
     [RequireComponent(typeof(SpriteRenderer))]
@@ -26,6 +28,7 @@ namespace MazeRunner.Levels
 
         private SpriteRenderer sr;
         private UnityEngine.Camera cam;
+        private float? worldY;
 
         private void Awake()
         {
@@ -46,8 +49,13 @@ namespace MazeRunner.Levels
             Vector3 c = cam.transform.position;
             float x = c.x + (viewportPosition.x - 0.5f) * viewWidth;
             x = Mathf.Min(x, c.x + viewWidth / 2f - size * edgeMargin);
-            float y = c.y + (viewportPosition.y - 0.5f) * viewHeight;
-            transform.position = new Vector3(x, y, transform.position.z);
+            if (worldY == null)
+            {
+                // From where the camera settles on the player, not its start position before it eases over.
+                var follow = cam.GetComponent<MazeRunner.Camera.CameraFollow>();
+                worldY = (follow != null ? follow.RestingY : c.y) + (viewportPosition.y - 0.5f) * viewHeight;
+            }
+            transform.position = new Vector3(x, worldY.Value, transform.position.z);
 
             if (backdrop != null && backdrop.sprite != null)
             {

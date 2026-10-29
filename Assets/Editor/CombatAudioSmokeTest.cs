@@ -134,6 +134,7 @@ namespace MazeRunner.EditorTools
             {
                 Application.logMessageReceived += OnLog;
                 yield return new WaitForSeconds(1f);
+                CheckMoonAtStart();
                 yield return Audio();
                 yield return new WaitForSeconds(1f);
                 FindPlayer();
@@ -141,6 +142,7 @@ namespace MazeRunner.EditorTools
                 else
                 {
                     yield return Stomp();
+                    yield return Moon();
                 }
                 Check(errorsLogged == 0, "no errors or exceptions logged", errorsLogged + " " + firstError);
                 Application.logMessageReceived -= OnLog;
@@ -283,6 +285,50 @@ namespace MazeRunner.EditorTools
                 Check(target.CurrentHealth == before - 1, "a stomp deals exactly 1 damage", before + " -> " + target.CurrentHealth);
                 Check(bounced, "the player bounces off a stomped enemy");
                 EnemyHealthField.SetValue(target, target.MaxHealth);
+            }
+
+            // ------------------------------------------------------------------- moon
+
+            /// <summary>At the spawn, with the camera settled on the player, the moon is where it always was: upper right.</summary>
+            private void CheckMoonAtStart()
+            {
+                var moon = FindAnyObjectByType<SkyMoon>();
+                var cam = UnityEngine.Camera.main;
+                Vector3 vp = moon != null && cam != null ? cam.WorldToViewportPoint(moon.transform.position) : Vector3.zero;
+                Check(Mathf.Abs(vp.y - 0.74f) < 0.05f && vp.x > 0.6f, "the moon starts in the upper-right sky", "viewport " + vp.ToString("F2"));
+            }
+
+            /// <summary>The moon keeps its world height through jumps, camera smoothing and a respawn snap; only its X follows the camera.</summary>
+            private IEnumerator Moon()
+            {
+                var moon = FindAnyObjectByType<SkyMoon>();
+                var cam = UnityEngine.Camera.main;
+                if (moon == null || cam == null) { Check(false, "level has a SkyMoon and a main camera"); yield break; }
+                yield return null;
+                float y0 = moon.transform.position.y;
+                float dx0 = moon.transform.position.x - cam.transform.position.x;
+                float camMin = cam.transform.position.y, camMax = camMin, camX0 = cam.transform.position.x;
+                float yDrift = 0f, xDrift = 0f;
+                // A big jump to the right: the camera moves both ways.
+                playerBody.position += new Vector2(6f, 0f);
+                player.transform.position = playerBody.position;
+                playerBody.linearVelocity = new Vector2(0f, 14f);
+                for (float t = 0f; t < 1.5f; t += Time.deltaTime)
+                {
+                    yield return null;
+                    camMin = Mathf.Min(camMin, cam.transform.position.y);
+                    camMax = Mathf.Max(camMax, cam.transform.position.y);
+                    yDrift = Mathf.Max(yDrift, Mathf.Abs(moon.transform.position.y - y0));
+                    xDrift = Mathf.Max(xDrift, Mathf.Abs(moon.transform.position.x - cam.transform.position.x - dx0));
+                }
+                float camDx = cam.transform.position.x - camX0;
+                Check(camMax - camMin > 1f && Mathf.Abs(camDx) > 1f, "moon trial: the camera moved up/down and sideways", "camera y " + camMin.ToString("0.00") + ".." + camMax.ToString("0.00") + ", x moved " + camDx.ToString("0.00"));
+                Check(yDrift == 0f, "the moon's world Y stays fixed while the camera moves vertically", "largest Y change " + yDrift.ToString("0.0000"));
+                Check(xDrift < 0.001f, "the moon's X follows the camera horizontally", "largest drift from its screen spot " + xDrift.ToString("0.0000"));
+                health.Respawn();
+                yield return null;
+                yield return null;
+                Check(moon.transform.position.y == y0, "a respawn camera snap leaves the moon's Y unchanged", y0.ToString("0.000") + " -> " + moon.transform.position.y.ToString("0.000"));
             }
         }
     }
