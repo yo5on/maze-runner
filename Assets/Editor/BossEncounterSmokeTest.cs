@@ -530,6 +530,9 @@ namespace MazeRunner.EditorTools
                 // 6. Regular enemies: platform safety for each kind, prediction for a basic and an elite one.
                 yield return RegularEnemyTrials();
 
+                // 6b. The Plague Alchemist with the player standing and jumping on its head.
+                if (Level == 1) yield return HeadStompTrial();
+
                 // 7. Defeat everything; the goal now completes the level.
                 MethodInfo die = typeof(GoblinEnemy).GetMethod("Die", BindingFlags.Instance | BindingFlags.NonPublic);
                 foreach (GoblinEnemy g in FindObjectsByType<GoblinEnemy>()) if (!g.IsDead && g != boss) die.Invoke(g, null);
@@ -979,6 +982,91 @@ namespace MazeRunner.EditorTools
                     (moved || e == null ? "" : " | v " + e.Body.linearVelocity.ToString("F2") + " feet " + e.BodyCollider.bounds.min.y.ToString("F2") + " on " + e.StandsOnPlatform +
                      " locked " + e.IsAttackLocked + " knocked " + e.IsKnockedBack + " type " + e.Body.bodyType + " sim " + e.Body.simulated + " constraints " + e.Body.constraints +
                      " enabled " + e.enabled + " brain " + (brain != null && brain.enabled) + " player " + player.transform.position.ToString("F1")));
+            }
+
+            /// <summary>
+            /// The player lands on the boss's head and keeps jumping straight up and down on it for 4 s: the boss
+            /// must not keep reversing (facing or walking) under the player, and must then pursue normally to each side.
+            /// </summary>
+            private IEnumerator HeadStompTrial()
+            {
+                var brain = boss.GetComponent<EnemyBehaviour>();
+                float floor = arena.max.y;
+                RestoreHealth(boss);
+                PlaceBoss(arena.center.x);
+                Place(new Vector2(arena.center.x - 8f, floor + 1f), Vector2.zero);
+                yield return new WaitForSeconds(0.5f);
+                Bounds b = boss.BodyCollider.bounds;
+                float feetToPivot = player.transform.position.y - player.GetComponent<Collider2D>().bounds.min.y;
+                Place(new Vector2(b.center.x, b.max.y + feetToPivot + 0.6f), Vector2.zero);
+
+                int flips = 0, reversals = 0, onHead = 0, landings = 0, steps = 0;
+                bool wasStanding = false;
+                int burst = 0;
+                var flipTimes = new List<float>();
+                int lastFacing = boss.Direction;
+                float lastVx = 0f;
+                for (float t = 0f; t < 6f && boss != null && !boss.IsDead; t += Time.fixedDeltaTime)
+                {
+                    yield return new WaitForFixedUpdate();
+                    KeepAlive();
+                    if (boss.CurrentHealth <= 3) RestoreHealth(boss);
+                    steps++;
+                    Bounds eb = boss.BodyCollider.bounds, pb = player.GetComponent<Collider2D>().bounds;
+                    bool standing = pb.min.y >= eb.max.y - 0.15f && pb.min.y <= eb.max.y + 0.15f && pb.max.x > eb.min.x && pb.min.x < eb.max.x;
+                    bool over = pb.center.x > eb.min.x && pb.center.x < eb.max.x && pb.min.y >= eb.max.y - 0.15f;
+                    if (over) onHead++;
+                    // Like a player keeping on top of it: steers back over its middle, and jumps again on landing.
+                    Vector2 pv = playerBody.linearVelocity;
+                    pv.x = Mathf.Clamp((eb.center.x - pb.center.x) * 12f, -7f, 7f);
+                    if (standing && !wasStanding) landings++;
+                    wasStanding = standing;
+                    if (standing && pv.y <= 0.1f) pv.y = JumpSpeed;
+                    playerBody.linearVelocity = pv;
+                    if (boss.Direction != lastFacing)
+                    {
+                        flips++;
+                        lastFacing = boss.Direction;
+                        flipTimes.Add(t);
+                        // Flips within half a second: a turn (or an evade and a turn back) is at most 2.
+                        while (t - flipTimes[0] > 0.5f) flipTimes.RemoveAt(0);
+                        burst = Mathf.Max(burst, flipTimes.Count);
+                    }
+                    float vx = boss.Body.linearVelocity.x;
+                    if (Mathf.Abs(vx) > 0.05f)
+                    {
+                        if (lastVx != 0f && Mathf.Sign(vx) != Mathf.Sign(lastVx)) reversals++;
+                        lastVx = vx;
+                    }
+                }
+                Log("INFO " + L + " head-stomp trial: " + steps + " steps, " + onHead + " over the head, " + landings + " landings on it, " + flips + " facing flips, " + reversals + " walk reversals");
+                Check(landings >= 3 && onHead >= steps / 2, "head-stomp trial: the player kept landing and jumping on the boss's head", landings + " landings, over its head " + onHead + " of " + steps + " steps");
+                Check(burst <= 2 && flips <= 6 && reversals <= 6, "boss does not flip left/right with the player on its head",
+                    flips + " facing flips (at most " + burst + " within 0.5 s), " + reversals + " walk reversals in " + steps + " steps");
+
+                // Then the player on the floor to each side, beyond its keep-away range: it turns toward them and holds that way.
+                foreach (int side in new[] { -1, 1 })
+                {
+                    if (boss == null || boss.IsDead) break;
+                    RestoreHealth(boss);
+                    PlaceBoss(arena.center.x);
+                    float px = Mathf.Clamp(boss.BodyCollider.bounds.center.x + side * 8f, arena.min.x + 0.5f, arena.max.x - 0.5f);
+                    Place(new Vector2(px, floor + 1f), Vector2.zero);
+                    int facing = 0, flipsAfter = 0, lastDir = boss.Direction;
+                    float x0 = boss.BodyCollider.bounds.center.x;
+                    for (float t = 0f; t < 2f; t += Time.fixedDeltaTime)
+                    {
+                        yield return new WaitForFixedUpdate();
+                        KeepAlive();
+                        if (t > 0.5f && boss.Direction == side) facing++;
+                        if (boss.Direction != lastDir) { flipsAfter++; lastDir = boss.Direction; }
+                    }
+                    float moved = (boss.BodyCollider.bounds.center.x - x0) * side;
+                    string sideName = side < 0 ? "left" : "right";
+                    Check(facing > 0 && boss.Direction == side && flipsAfter <= 1, "after the head stomps the boss turns to the player on its " + sideName + " and stays turned",
+                        "faced them " + facing + " steps, " + flipsAfter + " turns, moved " + moved.ToString("0.00") + " toward them");
+                }
+                Release();
             }
 
             private static float Stand(Bounds platform, float x) => Mathf.Clamp(x, platform.min.x + 0.5f, platform.max.x - 0.5f);
