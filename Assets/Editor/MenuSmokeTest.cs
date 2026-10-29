@@ -472,7 +472,7 @@ namespace MazeRunner.EditorTools
                 // 5. Death and respawn, then Game Over.
                 health.Die();
                 yield return Wait(4f);
-                Check(health.CurrentHealth > 0 && body.simulated, "first death respawns the player");
+                Check(health.CurrentHealth == 5 && health.MaxHealth == 5 && body.simulated, "first death respawns the player with all 5 hearts", health.CurrentHealth + "/" + health.MaxHealth);
                 Check(MenuNavigator.OpenMenu == null, "respawn: no menu open");
                 health.Die();
                 yield return Wait(0.5f);

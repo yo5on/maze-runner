@@ -50,7 +50,7 @@ namespace MazeRunner.EditorTools
         private const string SpikeTexturePath = "Assets/Art/Environment/Spikes.png";
         private const string RouteFile = "Logs/level-routes.json";
 
-        private const int PlayerMaxHealth = 7;
+        private const int PlayerMaxHealth = 5;
         private const float PlayerJumpForce = 9f;
 
         private static readonly Color MoverColor = new Color32(0xaf, 0xae, 0xa2, 0xff);   // stone

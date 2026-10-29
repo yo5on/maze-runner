@@ -8818,7 +8818,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f3449dabaa7d04d45bbb09c4f34df009, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MazeRunner.Player.PlayerHealth
-  maxHealth: 7
+  maxHealth: 5
   invincibilityDuration: 0
   fallDeathY: -10
   maxDeathAnimationTime: 1.5

@@ -48,6 +48,9 @@ namespace MazeRunner.EditorTools
         private static readonly FieldInfo BehaviourField = typeof(GoblinEnemy).GetField("behaviour", Private);
         private static readonly FieldInfo InvincibleField = typeof(PlayerHealth).GetField("invincibilityTimer", Private);
         private static readonly MethodInfo GameOverMethod = typeof(PlayerHealth).GetMethod("GameOver", Private);
+        private static readonly FieldInfo HeartImagesField = typeof(HealthDisplay).GetField("heartImages", Private);
+        private static readonly FieldInfo FullHeartField = typeof(HealthDisplay).GetField("fullHeartSprite", Private);
+        private const int StartingHearts = 5;
 
         static CombatAudioSmokeTest()
         {
@@ -158,6 +161,7 @@ namespace MazeRunner.EditorTools
                 AudioManager m = AudioManager.Instance;
                 Check(m != null && all.Length == 1, "exactly one AudioManager", all.Length + " found");
                 if (m == null) yield break;
+                CheckStartingHearts("level start");
                 var music = (AudioSource)MusicField.GetValue(m);
                 var sfx = (AudioSource)SfxField.GetValue(m);
                 Check(music != null && music.clip != null && music.loop, "music source has a looping clip", music != null && music.clip != null ? music.clip.name : "none");
@@ -219,6 +223,7 @@ namespace MazeRunner.EditorTools
                     yield return new WaitForSeconds(0.5f);
                     Check(music.isPlaying && AudioManager.Instance == m && FindObjectsByType<AudioManager>(FindObjectsSortMode.None).Length == 1,
                         "retry after game over plays the music on the one AudioManager");
+                    CheckStartingHearts("retry after game over");
                 }
 
                 string level = SceneManager.GetActiveScene().name;
@@ -239,6 +244,38 @@ namespace MazeRunner.EditorTools
                 yield return new WaitForSeconds(0.5f);
                 Check(AudioManager.Instance == m && FindObjectsByType<AudioManager>(FindObjectsSortMode.None).Length == 1 && music.isPlaying,
                     "back from the menu: still one AudioManager, music playing");
+                CheckStartingHearts("new session from the main menu");
+
+                var h = FindAnyObjectByType<PlayerHealth>();
+                if (h != null)
+                {
+                    h.TakeDamage(1);
+                    Check(h.CurrentHealth == StartingHearts - 1 && FullHearts() == StartingHearts - 1, "one hit leaves 4 of 5 hearts on the HUD", h.CurrentHealth + " health, " + FullHearts() + " full hearts");
+                    h.Heal(10);
+                    Check(h.CurrentHealth == StartingHearts && FullHearts() == StartingHearts, "healing caps at 5 hearts", h.CurrentHealth + " health, " + FullHearts() + " full hearts");
+                }
+            }
+
+            /// <summary>Full hearts the HUD shows, or -1 without a HealthDisplay.</summary>
+            private static int FullHearts()
+            {
+                var display = FindAnyObjectByType<HealthDisplay>();
+                var images = display != null ? HeartImagesField.GetValue(display) as UnityEngine.UI.Image[] : null;
+                if (images == null) return -1;
+                var full = (Sprite)FullHeartField.GetValue(display);
+                int n = 0;
+                foreach (var img in images) if (img != null && img.sprite == full) n++;
+                return n;
+            }
+
+            /// <summary>Every level attempt starts with 5 hearts, 5 heart containers on the HUD (all full) and the one spare respawn.</summary>
+            private void CheckStartingHearts(string when)
+            {
+                var h = FindAnyObjectByType<PlayerHealth>();
+                var display = FindAnyObjectByType<HealthDisplay>();
+                var images = display != null ? HeartImagesField.GetValue(display) as UnityEngine.UI.Image[] : null;
+                Check(h != null && h.MaxHealth == StartingHearts && h.CurrentHealth == StartingHearts && h.SpareLives == 1 && images != null && images.Length == StartingHearts && FullHearts() == StartingHearts,
+                    "starts with 5 hearts (" + when + ")", h == null ? "no PlayerHealth" : h.CurrentHealth + "/" + h.MaxHealth + " health, spare " + h.SpareLives + ", HUD " + (images != null ? images.Length : -1) + " hearts, " + FullHearts() + " full");
             }
 
             // ------------------------------------------------------------------- stomp
