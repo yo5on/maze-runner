@@ -16,7 +16,7 @@
   --hair: rgba(180, 194, 214, 0.2);
   --accent: #4da861;
   --accent-soft: rgba(77, 168, 97, 0.35);
-  --cream: var(--cream);
+  --cream: #f3ead7;
 
   --ui: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
   --display: "Yoster", system-ui, sans-serif;
@@ -649,4 +649,31 @@ body.touch.portrait #btn-jump {
 #sheet-close:hover,
 #sheet-close:active {
   background: var(--accent-soft);
+}
+
+
+/* UI audit: fix the self-referential cream token and make web-player overlays keyboard-friendly. */
+:where(button, a, input, [role="button"]):focus-visible {
+  outline: 2px solid var(--cream);
+  outline-offset: 4px;
+}
+#sheet-close {
+  min-height: 44px;
+  border-color: rgba(77, 168, 97, 0.82);
+  color: var(--cream);
+  transition: border-color 160ms ease, background-color 160ms ease, transform 160ms ease;
+}
+.sheet-body {
+  line-height: 1.65;
+}
+@media (hover: hover) {
+  #sheet-close:hover {
+    border-color: var(--cream);
+    background: rgba(77, 168, 97, 0.16);
+    transform: translateY(-1px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  #sheet-close { transition: none; }
+  #sheet-close:hover { transform: none; }
 }
