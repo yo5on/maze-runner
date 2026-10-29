@@ -203,3 +203,9 @@ docs/                      Project documentation
 <div align="center"><samp><b>Scope and Future Work</b></samp></div>
 
 <samp>The repository contains reusable systems beyond what is currently represented in the three level scenes. For example, the wraith and collectible scripts exist, but the current gameplay scenes inspected do not establish that those features are placed and wired into the levels. Adding and balancing content, confirming scene wiring, and end-to-end playtesting remain ongoing work.</samp>
+
+---
+
+<div align="center"><samp><b>License</b></samp></div>
+
+<samp>This project's original code is licensed under the MIT License. See [LICENSE](LICENSE) for details. Third-party assets and dependencies remain under their respective licenses.</samp>
