@@ -49,17 +49,28 @@ namespace MazeRunner.Enemies
         {
             if (Busy) return;
             if (Enemy.IsAttackLocked) { Enemy.Halt(); return; }
-            if (!engaged) { Enemy.PatrolStep(); return; }
-            if (Mathf.Abs(DX) > slamRange * 0.6f) Enemy.MoveHorizontal(DirToPlayer, walkSpeed);
-            else { Enemy.Halt(); Enemy.Face(DirToPlayer); }
+            int side = PlayerSide();
+            if (!engaged)
+            {
+                // A stomp's bounce lifts the player past the engagement height: it stands under them, facing
+                // as it was, instead of patrolling away (a boss posted at one spot flipped every step).
+                if (PlayerOverhead) Enemy.Halt();
+                else Enemy.PatrolStep();
+                return;
+            }
+            if (Mathf.Abs(DX) > slamRange * 0.6f) Enemy.MoveHorizontal(side, walkSpeed);
+            else { Enemy.Halt(); Enemy.Face(side); }
         }
+
+        /// <summary>The player close above it, such as bouncing on its head.</summary>
+        protected bool PlayerOverhead => HasPlayer && Mathf.Abs(DX) < slamRange && DY > 0f && DY < 8f;
 
         protected virtual float SlamCooldown => cooldown;
 
         protected IEnumerator Slam()
         {
             nextSlam = Time.time + SlamCooldown;
-            int dir = DirToPlayer;
+            int dir = PlayerSide();
             Enemy.Halt();
             Enemy.Face(dir);
             Bounds b = Enemy.BodyCollider.bounds;

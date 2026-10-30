@@ -176,24 +176,6 @@ namespace MazeRunner.Enemies
         /// <summary>The player close above it, such as bouncing on its head.</summary>
         private bool PlayerOverhead => HasPlayer && Mathf.Abs(DX) < tooClose && DY > 0f && DY < 8f;
 
-        private int playerSide = 1;
-
-        /// <summary>
-        /// The side the player is on, from the body's middle, changed only once the player is clearly past it
-        /// (a dead zone of a quarter body width). A player standing or jumping on its head hovers around the
-        /// middle; reading that sign raw made it reverse its retreat step after step.
-        /// </summary>
-        private int PlayerSide()
-        {
-            if (!HasPlayer) return playerSide;
-            Bounds body = Enemy.BodyCollider != null ? Enemy.BodyCollider.bounds : new Bounds(transform.position, Vector3.one);
-            float dx = PlayerTransform.position.x - body.center.x;
-            float deadZone = body.extents.x * 0.5f;
-            if (dx > deadZone) playerSide = 1;
-            else if (dx < -deadZone) playerSide = -1;
-            return playerSide;
-        }
-
         private IEnumerator Throw()
         {
             nextThrow = Time.time + ThrowCooldown;

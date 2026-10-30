@@ -440,6 +440,7 @@ namespace MazeRunner.Enemies
             ownedPosition = rb.position;
             ownedVelocity = rb.linearVelocity;
             hasOwnedMotion = true;
+            if (Levels.EnemyTracker.Instance != null) Levels.EnemyTracker.Instance.RegisterEnemy(this);
         }
 
         // ---------------------------------------------------------------- knockback and shoving
@@ -843,7 +844,7 @@ namespace MazeRunner.Enemies
 
             if (Levels.EnemyTracker.Instance != null)
             {
-                Levels.EnemyTracker.Instance.NotifyEnemyDefeated();
+                Levels.EnemyTracker.Instance.NotifyEnemyDefeated(this);
             }
 
             StartCoroutine(RemoveAfterDeathAnimation());

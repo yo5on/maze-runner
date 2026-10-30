@@ -394,6 +394,7 @@ namespace MazeRunner.EditorTools
                 Place(new Vector2(goal.transform.position.x, floor + 1f), Vector2.zero);
                 yield return new WaitForSeconds(0.6f);
                 Check(!completed, "goal blocked while the boss lives");
+                Check(ExitHidden(goal), "exit hidden while enemies live", EnemyTracker.Instance.RemainingEnemyCount + " left");
                 yield return SetupKeyboard();
                 if (unexpectedPlayerDeath) { Log("ABORT " + L + " scenario before fight: " + unexpectedDeathReason); yield break; }
 
@@ -530,10 +531,27 @@ namespace MazeRunner.EditorTools
                 // 6. Regular enemies: platform safety for each kind, prediction for a basic and an elite one.
                 yield return RegularEnemyTrials();
 
-                // 6b. The Plague Alchemist with the player standing and jumping on its head.
-                if (Level == 1) yield return HeadStompTrial();
+                // 6b. The Ogre Warlord / Plague Alchemist with the player standing and jumping on its head.
+                if (Level <= 1) yield return HeadStompTrial();
 
                 // 7. Defeat everything; the goal now completes the level.
+                // A spawned enemy counts too; hurting or switching one off does not take it off the count.
+                int counted = EnemyTracker.Instance.RemainingEnemyCount;
+                GoblinEnemy model = SceneEnemies().FirstOrDefault(g => !g.IsBoss && !g.IsDead && g.CurrentHealth >= 2);
+                if (model != null)
+                {
+                    Object.Instantiate(model.gameObject, model.transform.position + Vector3.up * 0.2f, Quaternion.identity);
+                    yield return null;
+                    yield return null;
+                    Check(EnemyTracker.Instance.RemainingEnemyCount == counted + 1, "an enemy spawned mid-level is counted", counted + " -> " + EnemyTracker.Instance.RemainingEnemyCount);
+                    counted = EnemyTracker.Instance.RemainingEnemyCount;
+                    model.TakeDamage(1, new Vector2(3f, 0f));
+                    model.gameObject.SetActive(false);
+                    yield return null;
+                    Check(EnemyTracker.Instance.RemainingEnemyCount == counted && ExitHidden(goal), "a hurt, knocked-back or switched-off enemy still keeps the exit hidden",
+                        EnemyTracker.Instance.RemainingEnemyCount + " left");
+                    model.gameObject.SetActive(true);
+                }
                 MethodInfo die = typeof(GoblinEnemy).GetMethod("Die", BindingFlags.Instance | BindingFlags.NonPublic);
                 foreach (GoblinEnemy g in FindObjectsByType<GoblinEnemy>()) if (!g.IsDead && g != boss) die.Invoke(g, null);
                 foreach (WraithEnemy w in FindObjectsByType<WraithEnemy>()) w.TakeDamage(999);
@@ -542,12 +560,19 @@ namespace MazeRunner.EditorTools
                 yield return new WaitForSeconds(0.5f);
                 Check(!completed && EnemyTracker.Instance.RemainingEnemyCount == 1, "goal still shut with only the boss left",
                     EnemyTracker.Instance.RemainingEnemyCount + " left");
+                Check(ExitHidden(goal), "exit still hidden with only the boss left");
+                // Killing the dead again must not count twice.
+                foreach (GoblinEnemy g in FindObjectsByType<GoblinEnemy>()) if (g.IsDead) die.Invoke(g, null);
+                Check(EnemyTracker.Instance.RemainingEnemyCount == 1, "a second death call does not count twice", EnemyTracker.Instance.RemainingEnemyCount + " left");
                 Place(new Vector2(arena.min.x + 1.5f, floor + 1f), Vector2.zero);
                 for (int i = 0; i < 40 && !boss.IsDead; i++) boss.TakeDamage(1);
                 Check(boss.IsDead, "boss can be defeated");
                 yield return new WaitForSeconds(4f);
                 Check(boss == null, "boss removed after its death animation");
                 Check(EnemyTracker.Instance.RemainingEnemyCount == 0, "every enemy counted as defeated");
+                var goalSprite = goal.GetComponent<SpriteRenderer>();
+                Check(goal.IsRevealed && goal.GetComponent<Collider2D>().enabled && (goalSprite == null || goalSprite.enabled),
+                    "exit revealed once the last enemy (the boss) is down");
                 var bar = FindAnyObjectByType<BossHealthBar>();
                 Check(bar == null, "boss health bar removed with the boss");
                 Place(new Vector2(goal.transform.position.x, floor + 1f), Vector2.zero);
@@ -807,6 +832,13 @@ namespace MazeRunner.EditorTools
                 else Check(false, "elite duelist prediction target available", "SKIPPED: no DuelistBehaviour on a platform at least 5 units wide");
             }
 
+            /// <summary>The exit shows nothing and cannot be entered.</summary>
+            private static bool ExitHidden(LevelGoal goal)
+            {
+                var sr = goal.GetComponent<SpriteRenderer>();
+                return !goal.IsRevealed && !goal.GetComponent<Collider2D>().enabled && (sr == null || !sr.enabled);
+            }
+
             private static GoblinEnemy[] SceneEnemies() =>
                 FindObjectsByType<GoblinEnemy>(FindObjectsInactive.Exclude, FindObjectsSortMode.None)
                     .OrderBy(g => StablePath(g.transform), System.StringComparer.Ordinal).ToArray();
@@ -990,12 +1022,18 @@ namespace MazeRunner.EditorTools
             /// </summary>
             private IEnumerator HeadStompTrial()
             {
+                Random.InitState(4242); // the Warlord's stomp-read sidestep is a dice roll: same rolls every run
                 var brain = boss.GetComponent<EnemyBehaviour>();
+                int firstEvent = events.Count;
                 float floor = arena.max.y;
                 RestoreHealth(boss);
                 PlaceBoss(arena.center.x);
                 Place(new Vector2(arena.center.x - 8f, floor + 1f), Vector2.zero);
                 yield return new WaitForSeconds(0.5f);
+                // From 8 units the Ogre Warlord starts its charge: let any move finish before standing on it.
+                for (float t = 0f; t < 6f && brain != null && brain.IsBusy; t += Time.deltaTime) { KeepAlive(); yield return null; }
+                PlaceBoss(arena.center.x);
+                yield return new WaitForFixedUpdate();
                 Bounds b = boss.BodyCollider.bounds;
                 float feetToPivot = player.transform.position.y - player.GetComponent<Collider2D>().bounds.min.y;
                 Place(new Vector2(b.center.x, b.max.y + feetToPivot + 0.6f), Vector2.zero);
@@ -1021,7 +1059,8 @@ namespace MazeRunner.EditorTools
                     pv.x = Mathf.Clamp((eb.center.x - pb.center.x) * 12f, -7f, 7f);
                     if (standing && !wasStanding) landings++;
                     wasStanding = standing;
-                    if (standing && pv.y <= 0.1f) pv.y = JumpSpeed;
+                    // Knocked off (a slam, a sidestep): it jumps straight back up from the floor too.
+                    if ((standing || controller.IsGrounded) && pv.y <= 0.1f) pv.y = JumpSpeed;
                     playerBody.linearVelocity = pv;
                     if (boss.Direction != lastFacing)
                     {
@@ -1039,7 +1078,8 @@ namespace MazeRunner.EditorTools
                         lastVx = vx;
                     }
                 }
-                Log("INFO " + L + " head-stomp trial: " + steps + " steps, " + onHead + " over the head, " + landings + " landings on it, " + flips + " facing flips, " + reversals + " walk reversals");
+                Log("INFO " + L + " head-stomp trial: " + steps + " steps, " + onHead + " over the head, " + landings + " landings on it, " + flips + " facing flips, " + reversals + " walk reversals; moves: " +
+                    string.Join(",", events.Skip(firstEvent).Where(ev => ev.who == brain).Select(ev => ev.what)));
                 Check(landings >= 3 && onHead >= steps / 2, "head-stomp trial: the player kept landing and jumping on the boss's head", landings + " landings, over its head " + onHead + " of " + steps + " steps");
                 Check(burst <= 2 && flips <= 6 && reversals <= 6, "boss does not flip left/right with the player on its head",
                     flips + " facing flips (at most " + burst + " within 0.5 s), " + reversals + " walk reversals in " + steps + " steps");

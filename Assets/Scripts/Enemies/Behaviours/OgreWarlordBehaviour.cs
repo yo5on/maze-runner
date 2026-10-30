@@ -93,7 +93,7 @@ namespace MazeRunner.Enemies
             Trace("sidestep");
             yield return Travel(dir, sidestepSpeed, sidestepDistance);
             Enemy.Halt();
-            if (HasPlayer) Enemy.Face(DirToPlayer);
+            if (HasPlayer) Enemy.Face(PlayerSide());
             yield return new WaitForSeconds(0.15f);
             // The stomp came down beside it: the marked slam answers if the player landed in reach.
             if (HasPlayer && Time.time >= nextSlam && Mathf.Abs(DX) <= slamRange && SameLevel(2f)) yield return Slam();

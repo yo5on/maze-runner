@@ -21,7 +21,10 @@ namespace MazeRunner.EditorTools
     ///   reload (retry / restart) on the same instance without restarting the track; the pause menu,
     ///   game over + retry and a main-menu round trip keep one AudioManager with its music playing;
     /// - stomp: landing on a regular enemy's head deals exactly 1 damage and bounces the player
-    ///   (boss stomps are covered by BossEncounterSmokeTest).
+    ///   (boss stomps are covered by BossEncounterSmokeTest);
+    /// - the moon is hidden; an acid pool landed on each moving platform rides it through a whole cycle and hurts;
+    /// - a regular Ogre's ground slam hits a grounded player on either side for its damage, on its cooldown,
+    ///   and misses a player in the air.
     /// Results: Logs/combat-audio-smoke.txt. Audio is checked as state (clips, isPlaying, volumes):
     /// batch mode has no audio device, so this does not prove anything is audible.
     ///
@@ -51,6 +54,9 @@ namespace MazeRunner.EditorTools
         private static readonly FieldInfo HeartImagesField = typeof(HealthDisplay).GetField("heartImages", Private);
         private static readonly FieldInfo FullHeartField = typeof(HealthDisplay).GetField("fullHeartSprite", Private);
         private const int StartingHearts = 5;
+        private static readonly FieldInfo PeriodField = typeof(MovingPlatform).GetField("period", Private);
+        private static readonly FieldInfo SlamDamageField = typeof(OgreBehaviour).GetField("slamDamage", Private);
+        private static readonly FieldInfo SlamCooldownField = typeof(OgreBehaviour).GetField("cooldown", Private);
 
         static CombatAudioSmokeTest()
         {
@@ -146,6 +152,9 @@ namespace MazeRunner.EditorTools
                 {
                     yield return Stomp();
                     yield return Moon();
+                    yield return AcidOnPlatforms();
+                    yield return OgreSlam();
+                    yield return ExitWithNoEnemies();
                 }
                 Check(errorsLogged == 0, "no errors or exceptions logged", errorsLogged + " " + firstError);
                 Application.logMessageReceived -= OnLog;
@@ -198,6 +207,7 @@ namespace MazeRunner.EditorTools
                     "same AudioManager after a scene reload");
                 Check(music.isPlaying && music.time >= before, "music resumes after a reload without restarting",
                     "time " + before.ToString("0.00") + " -> " + music.time.ToString("0.00"));
+                CheckExitReset("after a scene reload");
 
                 // The real screens: pause menu, game over + retry, and a round trip through the main menu.
                 var pause = FindAnyObjectByType<PauseMenuController>();
@@ -223,6 +233,7 @@ namespace MazeRunner.EditorTools
                     yield return new WaitForSeconds(0.5f);
                     Check(music.isPlaying && AudioManager.Instance == m && FindObjectsByType<AudioManager>(FindObjectsSortMode.None).Length == 1,
                         "retry after game over plays the music on the one AudioManager");
+                    CheckExitReset("after retry from game over");
                     CheckStartingHearts("retry after game over");
                 }
 
@@ -333,6 +344,196 @@ namespace MazeRunner.EditorTools
                 var cam = UnityEngine.Camera.main;
                 Vector3 vp = moon != null && cam != null ? cam.WorldToViewportPoint(moon.transform.position) : Vector3.zero;
                 Check(Mathf.Abs(vp.y - 0.74f) < 0.05f && vp.x > 0.6f, "the moon starts in the upper-right sky", "viewport " + vp.ToString("F2"));
+                var sr = moon != null ? moon.GetComponent<SpriteRenderer>() : null;
+                Check(sr != null && !sr.enabled && sr.sprite != null, "the moon is hidden for now (sprite kept)");
+            }
+
+            // ------------------------------------------------------------------- level exit
+
+            /// <summary>A fresh level: every enemy counted again (none carried over) and the exit hidden.</summary>
+            private void CheckExitReset(string when)
+            {
+                int live = 0;
+                foreach (GoblinEnemy g in FindObjectsByType<GoblinEnemy>(FindObjectsSortMode.None)) if (!g.IsDead) live++;
+                foreach (WraithEnemy w in FindObjectsByType<WraithEnemy>(FindObjectsSortMode.None)) if (!w.IsDead) live++;
+                foreach (Enemy e in FindObjectsByType<Enemy>(FindObjectsSortMode.None)) if (!e.IsDefeated) live++;
+                var goal = FindAnyObjectByType<LevelGoal>();
+                int counted = EnemyTracker.Instance != null ? EnemyTracker.Instance.RemainingEnemyCount : -1;
+                Check(goal != null && !goal.IsRevealed && !goal.GetComponent<Collider2D>().enabled && live > 0 && counted == live,
+                    "exit hidden and every enemy counted " + when, counted + " counted, " + live + " alive");
+            }
+
+            /// <summary>With no enemies left - removed outright, not killed - the exit shows instead of staying hidden forever.</summary>
+            private IEnumerator ExitWithNoEnemies()
+            {
+                var goal = FindAnyObjectByType<LevelGoal>();
+                foreach (GoblinEnemy g in FindObjectsByType<GoblinEnemy>(FindObjectsInactive.Include, FindObjectsSortMode.None)) Destroy(g.gameObject);
+                foreach (WraithEnemy w in FindObjectsByType<WraithEnemy>(FindObjectsInactive.Include, FindObjectsSortMode.None)) Destroy(w.gameObject);
+                foreach (Enemy e in FindObjectsByType<Enemy>(FindObjectsInactive.Include, FindObjectsSortMode.None)) Destroy(e.gameObject);
+                yield return null;
+                yield return null;
+                Check(goal != null && goal.IsRevealed && goal.GetComponent<Collider2D>().enabled, "with no enemies left the exit shows",
+                    EnemyTracker.Instance.RemainingEnemyCount + " left");
+            }
+
+            // ------------------------------------------------------------------- acid on moving platforms
+
+            /// <summary>
+            /// An acid pool landed on each moving platform keeps its exact offset (transform, collider, sprite) through a
+            /// whole there-and-back cycle, and still hurts a player who steps into it while the platform moves.
+            /// </summary>
+            private IEnumerator AcidOnPlatforms()
+            {
+                MovingPlatform[] movers = FindObjectsByType<MovingPlatform>(FindObjectsSortMode.None);
+                Check(movers.Length > 0, "level has moving platforms");
+                float feet = player.transform.position.y - playerCollider.bounds.min.y;
+                foreach (MovingPlatform mp in movers)
+                {
+                    var box = mp.GetComponent<BoxCollider2D>();
+                    var platformSprite = mp.GetComponent<SpriteRenderer>();
+                    GameObject pool = AlchemistFlask.MakePool(box.bounds.center.x, box, 60f, null);
+                    if (pool == null) { Check(false, mp.name + ": an acid pool fits on it"); continue; }
+                    var poolCol = pool.GetComponent<Collider2D>();
+                    var poolSprite = pool.GetComponent<SpriteRenderer>();
+                    Vector3 offT = pool.transform.position - mp.transform.position;
+                    Vector3 offC = poolCol.bounds.center - box.bounds.center;
+                    Vector3 offR = poolSprite.bounds.center - platformSprite.bounds.center;
+                    Vector3 start = mp.transform.position, lo = start, hi = start;
+                    float drift = 0f, period = (float)PeriodField.GetValue(mp);
+                    for (float t = 0f; t < period + 0.2f; t += Time.deltaTime)
+                    {
+                        yield return null;
+                        lo = Vector3.Min(lo, mp.transform.position);
+                        hi = Vector3.Max(hi, mp.transform.position);
+                        drift = Mathf.Max(drift, (pool.transform.position - mp.transform.position - offT).magnitude,
+                            (poolCol.bounds.center - box.bounds.center - offC).magnitude,
+                            (poolSprite.bounds.center - platformSprite.bounds.center - offR).magnitude);
+                    }
+                    float range = (hi - lo).magnitude, back = (mp.transform.position - start).magnitude;
+                    Check(range > 1f && drift < 0.001f, mp.name + ": the acid pool stays on the platform through its whole cycle",
+                        "platform swept " + range.ToString("0.00") + " (now " + back.ToString("0.00") + " from its start), largest drift " + drift.ToString("0.00000"));
+
+                    // Step into it a quarter cycle later (the platform is moving).
+                    for (float t = 0f; t < period / 4f; t += Time.deltaTime) yield return null;
+                    health.Heal(10);
+                    InvincibleField.SetValue(health, 0f);
+                    int before = health.CurrentHealth;
+                    Vector2 pos = new Vector2(poolCol.bounds.center.x, box.bounds.max.y + feet + 0.02f);
+                    playerBody.position = pos;
+                    player.transform.position = pos;
+                    playerBody.linearVelocity = Vector2.zero;
+                    Physics2D.SyncTransforms();
+                    for (float t = 0f; t < 0.5f && health.CurrentHealth == before; t += Time.deltaTime) yield return null;
+                    Check(health.CurrentHealth == before - 1, mp.name + ": the moving acid pool hurts the player", before + " -> " + health.CurrentHealth);
+                    Destroy(pool);
+                    health.Heal(10);
+                    health.Respawn();
+                    yield return null;
+                }
+            }
+
+            // ------------------------------------------------------------------- ogre slam
+
+            /// <summary>
+            /// A regular Ogre against the player on its floor: the slam lands (its damage, knocked away) on each side,
+            /// keeps coming on its cooldown - not stuck, not spamming - and a player in the air over the zone is missed.
+            /// Other enemies are switched off meanwhile so only the Ogre can hurt the player.
+            /// </summary>
+            private IEnumerator OgreSlam()
+            {
+                GoblinEnemy ogre = null;
+                OgreBehaviour brain = null;
+                foreach (GoblinEnemy e in FindObjectsByType<GoblinEnemy>(FindObjectsSortMode.None))
+                {
+                    var b = BehaviourField.GetValue(e) as EnemyBehaviour;
+                    if (!e.IsDead && b != null && b.GetType() == typeof(OgreBehaviour) && e.Platform != null) { ogre = e; brain = (OgreBehaviour)b; break; }
+                }
+                if (ogre == null) { Log("INFO " + L + " no regular Ogre"); yield break; }
+                var others = new System.Collections.Generic.List<GameObject>();
+                foreach (GoblinEnemy e in FindObjectsByType<GoblinEnemy>(FindObjectsSortMode.None))
+                    if (e != ogre) { others.Add(e.gameObject); e.gameObject.SetActive(false); }
+                foreach (Hazard h in FindObjectsByType<Hazard>(FindObjectsSortMode.None)) { others.Add(h.gameObject); h.gameObject.SetActive(false); }
+
+                int damage = (int)SlamDamageField.GetValue(brain);
+                float cooldown = (float)SlamCooldownField.GetValue(brain);
+                Bounds floor = ogre.Platform.bounds;
+                float feet = player.transform.position.y - playerCollider.bounds.min.y;
+                float gravity = playerBody.gravityScale;
+                Log("INFO " + L + " ogre trial: " + ogre.name + " slam " + damage + " dmg, cooldown " + cooldown);
+
+                foreach (int side in new[] { 1, -1 })
+                {
+                    string sideName = side > 0 ? "right" : "left";
+                    float cx = Mathf.Clamp(floor.center.x, floor.min.x + 2.5f, floor.max.x - 2.5f);
+                    ogre.Body.position = new Vector2(cx, ogre.Body.position.y);
+                    ogre.transform.position = ogre.Body.position;
+                    ogre.Halt();
+                    Physics2D.SyncTransforms();
+                    while (brain.IsBusy) yield return null; // a slam left over from the other side's trial
+                    Vector2 spot = new Vector2(ogre.BodyCollider.bounds.center.x + side * 1.6f, floor.max.y + feet + 0.02f);
+
+                    // Grounded beside it for 9 s: each slam faces the player, hits for its damage and knocks them away.
+                    var hits = new System.Collections.Generic.List<float>();
+                    int wrongDamage = 0, wrongFacing = 0, knockedAway = 0, starts = 0;
+                    bool wasBusy = false;
+                    float placeAt = 0f;
+                    for (float t = 0f; t < 9f; t += Time.fixedDeltaTime)
+                    {
+                        if (t >= placeAt)
+                        {
+                            health.Heal(10);
+                            InvincibleField.SetValue(health, 0f);
+                            playerBody.position = spot;
+                            player.transform.position = spot;
+                            playerBody.linearVelocity = Vector2.zero;
+                            placeAt = float.MaxValue;
+                        }
+                        int before = health.CurrentHealth;
+                        yield return new WaitForFixedUpdate();
+                        if (brain.IsBusy && !wasBusy) { starts++; if (ogre.Direction != side) wrongFacing++; }
+                        wasBusy = brain.IsBusy;
+                        if (health.CurrentHealth < before)
+                        {
+                            hits.Add(t);
+                            if (before - health.CurrentHealth != damage) wrongDamage++;
+                            if (playerBody.linearVelocity.x * side > 1f) knockedAway++;
+                            placeAt = t + 0.6f;
+                        }
+                    }
+                    float minGap = float.MaxValue;
+                    for (int i = 1; i < hits.Count; i++) minGap = Mathf.Min(minGap, hits[i] - hits[i - 1]);
+                    string detail = starts + " slams, " + hits.Count + " hits, " + wrongDamage + " wrong damage, " + knockedAway + " knocked away, " +
+                                    wrongFacing + " facing away, shortest gap " + (hits.Count > 1 ? minGap.ToString("0.00") : "-");
+                    Check(hits.Count >= 2 && wrongDamage == 0 && knockedAway == hits.Count && wrongFacing == 0,
+                        "Ogre slam hits a grounded player on its " + sideName + " for " + damage + " and knocks them away, again and again", detail);
+                    Check(starts <= 3 && (hits.Count < 2 || minGap >= cooldown - 0.1f), "Ogre slams on its " + cooldown + " s cooldown, not faster (" + sideName + ")", detail);
+                }
+
+                // Hovering in the air in front of it: it still slams, and the slam misses.
+                {
+                    Vector2 spot = new Vector2(ogre.BodyCollider.bounds.center.x + 1.6f, floor.max.y + feet + 0.9f);
+                    health.Heal(10);
+                    InvincibleField.SetValue(health, 0f);
+                    playerBody.gravityScale = 0f;
+                    int before = health.CurrentHealth, starts = 0;
+                    bool wasBusy = false;
+                    for (float t = 0f; t < cooldown + 2f; t += Time.fixedDeltaTime)
+                    {
+                        playerBody.position = spot;
+                        playerBody.linearVelocity = Vector2.zero;
+                        yield return new WaitForFixedUpdate();
+                        if (brain.IsBusy && !wasBusy) starts++;
+                        wasBusy = brain.IsBusy;
+                    }
+                    playerBody.gravityScale = gravity;
+                    Check(starts >= 1 && health.CurrentHealth == before, "Ogre slam misses a player in the air over the zone",
+                        starts + " slams, health " + before + " -> " + health.CurrentHealth);
+                }
+
+                foreach (GameObject g in others) if (g != null) g.SetActive(true);
+                health.Heal(10);
+                health.Respawn();
+                yield return null;
             }
 
             /// <summary>The moon keeps its world height through jumps, camera smoothing and a respawn snap; only its X follows the camera.</summary>

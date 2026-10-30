@@ -144,6 +144,8 @@ namespace MazeRunner.Enemies
             col.size = new Vector2(w / s.x, 0.48f / s.y);
             col.offset = new Vector2(0f, 0.12f / s.y);
             go.AddComponent<Hazard>();
+            // Ride the ground it landed on (a moving platform carries it); world pose and scale are kept.
+            go.transform.SetParent(ground.transform, true);
             Destroy(go, lifetime);
             return go;
         }

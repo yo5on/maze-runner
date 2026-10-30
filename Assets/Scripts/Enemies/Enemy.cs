@@ -48,12 +48,18 @@ namespace MazeRunner.Enemies
             // LevelGoal only completes once EnemyTracker counts every enemy as defeated.
             if (Levels.EnemyTracker.Instance != null)
             {
-                Levels.EnemyTracker.Instance.NotifyEnemyDefeated();
+                Levels.EnemyTracker.Instance.NotifyEnemyDefeated(this);
             }
 
             Destroy(gameObject);
         }
 
         private bool defeated;
+        public bool IsDefeated => defeated;
+
+        private void Start()
+        {
+            if (Levels.EnemyTracker.Instance != null) Levels.EnemyTracker.Instance.RegisterEnemy(this);
+        }
     }
 }

@@ -48,7 +48,10 @@ namespace MazeRunner.Enemies
         {
             GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
             if (playerObj != null) player = playerObj.transform;
+            if (Levels.EnemyTracker.Instance != null) Levels.EnemyTracker.Instance.RegisterEnemy(this);
         }
+
+        public bool IsDead => isDead;
         
         private void Update()
         {
@@ -120,7 +123,7 @@ namespace MazeRunner.Enemies
             // LevelGoal only completes once EnemyTracker counts every enemy as defeated.
             if (Levels.EnemyTracker.Instance != null)
             {
-                Levels.EnemyTracker.Instance.NotifyEnemyDefeated();
+                Levels.EnemyTracker.Instance.NotifyEnemyDefeated(this);
             }
 
             rb.linearVelocity = Vector2.zero;

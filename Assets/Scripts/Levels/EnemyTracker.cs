@@ -1,18 +1,31 @@
-    using UnityEngine;
+using System.Collections.Generic;
+using UnityEngine;
 using UnityEngine.SceneManagement;
 
 namespace MazeRunner.Levels
 {
+    /// <summary>
+    /// The level's living enemies, as a set: each enemy joins when it starts (scene-placed or spawned later)
+    /// and leaves when it is defeated, so a death never counts twice and a damaged, stunned or switched-off
+    /// enemy still counts. Destroyed entries (a scene reload) drop out by themselves.
+    /// </summary>
     public class EnemyTracker : MonoBehaviour
     {
         private static EnemyTracker instance;
-        private int enemyCount;
-        private int defeatedCount;
-        
+        private readonly HashSet<MonoBehaviour> alive = new HashSet<MonoBehaviour>();
+
         public static EnemyTracker Instance => instance;
-        public bool AllEnemiesDefeated => enemyCount > 0 && defeatedCount >= enemyCount;
-        public int RemainingEnemyCount => Mathf.Max(0, enemyCount - defeatedCount);
-        
+        public bool AllEnemiesDefeated => RemainingEnemyCount == 0;
+
+        public int RemainingEnemyCount
+        {
+            get
+            {
+                alive.RemoveWhere(e => e == null);
+                return alive.Count;
+            }
+        }
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void CreateOnLoad()
         {
@@ -22,7 +35,7 @@ namespace MazeRunner.Levels
                 trackerObject.AddComponent<EnemyTracker>();
             }
         }
-        
+
         private void Awake()
         {
             if (instance != null && instance != this)
@@ -30,17 +43,17 @@ namespace MazeRunner.Levels
                 Destroy(gameObject);
                 return;
             }
-            
+
             instance = this;
             DontDestroyOnLoad(gameObject);
             SceneManager.sceneLoaded += OnSceneLoaded;
         }
-        
+
         private void Start()
         {
             RegisterAllEnemies();
         }
-        
+
         private void OnDestroy()
         {
             if (instance == this)
@@ -49,36 +62,35 @@ namespace MazeRunner.Levels
                 instance = null;
             }
         }
-        
+
         private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
         {
             RegisterAllEnemies();
         }
-        
-        /// <summary>Counts the scene's enemies again (call after spawning enemies at load time).</summary>
+
+        /// <summary>Scans the scene for enemies again (call after spawning enemies at load time).</summary>
         public void RefreshEnemyCount()
         {
             RegisterAllEnemies();
         }
-        
+
         private void RegisterAllEnemies()
         {
-            enemyCount = 0;
-            defeatedCount = 0;
-            
-            var goblins = FindObjectsByType<Enemies.GoblinEnemy>(FindObjectsSortMode.None);
-            enemyCount += goblins.Length;
-            
-            var wraiths = FindObjectsByType<Enemies.WraithEnemy>(FindObjectsSortMode.None);
-            enemyCount += wraiths.Length;
-            
-            var baseEnemies = FindObjectsByType<Enemies.Enemy>(FindObjectsSortMode.None);
-            enemyCount += baseEnemies.Length;
+            // Before their own Start, so nothing reads an empty level in between.
+            foreach (var g in FindObjectsByType<Enemies.GoblinEnemy>(FindObjectsSortMode.None)) if (!g.IsDead) alive.Add(g);
+            foreach (var w in FindObjectsByType<Enemies.WraithEnemy>(FindObjectsSortMode.None)) if (!w.IsDead) alive.Add(w);
+            foreach (var e in FindObjectsByType<Enemies.Enemy>(FindObjectsSortMode.None)) if (!e.IsDefeated) alive.Add(e);
         }
-        
-        public void NotifyEnemyDefeated()
+
+        /// <summary>An enemy has started: it counts until it is defeated.</summary>
+        public void RegisterEnemy(MonoBehaviour enemy)
         {
-            defeatedCount++;
+            if (enemy != null) alive.Add(enemy);
+        }
+
+        public void NotifyEnemyDefeated(MonoBehaviour enemy)
+        {
+            alive.Remove(enemy);
         }
     }
 }
